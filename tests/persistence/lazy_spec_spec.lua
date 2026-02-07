@@ -69,6 +69,7 @@ describe("theme-browser.persistence.lazy_spec", function()
     })
 
     assert.is_not_nil(out)
+    assert.is_truthy(out:find("theme%-browser%-selected%.lua") ~= nil)
     assert.equals(0, state_calls)
     assert.equals(1, vim.fn.filereadable(out))
 
@@ -90,5 +91,20 @@ describe("theme-browser.persistence.lazy_spec", function()
     })
 
     assert.equals(1, state_calls)
+  end)
+
+  it("removes legacy selected-theme.lua when writing new spec", function()
+    local legacy = temp_root .. "/lua/plugins/selected-theme.lua"
+    vim.fn.mkdir(vim.fn.fnamemodify(legacy, ":h"), "p")
+    vim.fn.writefile({ "return {}" }, legacy)
+
+    local lazy_spec = reset_module()
+    local out = lazy_spec.generate_spec("tokyonight", nil, {
+      notify = false,
+      update_state = false,
+    })
+
+    assert.is_not_nil(out)
+    assert.equals(0, vim.fn.filereadable(legacy))
   end)
 end)

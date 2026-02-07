@@ -160,9 +160,12 @@ local function setup_commands()
     end
 
     local theme_service = require("theme-browser.application.theme_service")
-    theme_service.install(opts.fargs[1], opts.fargs[2])
+    theme_service.install(opts.fargs[1], opts.fargs[2], {
+      wait_install = opts.bang == true,
+    })
   end, {
     nargs = "*",
+    bang = true,
   })
 
   vim.api.nvim_create_user_command("ThemeBrowserUninstall", function(opts)
@@ -192,7 +195,7 @@ local function setup_commands()
       "  :ThemeBrowserCacheInfo                - Show cache statistics",
       "  :ThemeBrowserReset                    - Reset state, cache, and managed spec",
       "  :ThemeBrowserPreview <name> [variant] - Preview theme",
-      "  :ThemeBrowserInstall <name> [variant] - Install theme via LazyVim",
+      "  :ThemeBrowserInstall[!] <name> [variant] - Install/apply now (! waits)",
       "  :ThemeBrowserMark <name> [variant]    - Mark theme for install",
       "  :ThemeBrowserUninstall                - Remove theme from LazyVim config",
       "  :ThemeBrowserStatus [name]            - Show theme status",

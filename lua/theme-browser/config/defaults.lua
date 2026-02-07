@@ -61,6 +61,7 @@ local M = {
   package_manager = {
     enabled = false,
     mode = "plugin_only",
+    provider = "auto",
   },
 
   -- UI configuration
@@ -70,6 +71,7 @@ local M = {
     border = "rounded",
     show_hints = true,
     show_breadcrumbs = true,
+    preview_on_move = false,
   },
 
   -- Status display configuration

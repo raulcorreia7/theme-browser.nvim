@@ -2,7 +2,25 @@ local M = {}
 local log = require("theme-browser.util.log")
 
 local function get_spec_file()
+  return vim.fn.stdpath("config") .. "/lua/plugins/theme-browser-selected.lua"
+end
+
+local function get_legacy_spec_file()
   return vim.fn.stdpath("config") .. "/lua/plugins/selected-theme.lua"
+end
+
+local function resolve_existing_spec_file()
+  local preferred = get_spec_file()
+  if vim.fn.filereadable(preferred) == 1 then
+    return preferred
+  end
+
+  local legacy = get_legacy_spec_file()
+  if vim.fn.filereadable(legacy) == 1 then
+    return legacy
+  end
+
+  return preferred
 end
 
 local function ensure_parent_dir(path)
@@ -82,6 +100,11 @@ function M.generate_spec(theme_name, variant, opts)
   file:write(spec_content)
   file:close()
 
+  local legacy_spec_file = get_legacy_spec_file()
+  if legacy_spec_file ~= spec_file and vim.fn.filereadable(legacy_spec_file) == 1 then
+    vim.fn.delete(legacy_spec_file)
+  end
+
   if update_state then
     local state = require("theme-browser.persistence.state")
     state.set_current_theme(entry.name, entry.variant)
@@ -102,7 +125,7 @@ end
 ---Get current LazyVim spec state
 ---@return table|nil current spec theme
 function M.get_current_spec()
-  local spec_file = get_spec_file()
+  local spec_file = resolve_existing_spec_file()
   if vim.fn.filereadable(spec_file) == 0 then
     return nil
   end
@@ -134,12 +157,22 @@ function M.remove_spec(opts)
     notify = true
   end
 
-  local spec_file = get_spec_file()
-  if vim.fn.filereadable(spec_file) == 1 then
-    vim.fn.delete(spec_file)
-    if notify then
-      log.info("LazyVim spec removed")
+  local removed = false
+  local files = { get_spec_file(), get_legacy_spec_file() }
+  local seen = {}
+
+  for _, spec_file in ipairs(files) do
+    if not seen[spec_file] then
+      seen[spec_file] = true
+      if vim.fn.filereadable(spec_file) == 1 then
+        vim.fn.delete(spec_file)
+        removed = true
+      end
     end
+  end
+
+  if notify and removed then
+    log.info("LazyVim spec removed")
   end
 end
 

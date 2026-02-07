@@ -90,9 +90,12 @@ function M.check_state()
     vim.health.warn(string.format("State file not found: %s", state_file))
   end
 
-  local spec_file = vim.fn.stdpath("config") .. "/lua/plugins/selected-theme.lua"
+  local spec_file = vim.fn.stdpath("config") .. "/lua/plugins/theme-browser-selected.lua"
+  local legacy_spec_file = vim.fn.stdpath("config") .. "/lua/plugins/selected-theme.lua"
   if vim.fn.filereadable(spec_file) == 1 then
     vim.health.ok(string.format("LazyVim spec found: %s", spec_file))
+  elseif vim.fn.filereadable(legacy_spec_file) == 1 then
+    vim.health.ok(string.format("LazyVim legacy spec found: %s", legacy_spec_file))
   else
     vim.health.warn(string.format("LazyVim spec not found: %s", spec_file))
   end

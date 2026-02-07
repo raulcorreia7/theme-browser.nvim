@@ -14,6 +14,7 @@ local default_state = {
   package_manager = {
     enabled = false,
     mode = "plugin_only",
+    provider = "auto",
   },
 }
 
@@ -23,7 +24,7 @@ local default_state = {
 ---@field marked_theme table|nil {name, variant}
 ---@field theme_history string[]
 ---@field cache_stats table {hits, misses}
----@field package_manager table {enabled, mode}
+---@field package_manager table {enabled, mode, provider}
 
 local state = vim.deepcopy(default_state)
 
@@ -187,16 +188,22 @@ local function is_entry_installed(entry, snapshot)
     end
   end
 
-  local spec_file = vim.fn.stdpath("config") .. "/lua/plugins/selected-theme.lua"
-  if vim.fn.filereadable(spec_file) == 1 then
-    local ok, lines = pcall(vim.fn.readfile, spec_file)
-    if ok and type(lines) == "table" then
-      local content = table.concat(lines, "\n")
-      if content:find(entry.repo, 1, true) ~= nil then
-        if snapshot and type(snapshot.installed_by_repo) == "table" then
-          snapshot.installed_by_repo[entry.repo] = true
+  local spec_files = {
+    vim.fn.stdpath("config") .. "/lua/plugins/theme-browser-selected.lua",
+    vim.fn.stdpath("config") .. "/lua/plugins/selected-theme.lua",
+  }
+
+  for _, spec_file in ipairs(spec_files) do
+    if vim.fn.filereadable(spec_file) == 1 then
+      local ok, lines = pcall(vim.fn.readfile, spec_file)
+      if ok and type(lines) == "table" then
+        local content = table.concat(lines, "\n")
+        if content:find(entry.repo, 1, true) ~= nil then
+          if snapshot and type(snapshot.installed_by_repo) == "table" then
+            snapshot.installed_by_repo[entry.repo] = true
+          end
+          return true
         end
-        return true
       end
     end
   end
@@ -352,6 +359,9 @@ function M.load()
     if type(decoded.package_manager.mode) == "string" and decoded.package_manager.mode ~= "" then
       state.package_manager.mode = decoded.package_manager.mode
     end
+    if type(decoded.package_manager.provider) == "string" and decoded.package_manager.provider ~= "" then
+      state.package_manager.provider = decoded.package_manager.provider
+    end
   end
 end
 
@@ -483,7 +493,7 @@ function M.increment_cache_miss()
 end
 
 ---Get package manager configuration
----@return table {enabled, mode}
+---@return table {enabled, mode, provider}
 function M.get_package_manager()
   return state.package_manager
 end
@@ -491,10 +501,14 @@ end
 ---Set package manager configuration
 ---@param enabled boolean
 ---@param mode string "auto" | "manual" | "plugin_only"
-function M.set_package_manager(enabled, mode)
+---@param provider string|nil "auto" | "lazy" | "noop"
+function M.set_package_manager(enabled, mode, provider)
   state.package_manager.enabled = enabled
   if mode then
     state.package_manager.mode = mode
+  end
+  if provider then
+    state.package_manager.provider = provider
   end
   M.save()
 end

@@ -30,7 +30,7 @@ It lets you browse curated themes, preview them instantly, and persist your sele
 
 Default mode is `plugin_only` (Theme Browser manages loading directly, without requiring package-manager install).
 
-By default, a successful apply also updates `selected-theme.lua` (including in `plugin_only` mode) to keep startup flicker-safe. To opt out, set `startup.write_spec = false`.
+By default, a successful apply also updates `theme-browser-selected.lua` (including in `plugin_only` mode) to keep startup flicker-safe. To opt out, set `startup.write_spec = false`.
 
 ## Requirements
 
@@ -100,7 +100,7 @@ return {
 - `:ThemeBrowserTheme <name> [variant]` apply + persist
 - `:ThemeBrowserPreview <name> [variant]` preview (non-persistent)
 - `:ThemeBrowserClean` clean cache now
-- `:ThemeBrowserInstall <name> [variant]` write managed spec, mark for install, and prefetch in background
+- `:ThemeBrowserInstall[!] <name> [variant]` write managed spec, install via lazy in-session, and apply now (`!` waits)
 - `:ThemeBrowserUninstall` remove managed spec
 - `:ThemeBrowserStatus [name]` show status
 - `:ThemeBrowserReset` reset state + cache + managed spec
@@ -120,7 +120,7 @@ return {
 ## Persistence files
 
 - State file: `stdpath("data")/theme-browser/state.json`
-- Managed spec file: `~/.config/nvim/lua/plugins/selected-theme.lua`
+- Managed spec file: `~/.config/nvim/lua/plugins/theme-browser-selected.lua`
 
 ## Configuration
 
@@ -131,6 +131,7 @@ require("theme-browser").setup({
   package_manager = {
     enabled = false,
     mode = "plugin_only", -- auto | manual | plugin_only
+    provider = "auto", -- auto | lazy | noop
   },
   startup = {
     enabled = true,
@@ -145,6 +146,7 @@ require("theme-browser").setup({
     window_width = 0.6,
     window_height = 0.5,
     border = "rounded",
+    preview_on_move = false, -- preview installed/cached themes on cursor move
   },
   keymaps = {
   },
@@ -152,6 +154,8 @@ require("theme-browser").setup({
 ```
 
 ## Testing
+
+`ThemeBrowserInstall` attempts an in-session install through `lazy.nvim` when available, so a restart is not required for installation.
 
 ```bash
 make verify

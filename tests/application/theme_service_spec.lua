@@ -43,9 +43,11 @@ describe("theme-browser.application.theme_service", function()
   it("marks theme and starts install prefetch in background", function()
     local marked = nil
     local prefetch = nil
+    local applied = nil
 
     package.loaded["theme-browser.adapters.base"] = {
-      load_theme = function(_, _, _)
+      load_theme = function(name, variant, _)
+        applied = { name = name, variant = variant }
         return { ok = true }
       end,
     }
@@ -59,7 +61,7 @@ describe("theme-browser.application.theme_service", function()
 
     package.loaded["theme-browser.persistence.lazy_spec"] = {
       generate_spec = function(_, _, _)
-        return "/tmp/selected-theme.lua"
+        return "/tmp/theme-browser-selected.lua"
       end,
     }
 
@@ -79,10 +81,13 @@ describe("theme-browser.application.theme_service", function()
     local out = service.install("tokyonight", "tokyonight-night", { notify = false })
     vim.wait(120)
 
-    assert.equals("/tmp/selected-theme.lua", out)
+    assert.equals("/tmp/theme-browser-selected.lua", out)
     assert.is_not_nil(marked)
     assert.equals("tokyonight", marked.name)
     assert.equals("night", marked.variant)
+    assert.is_not_nil(applied)
+    assert.equals("tokyonight", applied.name)
+    assert.equals("tokyonight-night", applied.variant)
     assert.is_not_nil(prefetch)
     assert.equals("tokyonight", prefetch.name)
     assert.equals("tokyonight-night", prefetch.variant)
@@ -93,6 +98,7 @@ describe("theme-browser.application.theme_service", function()
   it("loads package manager in background when requested", function()
     local load_called = false
     local ready_called = false
+    local install_opts = nil
 
     package.loaded["theme-browser.adapters.base"] = {
       load_theme = function(_, _, _)
@@ -108,7 +114,7 @@ describe("theme-browser.application.theme_service", function()
 
     package.loaded["theme-browser.persistence.lazy_spec"] = {
       generate_spec = function(_, _, _)
-        return "/tmp/selected-theme.lua"
+        return "/tmp/theme-browser-selected.lua"
       end,
     }
 
@@ -127,7 +133,8 @@ describe("theme-browser.application.theme_service", function()
         ready_called = true
         callback()
       end,
-      load_theme = function(_, _)
+      install_theme = function(_, _, opts)
+        install_opts = opts
         load_called = true
       end,
     }
@@ -141,5 +148,51 @@ describe("theme-browser.application.theme_service", function()
 
     assert.is_true(ready_called)
     assert.is_true(load_called)
+    assert.is_not_nil(install_opts)
+    assert.is_true(install_opts.force)
+    assert.is_true(install_opts.load)
+  end)
+
+  it("can skip apply-after-install when requested", function()
+    local applied = false
+
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        applied = true
+        return { ok = true }
+      end,
+    }
+
+    package.loaded["theme-browser.runtime.loader"] = {
+      ensure_available = function(_, _, _, callback)
+        callback(true, nil, nil)
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.lazy_spec"] = {
+      generate_spec = function(_, _, _)
+        return "/tmp/theme-browser-selected.lua"
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.state"] = {
+      mark_theme = function(_, _) end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function(_, _)
+        return { name = "tokyonight", variant = "night" }
+      end,
+    }
+
+    local service = require(module_name)
+    service.install("tokyonight", "tokyonight-night", {
+      notify = false,
+      apply_after_install = false,
+      load_package_manager = false,
+    })
+    vim.wait(120)
+
+    assert.is_false(applied)
   end)
 end)

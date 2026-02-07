@@ -38,20 +38,47 @@ local function prefetch_theme(theme_name, variant, opts)
   end)
 end
 
-local function load_package_manager_theme(theme_name, variant)
+local function load_package_manager_theme(theme_name, variant, opts)
+  opts = opts or {}
   local ok_pm, package_manager = pcall(require, "theme-browser.package_manager.manager")
-  if not ok_pm or type(package_manager.load_theme) ~= "function" then
+  if not ok_pm then
     return
+  end
+
+  local function install_now()
+    if type(package_manager.install_theme) == "function" then
+      package_manager.install_theme(theme_name, variant, {
+        load = true,
+        force = true,
+        wait = opts.wait_install == true,
+      })
+      return
+    end
+
+    if type(package_manager.load_theme) == "function" then
+      package_manager.load_theme(theme_name, variant)
+    end
   end
 
   if type(package_manager.when_ready) == "function" then
     package_manager.when_ready(function()
-      package_manager.load_theme(theme_name, variant)
+      install_now()
     end)
     return
   end
 
-  package_manager.load_theme(theme_name, variant)
+  install_now()
+end
+
+local function apply_installed_theme(theme_name, variant, opts)
+  if opts.apply_after_install == false then
+    return
+  end
+
+  base.load_theme(theme_name, variant, {
+    notify = opts.notify,
+    cleanup_preview = false,
+  })
 end
 
 local function start_install_jobs(theme_name, variant, opts)
@@ -59,9 +86,11 @@ local function start_install_jobs(theme_name, variant, opts)
     prefetch_theme(theme_name, variant, opts)
   end
 
-  if opts.load_package_manager == true then
-    load_package_manager_theme(theme_name, variant)
+  if opts.load_package_manager ~= false then
+    load_package_manager_theme(theme_name, variant, opts)
   end
+
+  apply_installed_theme(theme_name, variant, opts)
 end
 
 local function maybe_cleanup_preview(opts)
@@ -151,6 +180,10 @@ function M.install(theme_name, variant, opts)
   opts = opts or {}
   maybe_cleanup_preview(opts)
   mark_theme_for_install(theme_name, variant)
+
+  if opts.load_package_manager == nil then
+    opts.load_package_manager = true
+  end
 
   local lazy_spec = require("theme-browser.persistence.lazy_spec")
   local update_current = opts.update_current == true
