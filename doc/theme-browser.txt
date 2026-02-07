@@ -1,0 +1,136 @@
+*theme-browser.txt*  Theme Browser for Neovim
+
+Theme Browser provides a curated theme gallery, live preview/apply workflows,
+and optional startup persistence helpers.
+
+==============================================================================
+CONTENTS                                                    *theme-browser-contents*
+
+1. Requirements...............................................|theme-browser-requirements|
+2. Setup......................................................|theme-browser-setup|
+3. Commands...................................................|theme-browser-commands|
+4. Configuration..............................................|theme-browser-config|
+5. Health.....................................................|theme-browser-health|
+
+==============================================================================
+REQUIREMENTS                                                *theme-browser-requirements*
+
+- Neovim 0.8+
+- git (for downloading missing themes)
+
+Recommended:
+- rktjmp/lush.nvim
+- nvim-lua/plenary.nvim
+
+==============================================================================
+SETUP                                                              *theme-browser-setup*
+
+>
+  require("theme-browser").setup({
+    auto_load = true,
+    startup = {
+      enabled = true,
+      write_spec = false,
+      skip_if_already_active = true,
+    },
+  })
+<
+
+Registry resolution order:
+1. `registry_path` from user config (if readable)
+2. bundled fallback registry shipped with the plugin
+
+==============================================================================
+COMMANDS                                                        *theme-browser-commands*
+
+:ThemeBrowser [query]
+    Open gallery.
+
+:ThemeBrowserTheme <name> [variant]
+:ThemeBrowserTheme <name:variant>
+    Apply and persist theme.
+
+:ThemeBrowserPreview <name> [variant]
+:ThemeBrowserPreview <name:variant>
+    Preview theme without persistence.
+
+:ThemeBrowserInstall[!] <name> [variant]
+:ThemeBrowserInstall[!] <name:variant>
+    Write managed spec (cache-aware local dir when available), install and apply in
+    session (`!` waits).
+
+:ThemeBrowserMark <name> [variant]
+:ThemeBrowserStatus [name|name:variant]
+:ThemeBrowserClean
+:ThemeBrowserCacheClear
+:ThemeBrowserCacheInfo
+:ThemeBrowserUninstall
+:ThemeBrowserReset
+:ThemeBrowserFocus
+:ThemeBrowserHelp
+
+==============================================================================
+CONFIGURATION                                                      *theme-browser-config*
+
+>
+  require("theme-browser").setup({
+    registry_path = "", -- optional custom json path
+    cache_dir = vim.fn.stdpath("cache") .. "/theme-browser",
+    auto_load = true,
+    log_level = "info", -- error|warn|info|debug
+
+    startup = {
+      enabled = true,
+      write_spec = false,
+      skip_if_already_active = true,
+    },
+
+    cache = {
+      auto_cleanup = true,
+      cleanup_interval_days = 7,
+    },
+
+    package_manager = {
+      enabled = false,
+      mode = "plugin_only", -- auto|manual|plugin_only
+      provider = "auto", -- auto|lazy|noop
+    },
+
+    ui = {
+      window_width = 0.6,
+      window_height = 0.5,
+      border = "rounded",
+      show_hints = true,
+      show_breadcrumbs = true,
+      preview_on_move = true,
+    },
+
+    keymaps = {
+      close = { "q", "<Esc>" },
+      select = { "<CR>" },
+      preview = { "p" },
+      install = { "i" },
+      mark = { "m" },
+      navigate_up = { "k" },
+      navigate_down = { "j" },
+      goto_top = { "gg" },
+      goto_bottom = { "G" },
+    },
+  })
+<
+
+Unknown keys are ignored with warnings. Invalid nested values fall back to
+defaults.
+
+==============================================================================
+HEALTH                                                            *theme-browser-health*
+
+Run `:checkhealth theme_browser`.
+
+Health reports:
+- active registry source (user/bundled)
+- registry readability + json validity
+- startup.write_spec safety status
+- cache directory, dependencies, and state files
+
+vim:tw=78:ts=8:noet:ft=help:norl:

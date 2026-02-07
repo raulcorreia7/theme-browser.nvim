@@ -6,11 +6,15 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        nvim: [stable, nightly]
+        os: [ubuntu-latest, macos-latest]
+        nvim: [stable]
+        include:
+          - os: ubuntu-latest
+            nvim: nightly
 
     env:
       CI: true
@@ -24,6 +28,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1"
+
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install luacheck
+        run: luarocks install luacheck
+
+      - name: Setup StyLua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          version: latest
 
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1

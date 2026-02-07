@@ -24,13 +24,15 @@ It lets you browse curated themes, preview them instantly, and persist your sele
 2. You preview/apply a theme from the gallery.
 3. If theme files are missing, it performs a shallow download and loads from cache.
 4. Installing a theme marks it for install and starts a background prefetch.
-5. Applying a theme persists selection to state and updates the managed startup spec.
+5. Applying a theme persists selection to state.
 6. Cache cleanup runs automatically every week by default.
 7. On startup, it restores your persisted theme using the managed startup spec.
 
 Default mode is `plugin_only` (Theme Browser manages loading directly, without requiring package-manager install).
 
-By default, a successful apply also updates `theme-browser-selected.lua` (including in `plugin_only` mode) to keep startup flicker-safe. To opt out, set `startup.write_spec = false`.
+Registry loading prefers your configured path when readable, then falls back to the bundled registry shipped with the plugin.
+
+`startup.write_spec` defaults to `false` (safer default). Enable it if you want applies to write `theme-browser-selected.lua`.
 
 ## Requirements
 
@@ -57,7 +59,6 @@ return {
     },
     opts = {
       auto_load = true,
-      show_preview = false,
       package_manager = {
         enabled = false,
         mode = "plugin_only",
@@ -81,7 +82,6 @@ return {
     },
     opts = {
       auto_load = true,
-      show_preview = false,
       package_manager = {
         enabled = false,
         mode = "plugin_only",
@@ -99,8 +99,9 @@ return {
 - `:ThemeBrowser [query]` open gallery
 - `:ThemeBrowserTheme <name> [variant]` apply + persist
 - `:ThemeBrowserPreview <name> [variant]` preview (non-persistent)
+- `:ThemeBrowserTheme <name:variant>` and related commands accept `name:variant` tokens
 - `:ThemeBrowserClean` clean cache now
-- `:ThemeBrowserInstall[!] <name> [variant]` write managed spec, install via lazy in-session, and apply now (`!` waits)
+- `:ThemeBrowserInstall[!] <name> [variant]` write managed spec (prefers cached local dir when available), install via lazy in-session, and apply now (`!` waits)
 - `:ThemeBrowserUninstall` remove managed spec
 - `:ThemeBrowserStatus [name]` show status
 - `:ThemeBrowserReset` reset state + cache + managed spec
@@ -127,7 +128,6 @@ return {
 ```lua
 require("theme-browser").setup({
   auto_load = true,
-  show_preview = false,
   package_manager = {
     enabled = false,
     mode = "plugin_only", -- auto | manual | plugin_only
@@ -135,7 +135,7 @@ require("theme-browser").setup({
   },
   startup = {
     enabled = true,
-    write_spec = true,
+    write_spec = false,
     skip_if_already_active = true,
   },
   cache = {
@@ -161,7 +161,7 @@ require("theme-browser").setup({
 make verify
 ```
 
-CI runs `make verify` on Ubuntu with Neovim stable + nightly.
+CI runs `make verify` with lint/format/test checks on Ubuntu and macOS.
 In CI (`CI=true`), tests fail when `plenary.nvim` is unavailable instead of being skipped.
 
 ## License

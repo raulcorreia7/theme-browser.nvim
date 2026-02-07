@@ -5,12 +5,12 @@ SHELL := /bin/bash
 NVIM ?= nvim
 PYTHON ?= python3
 PLENARY_RTP ?=
-# CI=true makes missing plenary a hard failure.
+# CI=true makes missing plenary/tooling a hard failure.
 CI ?=
 
 ROOT := $(CURDIR)
 
-.PHONY: all setup build test lint fmt clean package smoke verify
+.PHONY: all setup build test lint fmt fmt-check clean package smoke verify
 
 all: verify
 
@@ -24,9 +24,31 @@ build:
 
 lint:
 	@$(PYTHON) scripts/lint_lua.py
+	@if command -v luacheck >/dev/null 2>&1; then \
+		luacheck lua tests; \
+	elif [[ "$(CI)" == "1" || "$(CI)" == "true" || "$(CI)" == "TRUE" || "$(CI)" == "True" ]]; then \
+		printf "luacheck not found; failing in CI mode\n"; \
+		exit 1; \
+	else \
+		printf "luacheck not found; skipping static lint (install luacheck to enable)\n"; \
+	fi
 
 fmt:
-	@printf "No formatter configured; skipped\n"
+	@if command -v stylua >/dev/null 2>&1; then \
+		stylua lua tests; \
+	else \
+		printf "stylua not found; skipping format\n"; \
+	fi
+
+fmt-check:
+	@if command -v stylua >/dev/null 2>&1; then \
+		stylua --check lua tests; \
+	elif [[ "$(CI)" == "1" || "$(CI)" == "true" || "$(CI)" == "TRUE" || "$(CI)" == "True" ]]; then \
+		printf "stylua not found; failing in CI mode\n"; \
+		exit 1; \
+	else \
+		printf "stylua not found; skipping format check\n"; \
+	fi
 
 test:
 	@PLENARY_PATH="$(PLENARY_RTP)"; \
@@ -50,7 +72,7 @@ test:
 smoke:
 	@$(PYTHON) scripts/smoke.py
 
-verify: setup lint smoke test
+verify: setup lint fmt-check smoke test
 
 package:
 	@mkdir -p dist
