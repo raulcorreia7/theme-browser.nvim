@@ -25,16 +25,22 @@ local function mark_theme_for_install(theme_name, variant)
   state.mark_theme(canonical_name, canonical_variant)
 end
 
-local function prefetch_theme(theme_name, variant, opts)
+local function prefetch_theme(theme_name, variant, opts, callback)
   runtime_loader.ensure_available(theme_name, variant, {
     notify = opts.notify,
     reason = "install",
     allow_package_manager = false,
   }, function(success, err)
     if success or opts.notify == false then
+      if type(callback) == "function" then
+        callback(success, err)
+      end
       return
     end
     log.warn(string.format("Background install prefetch failed: %s", err or "unknown error"))
+    if type(callback) == "function" then
+      callback(success, err)
+    end
   end)
 end
 
@@ -82,15 +88,20 @@ local function apply_installed_theme(theme_name, variant, opts)
 end
 
 local function start_install_jobs(theme_name, variant, opts)
+  local function continue_install_flow()
+    if opts.load_package_manager ~= false then
+      load_package_manager_theme(theme_name, variant, opts)
+    end
+
+    apply_installed_theme(theme_name, variant, opts)
+  end
+
   if opts.prefetch ~= false then
-    prefetch_theme(theme_name, variant, opts)
+    prefetch_theme(theme_name, variant, opts, continue_install_flow)
+    return
   end
 
-  if opts.load_package_manager ~= false then
-    load_package_manager_theme(theme_name, variant, opts)
-  end
-
-  apply_installed_theme(theme_name, variant, opts)
+  continue_install_flow()
 end
 
 local function maybe_cleanup_preview(opts)

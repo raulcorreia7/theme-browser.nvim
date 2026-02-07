@@ -195,4 +195,60 @@ describe("theme-browser.application.theme_service", function()
 
     assert.is_false(applied)
   end)
+
+  it("waits for prefetch before delegating install to package manager", function()
+    local prefetch_callback = nil
+    local package_manager_called = false
+
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        return { ok = true }
+      end,
+    }
+
+    package.loaded["theme-browser.runtime.loader"] = {
+      ensure_available = function(_, _, _, callback)
+        prefetch_callback = callback
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.lazy_spec"] = {
+      generate_spec = function(_, _, _)
+        return "/tmp/theme-browser-selected.lua"
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.state"] = {
+      mark_theme = function(_, _) end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function(_, _)
+        return { name = "tokyonight", variant = "night" }
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      when_ready = function(callback)
+        callback()
+      end,
+      install_theme = function(_, _, _)
+        package_manager_called = true
+      end,
+    }
+
+    local service = require(module_name)
+    service.install("tokyonight", "tokyonight-night", {
+      notify = false,
+      load_package_manager = true,
+    })
+
+    vim.wait(40)
+    assert.is_true(type(prefetch_callback) == "function")
+    assert.is_false(package_manager_called)
+
+    prefetch_callback(true, nil, nil)
+    vim.wait(40)
+    assert.is_true(package_manager_called)
+  end)
 end)

@@ -51,6 +51,7 @@ describe("Integration: setup autoload", function()
     snapshot_module("theme-browser.adapters.registry")
     snapshot_module("theme-browser.adapters.base")
     snapshot_module("theme-browser.package_manager.manager")
+    snapshot_module("theme-browser.persistence.lazy_spec")
 
     package.loaded[theme_browser_module] = nil
     clear_commands()
@@ -62,8 +63,58 @@ describe("Integration: setup autoload", function()
     restore_module("theme-browser.adapters.registry")
     restore_module("theme-browser.adapters.base")
     restore_module("theme-browser.package_manager.manager")
+    restore_module("theme-browser.persistence.lazy_spec")
     restore_module(theme_browser_module)
     clear_commands()
+  end)
+
+  it("runs managed spec migration during setup", function()
+    local migration_opts = nil
+
+    package.loaded["theme-browser.persistence.state"] = {
+      initialize = function(_) end,
+      get_current_theme = function()
+        return nil
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      initialize = function(_) end,
+      resolve = function(_, _)
+        return nil
+      end,
+      list_themes = function()
+        return {}
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        return { ok = true }
+      end,
+      has_package_manager = function()
+        return true
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      when_ready = function(callback)
+        callback()
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.lazy_spec"] = {
+      migrate_to_cache_aware = function(opts)
+        migration_opts = opts
+        return { migrated = false, reason = "missing" }
+      end,
+    }
+
+    local tb = require(theme_browser_module)
+    tb.setup(with_test_cache({ auto_load = false }))
+
+    assert.is_true(type(migration_opts) == "table")
+    assert.is_false(migration_opts.notify)
   end)
 
   it("auto-loads persisted theme when enabled", function()
@@ -390,6 +441,72 @@ describe("Integration: setup autoload", function()
 
     deferred()
     assert.is_true(called)
+  end)
+
+  it("provides command completion for theme names and name:variant tokens", function()
+    package.loaded["theme-browser.persistence.state"] = {
+      initialize = function(_) end,
+      get_current_theme = function()
+        return nil
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      initialize = function(_) end,
+      is_initialized = function()
+        return true
+      end,
+      get_theme = function(name)
+        if name == "tokyonight" then
+          return { name = "tokyonight" }
+        end
+        return nil
+      end,
+      resolve = function(_, _)
+        return nil
+      end,
+      list_themes = function()
+        return {
+          { name = "tokyonight" },
+          { name = "kanagawa" },
+        }
+      end,
+      list_entries = function()
+        return {
+          { name = "tokyonight", variant = "tokyonight-night", repo = "folke/tokyonight.nvim" },
+          { name = "tokyonight", variant = "tokyonight-day", repo = "folke/tokyonight.nvim" },
+          { name = "kanagawa", variant = "wave", repo = "rebelot/kanagawa.nvim" },
+        }
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        return { ok = true }
+      end,
+      has_package_manager = function()
+        return true
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      when_ready = function(callback)
+        callback()
+      end,
+    }
+
+    local tb = require(theme_browser_module)
+    tb.setup(with_test_cache({ auto_load = false }))
+
+    local theme_matches = vim.fn.getcompletion("ThemeBrowserTheme to", "cmdline")
+    assert.is_truthy(vim.tbl_contains(theme_matches, "tokyonight"))
+    assert.is_truthy(vim.tbl_contains(theme_matches, "tokyonight:tokyonight-night"))
+
+    local variant_matches = vim.fn.getcompletion("ThemeBrowserPreview tokyonight ", "cmdline")
+    assert.is_truthy(vim.tbl_contains(variant_matches, "tokyonight-night"))
+
+    local install_matches = vim.fn.getcompletion("ThemeBrowserInstall tok", "cmdline")
+    assert.is_truthy(vim.tbl_contains(install_matches, "tokyonight:tokyonight-day"))
   end)
 
   it("skips startup auto-load when target colorscheme is already active", function()

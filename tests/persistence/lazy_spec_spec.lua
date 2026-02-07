@@ -75,6 +75,9 @@ describe("theme-browser.persistence.lazy_spec", function()
 
     local content = table.concat(vim.fn.readfile(out), "\n")
     assert.is_truthy(content:find('"folke/tokyonight.nvim"', 1, true))
+    assert.is_truthy(content:find('repo = theme_repo', 1, true))
+    assert.is_truthy(content:find('local function resolve_theme_source%(%)'))
+    assert.is_truthy(content:find('dir = cache_path', 1, true))
     assert.is_truthy(content:find('"rktjmp/lush.nvim"', 1, true))
     assert.is_truthy(content:find("tokyonight%-night"))
     assert.is_truthy(content:find("config = function%(%)"))
@@ -106,5 +109,73 @@ describe("theme-browser.persistence.lazy_spec", function()
 
     assert.is_not_nil(out)
     assert.equals(0, vim.fn.filereadable(legacy))
+  end)
+
+  it("migrates legacy managed spec into cache-aware format", function()
+    local legacy = temp_root .. "/lua/plugins/selected-theme.lua"
+    vim.fn.mkdir(vim.fn.fnamemodify(legacy, ":h"), "p")
+    vim.fn.writefile({
+      "return {",
+      "  {",
+      '    "folke/tokyonight.nvim",',
+      '    repo = "folke/tokyonight.nvim",',
+      "    lazy = false,",
+      "    priority = 1000,",
+      "    config = function() end,",
+      "  },",
+      "}",
+    }, legacy)
+
+    local lazy_spec = reset_module()
+    local result = lazy_spec.migrate_to_cache_aware({ notify = false })
+
+    local preferred = temp_root .. "/lua/plugins/theme-browser-selected.lua"
+    assert.is_true(result.migrated)
+    assert.equals("migrated", result.reason)
+    assert.equals(preferred, result.spec_file)
+    assert.equals(0, vim.fn.filereadable(legacy))
+    assert.equals(1, vim.fn.filereadable(preferred))
+
+    local content = table.concat(vim.fn.readfile(preferred), "\n")
+    assert.is_truthy(content:find("local function resolve_theme_source%(%)"))
+    assert.is_truthy(content:find("dir = cache_path", 1, true))
+  end)
+
+  it("does not rewrite already cache-aware managed spec", function()
+    local lazy_spec = reset_module()
+    local out = lazy_spec.generate_spec("tokyonight", "tokyonight-night", {
+      notify = false,
+      update_state = false,
+    })
+
+    local before = table.concat(vim.fn.readfile(out), "\n")
+    local result = lazy_spec.migrate_to_cache_aware({ notify = false })
+    local after = table.concat(vim.fn.readfile(out), "\n")
+
+    assert.is_false(result.migrated)
+    assert.equals("already_cache_aware", result.reason)
+    assert.equals(out, result.spec_file)
+    assert.equals(before, after)
+  end)
+
+  it("skips migration when legacy theme cannot be resolved", function()
+    local legacy = temp_root .. "/lua/plugins/selected-theme.lua"
+    vim.fn.mkdir(vim.fn.fnamemodify(legacy, ":h"), "p")
+    vim.fn.writefile({
+      "return {",
+      "  {",
+      '    "unknown/theme.nvim",',
+      '    repo = "unknown/theme.nvim",',
+      "  },",
+      "}",
+    }, legacy)
+
+    local lazy_spec = reset_module()
+    local result = lazy_spec.migrate_to_cache_aware({ notify = false })
+
+    assert.is_false(result.migrated)
+    assert.equals("unresolved_theme", result.reason)
+    assert.equals(1, vim.fn.filereadable(legacy))
+    assert.equals(0, vim.fn.filereadable(temp_root .. "/lua/plugins/theme-browser-selected.lua"))
   end)
 end)
