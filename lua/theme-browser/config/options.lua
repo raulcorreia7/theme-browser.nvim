@@ -63,8 +63,8 @@ local top_level_order = {
   "status_display",
 }
 
-local legacy_top_level = {
-  show_preview = true,
+local removed_top_level_hints = {
+  show_preview = "use ui.preview_on_move",
 }
 
 local log_levels = {
@@ -189,26 +189,6 @@ local function validate_nested_value(parent_key, key, value, default_value)
   return value
 end
 
-local function apply_legacy_option(validated, user_config, key, value)
-  if key ~= "show_preview" then
-    return false
-  end
-
-  if type(value) ~= "boolean" then
-    notify_warn(string.format("Invalid type for %s: expected boolean, got %s", key, type(value)))
-    return true
-  end
-
-  if type(user_config.ui) == "table" and user_config.ui.preview_on_move ~= nil then
-    notify_warn("Config option 'show_preview' is deprecated; use ui.preview_on_move")
-    return true
-  end
-
-  validated.ui.preview_on_move = value
-  notify_warn("Config option 'show_preview' is deprecated; use ui.preview_on_move")
-  return true
-end
-
 local function normalize_nested(parent_key, user_value, default_value)
   if type(user_value) ~= "table" then
     notify_warn(string.format("Invalid type for %s: expected table, got %s", parent_key, type(user_value)))
@@ -258,8 +238,13 @@ function M.validate(user_config)
   end
 
   for _, key in ipairs(sorted_keys(user_config)) do
-    if not known_top_level[key] and not legacy_top_level[key] then
-      notify_warn(string.format("Unknown config option: %s", key))
+    if not known_top_level[key] then
+      local hint = removed_top_level_hints[key]
+      if hint then
+        notify_warn(string.format("Unknown config option: %s (%s)", key, hint))
+      else
+        notify_warn(string.format("Unknown config option: %s", key))
+      end
     end
   end
 
@@ -275,13 +260,6 @@ function M.validate(user_config)
       elseif nested_schema[key] then
         validated[key] = normalize_nested(key, value, defaults[key])
       end
-    end
-  end
-
-  for _, key in ipairs(sorted_keys(legacy_top_level)) do
-    local value = user_config[key]
-    if value ~= nil then
-      apply_legacy_option(validated, user_config, key, value)
     end
   end
 
