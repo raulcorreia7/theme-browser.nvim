@@ -71,7 +71,7 @@ local M = {
     border = "rounded",
     show_hints = true,
     show_breadcrumbs = true,
-    preview_on_move = false,
+    preview_on_move = true,
   },
 
   -- Status display configuration

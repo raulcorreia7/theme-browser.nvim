@@ -18,6 +18,7 @@ local row_offset = 0
 local search_context_active = false
 local render
 local navigate_to
+local last_cursor_preview_id = nil
 
 local function index_to_row(index)
   return index + row_offset
@@ -215,6 +216,55 @@ local function get_selected_entry()
   return filtered_entries[selected_idx]
 end
 
+local function is_cursor_preview_enabled()
+  local ui = get_config().ui or {}
+  return ui.preview_on_move == true
+end
+
+local function entry_id(entry)
+  return string.format("%s:%s", entry.name, entry.variant or "")
+end
+
+local function is_entry_locally_available(entry)
+  local state = require("theme-browser.persistence.state")
+  if type(state.get_entry_state) ~= "function" then
+    return false
+  end
+
+  local snapshot = type(state.build_state_snapshot) == "function" and state.build_state_snapshot() or nil
+  local entry_state = state.get_entry_state(entry, { snapshot = snapshot })
+  if type(entry_state) ~= "table" then
+    return false
+  end
+
+  return entry_state.installed == true or entry_state.cached == true
+end
+
+local function preview_selected_on_move()
+  if not is_cursor_preview_enabled() then
+    return
+  end
+
+  local entry = get_selected_entry()
+  if not entry then
+    return
+  end
+
+  if not is_entry_locally_available(entry) then
+    return
+  end
+
+  local current_id = entry_id(entry)
+  if last_cursor_preview_id == current_id then
+    return
+  end
+
+  local theme_service = require("theme-browser.application.theme_service")
+  theme_service.preview(entry.name, entry.variant, { notify = false })
+  last_cursor_preview_id = current_id
+  focus_gallery_window()
+end
+
 local function set_cursor_to_selected()
   if not gallery_winid or not vim.api.nvim_win_is_valid(gallery_winid) then
     return
@@ -314,6 +364,7 @@ navigate_to = function(idx)
 
   selected_idx = idx
   render()
+  preview_selected_on_move()
 end
 
 local function apply_selected()
@@ -446,7 +497,10 @@ local function setup_keymaps()
     if not ok then
       return
     end
-    sync_selection_to_cursor({ clamp = true })
+    local changed = sync_selection_to_cursor({ clamp = true })
+    if changed then
+      preview_selected_on_move()
+    end
   end, opts)
 
   vim.keymap.set("n", "N", function()
@@ -457,7 +511,10 @@ local function setup_keymaps()
     if not ok then
       return
     end
-    sync_selection_to_cursor({ clamp = true })
+    local changed = sync_selection_to_cursor({ clamp = true })
+    if changed then
+      preview_selected_on_move()
+    end
   end, opts)
 
   map_keys(keymaps.close or { "<Esc>" }, function()
@@ -480,7 +537,10 @@ local function setup_keymaps()
       if not gallery_winid or not vim.api.nvim_win_is_valid(gallery_winid) then
         return
       end
-      sync_selection_to_cursor({ clamp = false })
+      local changed = sync_selection_to_cursor({ clamp = false })
+      if changed then
+        preview_selected_on_move()
+      end
     end,
   })
 end
@@ -505,6 +565,7 @@ function M.open(query)
   end
   current_query = query or ""
   search_context_active = false
+  last_cursor_preview_id = nil
 
   filter_entries()
   selected_idx = 1
@@ -549,6 +610,7 @@ function M.close()
   selected_idx = 1
   current_query = ""
   search_context_active = false
+  last_cursor_preview_id = nil
   is_open = false
 end
 

@@ -146,7 +146,7 @@ require("theme-browser").setup({
     window_width = 0.6,
     window_height = 0.5,
     border = "rounded",
-    preview_on_move = false, -- preview installed/cached themes on cursor move
+    preview_on_move = true, -- preview installed/cached themes on cursor move
   },
   keymaps = {
   },
