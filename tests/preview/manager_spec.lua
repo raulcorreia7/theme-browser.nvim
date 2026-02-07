@@ -1,0 +1,60 @@
+describe("theme-browser.preview.manager", function()
+  local module_name = "theme-browser.preview.manager"
+  local original_rtp
+
+  before_each(function()
+    original_rtp = vim.o.runtimepath
+    package.loaded[module_name] = nil
+    package.loaded["theme-browser.downloader.github"] = {
+      get_cache_path = function(_, _)
+        return "/tmp/theme-browser-preview-cache"
+      end,
+      is_cached = function(_, _)
+        return true
+      end,
+    }
+    package.loaded["theme-browser"] = {
+      get_config = function()
+        return { cache_dir = "/tmp" }
+      end,
+    }
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        return { ok = false, errors = { colorscheme_error = "not found" } }
+      end,
+    }
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function(_, _)
+        return { name = "tokyonight", repo = "folke/tokyonight.nvim", variant = "tokyonight-night" }
+      end,
+    }
+    package.loaded["theme-browser.package_manager.manager"] = {
+      load_entry = function(_)
+        return false
+      end,
+    }
+  end)
+
+  after_each(function()
+    vim.o.runtimepath = original_rtp
+    package.loaded[module_name] = nil
+    package.loaded["theme-browser.downloader.github"] = nil
+    package.loaded["theme-browser"] = nil
+    package.loaded["theme-browser.adapters.base"] = nil
+    package.loaded["theme-browser.adapters.registry"] = nil
+    package.loaded["theme-browser.package_manager.manager"] = nil
+  end)
+
+  it("cleanup removes preview runtimepath entries", function()
+    vim.fn.mkdir("/tmp/theme-browser-preview-cache", "p")
+
+    local preview = require(module_name)
+    preview.create_preview("tokyonight", "tokyonight-night")
+    assert.is_truthy(vim.o.runtimepath:find("/tmp/theme-browser-preview-cache", 1, true))
+
+    preview.cleanup()
+    assert.is_nil(vim.o.runtimepath:find("/tmp/theme-browser-preview-cache", 1, true))
+
+    vim.fn.delete("/tmp/theme-browser-preview-cache", "rf")
+  end)
+end)

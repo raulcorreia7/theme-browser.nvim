@@ -1,0 +1,30 @@
+# Local configuration files
+*theme-browser-state.json
+*theme-browser-cache/
+
+# Package manager specs
+lua/plugins/theme-browser.lua
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Test artifacts
+*.log
+.nvim/
+*.prof
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python helper artifacts
+__pycache__/
+*.pyc
+
+# Local tooling/work artifacts
+.ruff_cache/
+.sisyphus/
+sys
+/gallery.lua

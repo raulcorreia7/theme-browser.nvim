@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        nvim: [stable, nightly]
+
+    env:
+      CI: true
+      PLENARY_RTP: ${{ github.workspace }}/.ci/plenary.nvim
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.nvim }}
+
+      - name: Install plenary.nvim
+        run: |
+          mkdir -p "$(dirname "$PLENARY_RTP")"
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim "$PLENARY_RTP"
+
+      - name: Run verify
+        run: make verify
