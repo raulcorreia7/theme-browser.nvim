@@ -10,15 +10,20 @@ import subprocess
 import tempfile
 
 
-def assert_curated_index(root: str) -> None:
-    index_path = os.path.join(
-        root, "theme-browser-registry", "curated", "dotfyle-top50.json"
-    )
+def assert_bundled_registry(root: str) -> None:
+    index_path = os.path.join(root, "lua", "theme-browser", "data", "registry.json")
     with open(index_path, "r", encoding="utf-8") as handle:
         data = json.load(handle)
-    if len(data) != 50:
-        raise RuntimeError(f"expected 50 curated entries, got {len(data)}")
-    print("curated index OK (50 themes)")
+    if not isinstance(data, list) or len(data) == 0:
+        raise RuntimeError("expected bundled registry with at least one theme")
+
+    has_tokyonight = any(
+        isinstance(theme, dict) and theme.get("name") == "tokyonight" for theme in data
+    )
+    if not has_tokyonight:
+        raise RuntimeError("expected bundled registry to include tokyonight")
+
+    print(f"bundled registry OK ({len(data)} themes)")
 
 
 def create_fixture_colorscheme() -> str:
@@ -44,7 +49,7 @@ def run_nvim_smoke(root: str, fixture_dir: str) -> None:
         "+qa",
     ]
     subprocess.run(cmd, check=True)
-    print("runtime load OK (tokyonight:night via curated index)")
+    print("runtime load OK (tokyonight:night via bundled registry)")
 
 
 def main() -> int:
@@ -52,7 +57,7 @@ def main() -> int:
     fixture_dir = None
 
     try:
-        assert_curated_index(root)
+        assert_bundled_registry(root)
         fixture_dir = create_fixture_colorscheme()
         run_nvim_smoke(root, fixture_dir)
     finally:

@@ -2,7 +2,7 @@ local M = {}
 
 local defaults = {
   enabled = true,
-  write_spec = true,
+  write_spec = false,
   skip_if_already_active = true,
 }
 

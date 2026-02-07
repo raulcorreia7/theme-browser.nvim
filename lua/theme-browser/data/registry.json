@@ -1,0 +1,72 @@
+[
+  {
+    "name": "catppuccin",
+    "repo": "catppuccin/nvim",
+    "colorscheme": "catppuccin",
+    "meta": { "strategy": "setup_colorscheme" },
+    "variants": [
+      "catppuccin-latte",
+      "catppuccin-frappe",
+      "catppuccin-macchiato",
+      "catppuccin-mocha"
+    ]
+  },
+  {
+    "name": "tokyonight",
+    "repo": "folke/tokyonight.nvim",
+    "colorscheme": "tokyonight",
+    "meta": { "strategy": "colorscheme_only" },
+    "variants": [
+      "tokyonight-night",
+      "tokyonight-storm",
+      "tokyonight-moon",
+      "tokyonight-day"
+    ]
+  },
+  {
+    "name": "kanagawa",
+    "repo": "rebelot/kanagawa.nvim",
+    "colorscheme": "kanagawa",
+    "meta": { "strategy": "colorscheme_only" },
+    "variants": [
+      "kanagawa-wave",
+      "kanagawa-dragon",
+      "kanagawa-lotus"
+    ]
+  },
+  {
+    "name": "gruvbox",
+    "repo": "ellisonleao/gruvbox.nvim",
+    "colorscheme": "gruvbox",
+    "meta": { "strategy": "setup_colorscheme" },
+    "variants": ["gruvbox", "gruvbox-material"]
+  },
+  {
+    "name": "everforest",
+    "repo": "neanias/everforest-nvim",
+    "colorscheme": "everforest",
+    "meta": { "strategy": "setup_colorscheme" },
+    "variants": ["everforest", "everforest-soft", "everforest-hard"]
+  },
+  {
+    "name": "onedark",
+    "repo": "navarasu/onedark.nvim",
+    "colorscheme": "onedark",
+    "meta": { "strategy": "setup_colorscheme" },
+    "variants": ["onedark", "onedark_dark", "onedark_darker", "onedark_deep"]
+  },
+  {
+    "name": "rose-pine",
+    "repo": "rose-pine/neovim",
+    "colorscheme": "rose-pine",
+    "meta": { "strategy": "setup_colorscheme" },
+    "variants": ["rose-pine", "rose-pine-main", "rose-pine-moon", "rose-pine-dawn"]
+  },
+  {
+    "name": "nightfox",
+    "repo": "EdenEast/nightfox.nvim",
+    "colorscheme": "nightfox",
+    "meta": { "strategy": "setup_colorscheme" },
+    "variants": ["nightfox", "dayfox", "dawnfox", "duskfox", "nordfox", "terafox", "carbonfox"]
+  }
+]

@@ -43,7 +43,7 @@ describe("Integration: lazy-managed theme loading", function()
     vim.cmd.colorscheme = original_colorscheme
   end)
 
-  it("persists spec and retries load path under lazy-managed mode", function()
+  it("retries load path under lazy-managed mode without writing spec by default", function()
     local calls = {
       factory = 0,
       set_current = 0,
@@ -112,7 +112,7 @@ describe("Integration: lazy-managed theme loading", function()
     assert.is_true(result.ok)
     assert.equals(2, calls.factory)
     assert.equals(1, calls.set_current)
-    assert.equals(1, calls.gen_spec)
+    assert.equals(0, calls.gen_spec)
     assert.equals(1, calls.lazy_load)
   end)
 

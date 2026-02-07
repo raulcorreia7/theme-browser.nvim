@@ -1,28 +1,19 @@
 ---@class Config
 ---@field registry_path string Path to themes.json
 ---@field cache_dir string Directory for theme cache
----@field default_theme string|nil Default theme on startup
 ---@field auto_load boolean Auto-load theme on startup
 ---@field startup table Startup workflow configuration
 ---@field cache table Cache maintenance configuration
----@field show_preview boolean Show preview buffer
 ---@field keymaps table Custom keymaps
 ---@field status_display table Status line configuration
 ---@field ui table UI customization
 ---@field package_manager table Package manager configuration
 
 ---@type Config
-local function get_plugin_root()
-  local source = debug.getinfo(1, "S").source
-  if source:sub(1, 1) == "@" then
-    source = source:sub(2)
-  end
-  local absolute = vim.fn.fnamemodify(source, ":p")
-  return vim.fn.fnamemodify(absolute, ":h:h:h:h")
-end
+local registry_config = require("theme-browser.config.registry")
 
 local function get_default_registry_path()
-  return get_plugin_root() .. "/theme-browser-registry/curated/dotfyle-top50.json"
+  return registry_config.resolve(nil).path
 end
 
 local M = {
@@ -32,16 +23,13 @@ local M = {
   -- Cache configuration
   cache_dir = vim.fn.stdpath("cache") .. "/theme-browser",
 
-  -- Default theme (nil = use system default)
-  default_theme = nil,
-
   -- Auto-load persisted theme on startup
   auto_load = true,
 
   -- Startup workflow configuration
   startup = {
     enabled = true,
-    write_spec = true,
+    write_spec = false,
     skip_if_already_active = true,
   },
 
@@ -50,9 +38,6 @@ local M = {
     auto_cleanup = true,
     cleanup_interval_days = 7,
   },
-
-  -- Show preview buffer when gallery opens
-  show_preview = false,
 
   -- Notification verbosity: error|warn|info|debug
   log_level = "info",

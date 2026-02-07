@@ -33,7 +33,7 @@ describe("theme-browser.startup.config", function()
     local resolved = startup_config.resolve(nil)
 
     assert.is_true(resolved.enabled)
-    assert.is_true(resolved.write_spec)
+    assert.is_false(resolved.write_spec)
     assert.is_true(resolved.skip_if_already_active)
   end)
 
@@ -46,7 +46,7 @@ describe("theme-browser.startup.config", function()
     })
 
     assert.is_false(resolved.enabled)
-    assert.is_true(resolved.write_spec)
+    assert.is_false(resolved.write_spec)
     assert.is_true(resolved.skip_if_already_active)
   end)
 
@@ -78,7 +78,7 @@ describe("theme-browser.startup.config", function()
     local resolved = startup_config.from_runtime()
 
     assert.is_true(resolved.enabled)
-    assert.is_true(resolved.write_spec)
+    assert.is_false(resolved.write_spec)
     assert.is_true(resolved.skip_if_already_active)
   end)
 end)

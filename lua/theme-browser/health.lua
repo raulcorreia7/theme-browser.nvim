@@ -1,5 +1,7 @@
 local M = {}
 
+local registry_config = require("theme-browser.config.registry")
+
 ---Check health of plugin
 function M.check()
   vim.health.start("Theme Browser")
@@ -18,6 +20,7 @@ function M.check()
   end
 
   M.check_registry(config.registry_path)
+  M.check_startup(config)
   M.check_cache(config.cache_dir)
   M.check_dependencies()
   M.check_state()
@@ -26,8 +29,16 @@ end
 ---Check registry
 ---@param registry_path string
 function M.check_registry(registry_path)
-  local file = io.open(registry_path, "r")
+  local resolved = registry_config.resolve(registry_path)
+  if resolved.source == "bundled" then
+    vim.health.ok(string.format("Registry source: bundled fallback (%s)", resolved.path))
+  elseif resolved.source == "user" then
+    vim.health.ok(string.format("Registry source: user configured path (%s)", resolved.path))
+  else
+    vim.health.warn(string.format("Registry path missing: %s", registry_path))
+  end
 
+  local file = io.open(registry_path, "r")
   if not file then
     vim.health.warn(string.format("Registry not found at: %s", registry_path))
     return
@@ -37,7 +48,6 @@ function M.check_registry(registry_path)
   file:close()
 
   local ok, decoded = pcall(vim.json.decode, content)
-
   if not ok then
     vim.health.error("Invalid JSON in registry file")
     return
@@ -45,6 +55,16 @@ function M.check_registry(registry_path)
 
   local theme_count = #decoded
   vim.health.ok(string.format("Registry loaded with %d themes", theme_count))
+end
+
+---@param config table
+function M.check_startup(config)
+  local startup = type(config.startup) == "table" and config.startup or {}
+  if startup.write_spec == false then
+    vim.health.ok("startup.write_spec is false (safer default)")
+  else
+    vim.health.warn("startup.write_spec is enabled; this writes a managed startup spec on apply")
+  end
 end
 
 ---Check cache directory
@@ -59,7 +79,6 @@ end
 
 ---Check dependencies
 function M.check_dependencies()
-
   if vim.fn.executable("git") == 1 then
     vim.health.ok("git executable found")
   else
