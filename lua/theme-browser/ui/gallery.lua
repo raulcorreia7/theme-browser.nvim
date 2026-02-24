@@ -4,6 +4,7 @@ local has_nui_popup, NuiPopup = pcall(require, "nui.popup")
 
 local log = require("theme-browser.util.log")
 local actions = require("theme-browser.ui.gallery.actions")
+local highlights = require("theme-browser.ui.highlights")
 local keymaps = require("theme-browser.ui.gallery.keymaps")
 local model = require("theme-browser.ui.gallery.model")
 local renderer = require("theme-browser.ui.gallery.renderer")
@@ -36,7 +37,50 @@ local function set_cursor_to_selected()
   model.set_cursor_to_selected(session, state_mod)
 end
 
+local function first_key(keys, fallback)
+  if type(keys) == "table" and type(keys[1]) == "string" and keys[1] ~= "" then
+    return keys[1]
+  end
+  if type(keys) == "string" and keys ~= "" then
+    return keys
+  end
+  return fallback
+end
+
+local function update_topbar()
+  if not session.winid or not vim.api.nvim_win_is_valid(session.winid) then
+    return
+  end
+
+  local config = get_config()
+  local keymaps_cfg = config.keymaps or {}
+
+  local down = first_key(keymaps_cfg.navigate_down, "j")
+  local up = first_key(keymaps_cfg.navigate_up, "k")
+  local top = first_key(keymaps_cfg.goto_top, "gg")
+  local bottom = first_key(keymaps_cfg.goto_bottom, "G")
+  local use = first_key(keymaps_cfg.select, "<CR>")
+  local preview = first_key(keymaps_cfg.preview, "p")
+  local install = first_key(keymaps_cfg.install, "i")
+  local close = first_key(keymaps_cfg.close, "q")
+
+  local crumbs = {
+    "Theme Browser",
+    string.format("%s/%s move", down, up),
+    string.format("%s/%s bounds", top, bottom),
+    "/ search",
+    "n/N jump",
+    string.format("%s use", use),
+    string.format("%s preview", preview),
+    string.format("%s use", install),
+    string.format("%s close", close),
+  }
+
+  vim.api.nvim_set_option_value("winbar", " " .. table.concat(crumbs, "  >  "), { win = session.winid })
+end
+
 local function render()
+  update_topbar()
   renderer.render(session, state_mod, set_cursor_to_selected)
 end
 
@@ -140,10 +184,6 @@ local function install_selected()
   actions.install_selected(session, get_selected_entry, render)
 end
 
-local function mark_selected()
-  actions.mark_selected(session, get_selected_entry, render)
-end
-
 function M.apply_current()
   apply_selected()
 end
@@ -154,10 +194,6 @@ end
 
 function M.install_current()
   install_selected()
-end
-
-function M.mark_current()
-  mark_selected()
 end
 
 ---@param query string|nil
@@ -189,6 +225,7 @@ function M.open(query)
   model.select_current(session, current)
 
   create_gallery_window()
+  highlights.apply()
   focus_gallery_window()
 
   keymaps.setup(session, get_config, {
@@ -196,7 +233,6 @@ function M.open(query)
     apply_selected = apply_selected,
     preview_selected = preview_selected,
     install_selected = install_selected,
-    mark_selected = mark_selected,
     clear_search_context = clear_search_context,
     close = M.close,
     focus_gallery_window = focus_gallery_window,
@@ -217,6 +253,10 @@ function M.focus()
 end
 
 function M.close()
+  if session.winid and vim.api.nvim_win_is_valid(session.winid) then
+    pcall(vim.api.nvim_set_option_value, "winbar", "", { win = session.winid })
+  end
+
   if session.popup then
     session.popup:unmount()
   elseif session.winid and vim.api.nvim_win_is_valid(session.winid) then
