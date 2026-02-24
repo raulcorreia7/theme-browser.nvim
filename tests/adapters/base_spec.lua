@@ -38,16 +38,13 @@ describe("theme-browser.adapters.base", function()
     restore("theme-browser.startup.persistence")
   end)
 
-  it("retries in background when theme assets are missing", function()
-    local calls = { factory = 0, set_current = 0, ensure = 0 }
+  it("fails fast when theme assets are missing", function()
+    local calls = { factory = 0, set_current = 0, attach_cached_runtime = 0 }
 
     package.loaded["theme-browser.adapters.factory"] = {
       load_theme = function(_, _, _)
         calls.factory = calls.factory + 1
-        if calls.factory == 1 then
-          return { ok = false, errors = { colorscheme_error = "not found" } }
-        end
-        return { ok = true, name = "tokyonight", variant = "night", colorscheme = "tokyonight-night" }
+        return { ok = false, errors = { colorscheme_error = "not found" } }
       end,
       get_theme_status = function()
         return { installed = false }
@@ -55,9 +52,9 @@ describe("theme-browser.adapters.base", function()
     }
 
     package.loaded["theme-browser.runtime.loader"] = {
-      ensure_available = function(_, _, _, cb)
-        calls.ensure = calls.ensure + 1
-        cb(true, nil)
+      attach_cached_runtime = function(_, _)
+        calls.attach_cached_runtime = calls.attach_cached_runtime + 1
+        return false, "theme is not cached", nil
       end,
     }
 
@@ -83,28 +80,23 @@ describe("theme-browser.adapters.base", function()
     local result = base.load_theme("tokyonight", "night", { notify = false })
 
     assert.is_false(result.ok)
-    assert.is_true(result.pending)
-    assert.equals(1, calls.ensure)
-    assert.equals(2, calls.factory)
-    assert.equals(1, calls.set_current)
+    assert.equals(1, calls.attach_cached_runtime)
+    assert.equals(1, calls.factory)
+    assert.equals(0, calls.set_current)
   end)
 
-  it("persists current theme in managed mode only after successful apply", function()
+  it("persists current theme after successful apply", function()
     local calls = {
       factory = 0,
-      package_load = 0,
       set_current = 0,
       startup_persist = 0,
-      runtime_ensure = 0,
+      attach_cached_runtime = 0,
     }
     local persisted = {}
 
     package.loaded["theme-browser.adapters.factory"] = {
       load_theme = function(_, _, _)
         calls.factory = calls.factory + 1
-        if calls.factory == 1 then
-          return { ok = false, errors = { colorscheme_error = "not found" } }
-        end
         return {
           ok = true,
           name = "tokyonight",
@@ -124,8 +116,9 @@ describe("theme-browser.adapters.base", function()
     }
 
     package.loaded["theme-browser.runtime.loader"] = {
-      ensure_available = function(_, _, _, _)
-        calls.runtime_ensure = calls.runtime_ensure + 1
+      attach_cached_runtime = function(_, _)
+        calls.attach_cached_runtime = calls.attach_cached_runtime + 1
+        return true, nil, "/tmp/tokyonight"
       end,
     }
 
@@ -143,10 +136,6 @@ describe("theme-browser.adapters.base", function()
       is_managed = function()
         return true
       end,
-      load_theme = function(_, _)
-        calls.package_load = calls.package_load + 1
-        assert.equals(0, calls.set_current)
-      end,
     }
 
     package.loaded["theme-browser.startup.persistence"] = {
@@ -159,9 +148,8 @@ describe("theme-browser.adapters.base", function()
     local result = base.load_theme("tokyonight", "night", { notify = false })
 
     assert.is_true(result.ok)
-    assert.equals(2, calls.factory)
-    assert.equals(1, calls.package_load)
-    assert.equals(0, calls.runtime_ensure)
+    assert.equals(1, calls.factory)
+    assert.equals(1, calls.attach_cached_runtime)
     assert.equals(1, calls.set_current)
     assert.equals(1, calls.startup_persist)
     assert.same({ { name = "tokyonight", variant = "night" } }, persisted)

@@ -33,7 +33,7 @@ describe("theme-browser.config.options", function()
     local validated = options.validate(nil)
 
     assert.equals(defaults.startup.write_spec, validated.startup.write_spec)
-    assert.is_false(validated.startup.write_spec)
+    assert.is_true(validated.startup.write_spec)
     assert.equals(defaults.package_manager.mode, validated.package_manager.mode)
   end)
 
@@ -81,10 +81,10 @@ describe("theme-browser.config.options", function()
 
     vim.notify = original_notify
 
-    assert.is_false(validated.startup.write_spec)
+    assert.is_true(validated.startup.write_spec)
     assert.equals(7, validated.cache.cleanup_interval_days)
     assert.equals(0.6, validated.ui.window_width)
-    assert.equals("plugin_only", validated.package_manager.mode)
+    assert.equals("manual", validated.package_manager.mode)
     assert.equals("auto", validated.package_manager.provider)
     assert.same({ "<Space>" }, validated.keymaps.select)
     assert.same({ "i" }, validated.keymaps.install)

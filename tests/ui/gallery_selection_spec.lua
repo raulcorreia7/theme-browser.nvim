@@ -2,7 +2,6 @@ describe("theme-browser.ui.gallery selection", function()
   local module_name = "theme-browser.ui.gallery"
   local snapshots = {}
   local applied = nil
-  local marked = nil
 
   local function snapshot(name)
     snapshots[name] = package.loaded[name]
@@ -19,7 +18,6 @@ describe("theme-browser.ui.gallery selection", function()
   before_each(function()
     snapshots = {}
     applied = nil
-    marked = nil
     snapshot(module_name)
     snapshot("theme-browser")
     snapshot("theme-browser.adapters.registry")
@@ -41,7 +39,6 @@ describe("theme-browser.ui.gallery selection", function()
             navigate_down = { "j" },
             goto_top = { "gg" },
             goto_bottom = { "G" },
-            mark = { "m" },
             preview = { "p" },
             install = { "i" },
           },
@@ -68,17 +65,13 @@ describe("theme-browser.ui.gallery selection", function()
       format_entry_states = function()
         return "Available"
       end,
-      mark_theme = function(name, variant)
-        marked = { name = name, variant = variant }
-      end,
     }
 
     package.loaded["theme-browser.application.theme_service"] = {
-      apply = function(name, variant)
+      use = function(name, variant)
         applied = { name = name, variant = variant }
       end,
       preview = function(_, _) end,
-      install = function(_, _) end,
     }
 
     package.loaded[module_name] = nil
@@ -97,19 +90,21 @@ describe("theme-browser.ui.gallery selection", function()
     restore("theme-browser.application.theme_service")
   end)
 
-  it("applies the row under cursor and renders right-side state column", function()
+  it("applies the row under cursor and renders state badges", function()
     local gallery = require(module_name)
     gallery.open()
 
     local win = vim.api.nvim_get_current_win()
     local buf = vim.api.nvim_get_current_buf()
+    local winbar = vim.api.nvim_get_option_value("winbar", { win = win })
+    assert.is_truthy(winbar:find("<CR> use", 1, true))
 
     local first = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]
     local fourth = vim.api.nvim_buf_get_lines(buf, 3, 4, false)[1]
-    assert.is_truthy(first:find("Theme %- Variant", 1, false))
-    assert.is_truthy(fourth:find("Available", 1, true))
+    assert.is_truthy(first:find("Theme", 1, true))
+    assert.is_truthy(fourth:find("%[AVAILABLE%]", 1, false))
 
-    vim.api.nvim_win_set_cursor(win, { 5, 0 })
+    vim.api.nvim_win_set_cursor(win, { 4, 0 })
     gallery.apply_current()
 
     assert.is_not_nil(applied)
@@ -117,16 +112,16 @@ describe("theme-browser.ui.gallery selection", function()
     assert.equals("wave", applied.variant)
   end)
 
-  it("marks the selected row with name and variant", function()
+  it("uses install key as an alias for select", function()
     local gallery = require(module_name)
     gallery.open()
 
     local win = vim.api.nvim_get_current_win()
-    vim.api.nvim_win_set_cursor(win, { 5, 0 })
-    gallery.mark_current()
+    vim.api.nvim_win_set_cursor(win, { 4, 0 })
+    gallery.install_current()
 
-    assert.is_not_nil(marked)
-    assert.equals("kanagawa", marked.name)
-    assert.equals("wave", marked.variant)
+    assert.is_not_nil(applied)
+    assert.equals("kanagawa", applied.name)
+    assert.equals("wave", applied.variant)
   end)
 end)

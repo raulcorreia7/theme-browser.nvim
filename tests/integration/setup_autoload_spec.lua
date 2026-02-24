@@ -2,16 +2,8 @@ describe("Integration: setup autoload", function()
   local theme_browser_module = "theme-browser"
   local command_names = {
     "ThemeBrowser",
-    "ThemeBrowserFocus",
-    "ThemeBrowserTheme",
+    "ThemeBrowserUse",
     "ThemeBrowserStatus",
-    "ThemeBrowserMark",
-    "ThemeBrowserClean",
-    "ThemeBrowserCacheClear",
-    "ThemeBrowserCacheInfo",
-    "ThemeBrowserPreview",
-    "ThemeBrowserInstall",
-    "ThemeBrowserUninstall",
     "ThemeBrowserReset",
     "ThemeBrowserHelp",
   }
@@ -40,7 +32,9 @@ describe("Integration: setup autoload", function()
   local function with_test_cache(opts)
     local config = vim.deepcopy(opts or {})
     local cache = type(config.cache) == "table" and config.cache or {}
+    local startup = type(config.startup) == "table" and config.startup or {}
     config.cache = vim.tbl_extend("force", { auto_cleanup = false }, cache)
+    config.startup = vim.tbl_extend("force", { write_spec = false }, startup)
     return config
   end
 
@@ -50,6 +44,7 @@ describe("Integration: setup autoload", function()
     snapshot_module("theme-browser.persistence.state")
     snapshot_module("theme-browser.adapters.registry")
     snapshot_module("theme-browser.adapters.base")
+    snapshot_module("theme-browser.application.theme_service")
     snapshot_module("theme-browser.package_manager.manager")
     snapshot_module("theme-browser.persistence.lazy_spec")
 
@@ -62,6 +57,7 @@ describe("Integration: setup autoload", function()
     restore_module("theme-browser.persistence.state")
     restore_module("theme-browser.adapters.registry")
     restore_module("theme-browser.adapters.base")
+    restore_module("theme-browser.application.theme_service")
     restore_module("theme-browser.package_manager.manager")
     restore_module("theme-browser.persistence.lazy_spec")
     restore_module(theme_browser_module)
@@ -290,22 +286,19 @@ describe("Integration: setup autoload", function()
     tb.setup(with_test_cache({ auto_load = false }))
 
     assert.equals(2, vim.fn.exists(":ThemeBrowserReset"))
-    assert.equals(2, vim.fn.exists(":ThemeBrowserClean"))
-    assert.equals(0, vim.fn.exists(":ThemeBrowserPreviewAll"))
-    assert.equals(0, vim.fn.exists(":ThemeBrowserCacheDelete"))
-    assert.equals(0, vim.fn.exists(":ThemeBrowserCachePurge"))
+    assert.equals(2, vim.fn.exists(":ThemeBrowserUse"))
+    assert.equals(0, vim.fn.exists(":ThemeBrowserInstall"))
+    assert.equals(0, vim.fn.exists(":ThemeBrowserPreview"))
+    assert.equals(0, vim.fn.exists(":ThemeBrowserMark"))
   end)
 
-  it("passes optional variant to ThemeBrowserMark command", function()
-    local marked = nil
+  it("passes optional variant to ThemeBrowserUse command", function()
+    local used = nil
 
     package.loaded["theme-browser.persistence.state"] = {
       initialize = function(_) end,
       get_current_theme = function()
         return nil
-      end,
-      mark_theme = function(name, variant)
-        marked = { name = name, variant = variant }
       end,
     }
 
@@ -334,14 +327,20 @@ describe("Integration: setup autoload", function()
       end,
     }
 
+    package.loaded["theme-browser.application.theme_service"] = {
+      use = function(name, variant)
+        used = { name = name, variant = variant }
+      end,
+    }
+
     local tb = require(theme_browser_module)
     tb.setup(with_test_cache({ auto_load = false }))
 
-    vim.cmd("ThemeBrowserMark tokyonight night")
+    vim.cmd("ThemeBrowserUse tokyonight night")
 
-    assert.is_not_nil(marked)
-    assert.equals("tokyonight", marked.name)
-    assert.equals("night", marked.variant)
+    assert.is_not_nil(used)
+    assert.equals("tokyonight", used.name)
+    assert.equals("night", used.variant)
   end)
 
   it("falls back to current editor colorscheme when state is empty", function()
@@ -498,14 +497,14 @@ describe("Integration: setup autoload", function()
     local tb = require(theme_browser_module)
     tb.setup(with_test_cache({ auto_load = false }))
 
-    local theme_matches = vim.fn.getcompletion("ThemeBrowserTheme to", "cmdline")
+    local theme_matches = vim.fn.getcompletion("ThemeBrowserUse to", "cmdline")
     assert.is_truthy(vim.tbl_contains(theme_matches, "tokyonight"))
     assert.is_truthy(vim.tbl_contains(theme_matches, "tokyonight:tokyonight-night"))
 
-    local variant_matches = vim.fn.getcompletion("ThemeBrowserPreview tokyonight ", "cmdline")
+    local variant_matches = vim.fn.getcompletion("ThemeBrowserUse tokyonight ", "cmdline")
     assert.is_truthy(vim.tbl_contains(variant_matches, "tokyonight-night"))
 
-    local install_matches = vim.fn.getcompletion("ThemeBrowserInstall tok", "cmdline")
+    local install_matches = vim.fn.getcompletion("ThemeBrowserUse tok", "cmdline")
     assert.is_truthy(vim.tbl_contains(install_matches, "tokyonight:tokyonight-day"))
   end)
 

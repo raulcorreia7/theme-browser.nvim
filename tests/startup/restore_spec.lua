@@ -119,7 +119,7 @@ describe("theme-browser.startup.restore", function()
     package.loaded["theme-browser.adapters.base"] = {
       load_theme = function(name, variant, opts)
         called = { name = name, variant = variant, opts = opts }
-        return { ok = false, pending = true }
+        return { ok = false }
       end,
     }
 

@@ -37,10 +37,9 @@ describe("theme-browser.runtime.loader", function()
     restore("theme-browser.downloader.github")
   end)
 
-  it("does not short-circuit through package manager in plugin_only mode", function()
+  it("fails fast when theme is not cached", function()
     local temp_dir = vim.fn.tempname()
-    local cache_path = temp_dir .. "/owner__theme.nvim"
-    local called = { download = 0, load_entry = 0 }
+    local called = { load_entry = 0 }
 
     package.loaded["theme-browser.adapters.registry"] = {
       resolve = function(_, _)
@@ -69,26 +68,21 @@ describe("theme-browser.runtime.loader", function()
         return false
       end,
       get_cache_path = function(_, _)
-        return cache_path
-      end,
-      download = function(_, _, cb, _)
-        called.download = called.download + 1
-        vim.fn.mkdir(cache_path, "p")
-        cb(true, nil)
+        return temp_dir .. "/owner__theme.nvim"
       end,
     }
 
     local loader = require(module_name)
-    local success = nil
-    loader.ensure_available("demo", nil, { notify = false, reason = "test" }, function(ok, _)
+    local success, err = nil, nil
+    loader.ensure_available("demo", nil, { notify = false, reason = "test" }, function(ok, callback_err)
       success = ok
+      err = callback_err
     end)
 
-    vim.wait(100)
-    assert.equals(1, called.download)
+    vim.wait(20)
+    assert.is_false(success)
+    assert.equals("theme is not cached or installed", err)
     assert.equals(0, called.load_entry)
-    assert.is_true(success)
-    assert.is_truthy(vim.o.runtimepath:find(cache_path, 1, true))
 
     vim.fn.delete(temp_dir, "rf")
   end)
@@ -125,9 +119,6 @@ describe("theme-browser.runtime.loader", function()
       end,
       resolve_cache_path = function(_, _)
         return legacy_path
-      end,
-      download = function(_, _, cb, _)
-        cb(false, "should not download")
       end,
     }
 
@@ -178,9 +169,6 @@ describe("theme-browser.runtime.loader", function()
       end,
       resolve_cache_path = function(_, _)
         return cache_path
-      end,
-      download = function(_, _, cb, _)
-        cb(false, "should not download")
       end,
     }
 

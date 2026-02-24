@@ -32,6 +32,9 @@ describe("theme-browser.ui.gallery search", function()
     snapshot("theme-browser.preview.manager")
     snapshot("theme-browser.adapters.base")
     snapshot("theme-browser.persistence.lazy_spec")
+    snapshot("theme-browser.package_manager.manager")
+    snapshot("theme-browser.application.theme_service")
+    snapshot("theme-browser.runtime.loader")
 
     package.loaded["theme-browser"] = {
       get_config = function()
@@ -48,6 +51,20 @@ describe("theme-browser.ui.gallery search", function()
     package.loaded["theme-browser.adapters.registry"] = {
       is_initialized = function()
         return true
+      end,
+      resolve = function(name, _)
+        local entries = {
+          { name = "tokyonight", variant = "tokyonight-night", repo = "folke/tokyonight.nvim" },
+          { name = "moonlight", variant = "moonlight-night", repo = "author/moonlight.nvim" },
+          { name = "kanagawa", variant = "wave", repo = "rebelot/kanagawa.nvim" },
+          { name = "nightfox", variant = "carbon", repo = "EdenEast/nightfox.nvim" },
+        }
+        for _, e in ipairs(entries) do
+          if e.name == name then
+            return e
+          end
+        end
+        return nil
       end,
       list_entries = function()
         return {
@@ -85,11 +102,27 @@ describe("theme-browser.ui.gallery search", function()
     package.loaded["theme-browser.adapters.base"] = {
       load_theme = function(name, variant)
         applied = { name = name, variant = variant }
+        return { ok = true, name = name, variant = variant }
       end,
     }
 
     package.loaded["theme-browser.persistence.lazy_spec"] = {
       generate_spec = function(_, _) end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      can_manage_install = function()
+        return true
+      end,
+      install_theme = function()
+        return true
+      end,
+    }
+
+    package.loaded["theme-browser.runtime.loader"] = {
+      attach_cached_runtime = function()
+        return true, nil
+      end,
     }
 
     package.loaded[module_name] = nil
@@ -108,6 +141,9 @@ describe("theme-browser.ui.gallery search", function()
     restore("theme-browser.preview.manager")
     restore("theme-browser.adapters.base")
     restore("theme-browser.persistence.lazy_spec")
+    restore("theme-browser.package_manager.manager")
+    restore("theme-browser.application.theme_service")
+    restore("theme-browser.runtime.loader")
   end)
 
   it("keeps selection aligned with n/N search movement", function()
@@ -118,12 +154,17 @@ describe("theme-browser.ui.gallery search", function()
     press("n")
     gallery.apply_current()
 
+    vim.wait(100)
+
     assert.is_not_nil(applied)
     assert.equals("moonlight", applied.name)
     assert.equals("moonlight-night", applied.variant)
 
+    applied = nil
     press("N")
     gallery.apply_current()
+
+    vim.wait(100)
 
     assert.is_not_nil(applied)
     assert.equals("tokyonight", applied.name)

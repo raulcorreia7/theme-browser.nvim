@@ -19,12 +19,10 @@ describe("theme-browser.application.theme_service", function()
     snapshots = {}
     snapshot(module_name)
     snapshot("theme-browser.adapters.base")
-    snapshot("theme-browser.runtime.loader")
-    snapshot("theme-browser.persistence.lazy_spec")
-    snapshot("theme-browser.persistence.state")
-    snapshot("theme-browser.adapters.registry")
     snapshot("theme-browser.package_manager.manager")
     snapshot("theme-browser.preview.manager")
+    snapshot("theme-browser.adapters.registry")
+    snapshot("theme-browser.runtime.loader")
 
     package.loaded[module_name] = nil
   end)
@@ -32,223 +30,256 @@ describe("theme-browser.application.theme_service", function()
   after_each(function()
     restore(module_name)
     restore("theme-browser.adapters.base")
-    restore("theme-browser.runtime.loader")
-    restore("theme-browser.persistence.lazy_spec")
-    restore("theme-browser.persistence.state")
-    restore("theme-browser.adapters.registry")
     restore("theme-browser.package_manager.manager")
     restore("theme-browser.preview.manager")
+    restore("theme-browser.adapters.registry")
+    restore("theme-browser.runtime.loader")
   end)
 
-  it("marks theme and starts install prefetch in background", function()
-    local marked = nil
-    local prefetch = nil
-    local applied = nil
+  it("uses already available theme without package manager install", function()
+    local calls = { load_theme = 0, install_theme = 0 }
 
     package.loaded["theme-browser.adapters.base"] = {
       load_theme = function(name, variant, _)
-        applied = { name = name, variant = variant }
-        return { ok = true }
-      end,
-    }
-
-    package.loaded["theme-browser.runtime.loader"] = {
-      ensure_available = function(name, variant, opts, callback)
-        prefetch = { name = name, variant = variant, opts = opts }
-        callback(true, nil, nil)
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.lazy_spec"] = {
-      generate_spec = function(_, _, _)
-        return "/tmp/theme-browser-selected.lua"
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.state"] = {
-      mark_theme = function(name, variant)
-        marked = { name = name, variant = variant }
-      end,
-    }
-
-    package.loaded["theme-browser.adapters.registry"] = {
-      resolve = function(_, _)
-        return { name = "tokyonight", variant = "night" }
-      end,
-    }
-
-    local service = require(module_name)
-    local out = service.install("tokyonight", "tokyonight-night", { notify = false })
-    vim.wait(120)
-
-    assert.equals("/tmp/theme-browser-selected.lua", out)
-    assert.is_not_nil(marked)
-    assert.equals("tokyonight", marked.name)
-    assert.equals("night", marked.variant)
-    assert.is_not_nil(applied)
-    assert.equals("tokyonight", applied.name)
-    assert.equals("tokyonight-night", applied.variant)
-    assert.is_not_nil(prefetch)
-    assert.equals("tokyonight", prefetch.name)
-    assert.equals("tokyonight-night", prefetch.variant)
-    assert.equals("install", prefetch.opts.reason)
-    assert.is_false(prefetch.opts.allow_package_manager)
-  end)
-
-  it("loads package manager in background when requested", function()
-    local load_called = false
-    local ready_called = false
-    local install_opts = nil
-
-    package.loaded["theme-browser.adapters.base"] = {
-      load_theme = function(_, _, _)
-        return { ok = true }
-      end,
-    }
-
-    package.loaded["theme-browser.runtime.loader"] = {
-      ensure_available = function(_, _, _, callback)
-        callback(true, nil, nil)
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.lazy_spec"] = {
-      generate_spec = function(_, _, _)
-        return "/tmp/theme-browser-selected.lua"
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.state"] = {
-      mark_theme = function(_) end,
-    }
-
-    package.loaded["theme-browser.adapters.registry"] = {
-      resolve = function(_, _)
-        return { name = "tokyonight" }
+        calls.load_theme = calls.load_theme + 1
+        return {
+          ok = true,
+          name = name,
+          variant = variant,
+          colorscheme = "tokyonight-night",
+        }
       end,
     }
 
     package.loaded["theme-browser.package_manager.manager"] = {
-      when_ready = function(callback)
-        ready_called = true
-        callback()
+      can_manage_install = function()
+        return true
       end,
-      install_theme = function(_, _, opts)
-        install_opts = opts
-        load_called = true
-      end,
-    }
-
-    local service = require(module_name)
-    service.install("tokyonight", "tokyonight-night", {
-      notify = false,
-      load_package_manager = true,
-    })
-    vim.wait(120)
-
-    assert.is_true(ready_called)
-    assert.is_true(load_called)
-    assert.is_not_nil(install_opts)
-    assert.is_true(install_opts.force)
-    assert.is_true(install_opts.load)
-  end)
-
-  it("can skip apply-after-install when requested", function()
-    local applied = false
-
-    package.loaded["theme-browser.adapters.base"] = {
-      load_theme = function(_, _, _)
-        applied = true
-        return { ok = true }
-      end,
-    }
-
-    package.loaded["theme-browser.runtime.loader"] = {
-      ensure_available = function(_, _, _, callback)
-        callback(true, nil, nil)
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.lazy_spec"] = {
-      generate_spec = function(_, _, _)
-        return "/tmp/theme-browser-selected.lua"
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.state"] = {
-      mark_theme = function(_, _) end,
-    }
-
-    package.loaded["theme-browser.adapters.registry"] = {
-      resolve = function(_, _)
-        return { name = "tokyonight", variant = "night" }
+      install_theme = function()
+        calls.install_theme = calls.install_theme + 1
+        return true
       end,
     }
 
     local service = require(module_name)
-    service.install("tokyonight", "tokyonight-night", {
-      notify = false,
-      apply_after_install = false,
-      load_package_manager = false,
-    })
-    vim.wait(120)
+    local result = service.use("tokyonight", "tokyonight-night", { notify = false })
 
-    assert.is_false(applied)
+    assert.is_true(result.ok)
+    assert.equals(1, calls.load_theme)
+    assert.equals(0, calls.install_theme)
   end)
 
-  it("waits for prefetch before delegating install to package manager", function()
-    local prefetch_callback = nil
-    local package_manager_called = false
+  it("installs missing theme then retries apply via callback", function()
+    local calls = { load_theme = 0, install_theme = 0 }
+    local callback_result = nil
+    local callback_called = false
 
     package.loaded["theme-browser.adapters.base"] = {
-      load_theme = function(_, _, _)
-        return { ok = true }
-      end,
-    }
+      load_theme = function(name, variant, _)
+        calls.load_theme = calls.load_theme + 1
+        if calls.load_theme == 1 then
+          return {
+            ok = false,
+            errors = { runtime_error = "theme is not cached or installed" },
+          }
+        end
 
-    package.loaded["theme-browser.runtime.loader"] = {
-      ensure_available = function(_, _, _, callback)
-        prefetch_callback = callback
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.lazy_spec"] = {
-      generate_spec = function(_, _, _)
-        return "/tmp/theme-browser-selected.lua"
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.state"] = {
-      mark_theme = function(_, _) end,
-    }
-
-    package.loaded["theme-browser.adapters.registry"] = {
-      resolve = function(_, _)
-        return { name = "tokyonight", variant = "night" }
+        return {
+          ok = true,
+          name = name,
+          variant = variant,
+          colorscheme = "tokyonight-night",
+        }
       end,
     }
 
     package.loaded["theme-browser.package_manager.manager"] = {
-      when_ready = function(callback)
-        callback()
+      can_manage_install = function()
+        return true
+      end,
+      is_ready = function()
+        return true
       end,
       install_theme = function(_, _, _)
-        package_manager_called = true
+        calls.install_theme = calls.install_theme + 1
+        return true
+      end,
+    }
+
+    package.loaded["theme-browser.runtime.loader"] = {
+      attach_cached_runtime = function()
+        return true, nil
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function()
+        return { repo = "folke/tokyonight.nvim" }
       end,
     }
 
     local service = require(module_name)
-    service.install("tokyonight", "tokyonight-night", {
-      notify = false,
-      load_package_manager = true,
-    })
+    local result = service.use("tokyonight", "tokyonight-night", { notify = false }, function(success, res, err)
+      callback_called = true
+      callback_result = { success = success, res = res, err = err }
+    end)
 
-    vim.wait(40)
-    assert.is_true(type(prefetch_callback) == "function")
-    assert.is_false(package_manager_called)
+    assert.is_true(result.ok or result.async_pending)
 
-    prefetch_callback(true, nil, nil)
-    vim.wait(40)
-    assert.is_true(package_manager_called)
+    for _ = 1, 50 do
+      vim.wait(100)
+      if callback_called then
+        break
+      end
+    end
+
+    assert.is_true(callback_called)
+    assert.is_true(callback_result.success)
+  end)
+
+  it("returns initial failure when install is unavailable", function()
+    local calls = { load_theme = 0 }
+    local callback_result = nil
+    local callback_called = false
+
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        calls.load_theme = calls.load_theme + 1
+        return {
+          ok = false,
+          errors = { runtime_error = "theme is not cached or installed" },
+        }
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      can_manage_install = function()
+        return false
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function()
+        return nil
+      end,
+    }
+
+    local service = require(module_name)
+    local result = service.use("tokyonight", "tokyonight-night", { notify = false }, function(success, res, err)
+      callback_called = true
+      callback_result = { success = success, res = res, err = err }
+    end)
+
+    assert.is_true(result.async_pending)
+
+    local waited = vim.wait(2000, function()
+      return callback_called
+    end)
+
+    assert.is_true(waited)
+    assert.is_true(callback_called)
+    assert.is_false(callback_result.success)
+    assert.is_true(calls.load_theme >= 1)
+  end)
+
+  it("keeps install as alias to use", function()
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        return { ok = true, name = "tokyonight", colorscheme = "tokyonight-night" }
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      can_manage_install = function()
+        return true
+      end,
+      install_theme = function(_, _, _)
+        return true
+      end,
+    }
+
+    local service = require(module_name)
+    local result = service.install("tokyonight", "tokyonight-night", { notify = false })
+    assert.is_true(result.ok)
+  end)
+
+  describe("preview function", function()
+    it("returns 0 on successful preview", function()
+      package.loaded["theme-browser.adapters.base"] = {
+        load_theme = function(_, _, _)
+          return { ok = true, name = "tokyonight", colorscheme = "tokyonight-night" }
+        end,
+      }
+
+      local service = require(module_name)
+      local status = service.preview("tokyonight", "tokyonight-night", { notify = false })
+
+      assert.equals(0, status)
+    end)
+
+    it("returns 0 and triggers async install for missing theme", function()
+      local calls = { load_theme = 0 }
+
+      package.loaded["theme-browser.adapters.base"] = {
+        load_theme = function(_, _, opts)
+          calls.load_theme = calls.load_theme + 1
+          if calls.load_theme == 1 then
+            return { ok = false, errors = { runtime_error = "not found" } }
+          end
+          return { ok = true, name = "tokyonight", colorscheme = "tokyonight-night" }
+        end,
+      }
+
+      package.loaded["theme-browser.package_manager.manager"] = {
+        can_manage_install = function()
+          return true
+        end,
+        install_theme = function()
+          return true
+        end,
+      }
+
+      package.loaded["theme-browser.runtime.loader"] = {
+        attach_cached_runtime = function()
+          return true, nil
+        end,
+      }
+
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function()
+          return { repo = "folke/tokyonight.nvim" }
+        end,
+      }
+
+      local service = require(module_name)
+      local status = service.preview("tokyonight", "tokyonight-night", { notify = false })
+
+      assert.equals(0, status)
+    end)
+
+    it("returns 0 even when install unavailable (triggers github fallback)", function()
+      package.loaded["theme-browser.adapters.base"] = {
+        load_theme = function(_, _, _)
+          return { ok = false, errors = { runtime_error = "not found" } }
+        end,
+      }
+
+      package.loaded["theme-browser.package_manager.manager"] = {
+        can_manage_install = function()
+          return false
+        end,
+      }
+
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function()
+          return { repo = "owner/repo" }
+        end,
+      }
+
+      local service = require(module_name)
+      local status = service.preview("tokyonight", "tokyonight-night", { notify = false })
+
+      assert.equals(0, status)
+    end)
   end)
 end)

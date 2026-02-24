@@ -43,7 +43,7 @@ describe("Integration: lazy-managed theme loading", function()
     vim.cmd.colorscheme = original_colorscheme
   end)
 
-  it("retries load path under lazy-managed mode without writing spec by default", function()
+  it("does not retry through lazy-managed load path", function()
     local calls = {
       factory = 0,
       set_current = 0,
@@ -109,11 +109,11 @@ describe("Integration: lazy-managed theme loading", function()
     local base = require(base_module)
     local result = base.load_theme("tokyonight", "tokyonight-night", { notify = false })
 
-    assert.is_true(result.ok)
-    assert.equals(2, calls.factory)
-    assert.equals(1, calls.set_current)
+    assert.is_false(result.ok)
+    assert.equals(1, calls.factory)
+    assert.equals(0, calls.set_current)
     assert.equals(0, calls.gen_spec)
-    assert.equals(1, calls.lazy_load)
+    assert.equals(0, calls.lazy_load)
   end)
 
   it("does not persist lazy state in preview mode", function()

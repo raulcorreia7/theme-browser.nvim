@@ -20,7 +20,7 @@ describe("theme-browser.preview.manager", function()
     }
     package.loaded["theme-browser.adapters.base"] = {
       load_theme = function(_, _, _)
-        return { ok = false, errors = { colorscheme_error = "not found" } }
+        return { ok = true, name = "tokyonight", colorscheme = "tokyonight-night" }
       end,
     }
     package.loaded["theme-browser.adapters.registry"] = {
@@ -45,16 +45,14 @@ describe("theme-browser.preview.manager", function()
     package.loaded["theme-browser.package_manager.manager"] = nil
   end)
 
-  it("cleanup removes preview runtimepath entries", function()
-    vim.fn.mkdir("/tmp/theme-browser-preview-cache", "p")
-
+  it("tracks and clears preview records", function()
     local preview = require(module_name)
     preview.create_preview("tokyonight", "tokyonight-night")
-    assert.is_truthy(vim.o.runtimepath:find("/tmp/theme-browser-preview-cache", 1, true))
+    local active = preview.list_previews()
+    assert.equals(1, #active)
+    assert.equals("tokyonight", active[1].name)
 
     preview.cleanup()
-    assert.is_nil(vim.o.runtimepath:find("/tmp/theme-browser-preview-cache", 1, true))
-
-    vim.fn.delete("/tmp/theme-browser-preview-cache", "rf")
+    assert.equals(0, #preview.list_previews())
   end)
 end)
