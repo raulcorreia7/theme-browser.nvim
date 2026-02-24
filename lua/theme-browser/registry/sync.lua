@@ -3,7 +3,7 @@ local M = {}
 local log = require("theme-browser.util.log")
 
 local DEFAULT_REGISTRY_URL = "https://github.com/rcorreia/theme-browser-registry/releases/latest/download/themes.json"
-local DEFAULT_MANIFEST_URL = "https://github.com/rcorreia/theme-browser-registry/releases/latest/download/latest.json"
+local DEFAULT_MANIFEST_URL = "https://github.com/rcorreia/theme-browser-registry/releases/latest/download/manifest.json"
 local CACHE_FILENAME = "registry-synced.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
 
