@@ -103,11 +103,10 @@ return {
 
 ## Commands
 
-- `:ThemeBrowser [query]` open gallery
+- `:ThemeBrowser [query|enable|disable|toggle|status]` open gallery or control package manager integration
 - `:ThemeBrowserUse <name> [variant]` install/load/apply + persist
 - `:ThemeBrowserUse <name:variant>` also supported
 - `:ThemeBrowserStatus [name]` show status
-- `:ThemeBrowserPackageManager <enable|disable|toggle|status>` control package manager integration
 - `:ThemeBrowserReset` reset state + cache + managed spec
 - `:ThemeBrowserHelp` show command help
 

@@ -184,18 +184,63 @@ local function set_package_manager_enabled(enabled)
   end)
 end
 
+local function run_package_manager_action(action)
+  if action == "enable" then
+    set_package_manager_enabled(true)
+    return true
+  end
+
+  if action == "disable" then
+    set_package_manager_enabled(false)
+    return true
+  end
+
+  if action == "toggle" then
+    with_package_manager_state(function(_, enabled)
+      set_package_manager_enabled(not enabled)
+    end)
+    return true
+  end
+
+  if action == "status" then
+    with_package_manager_state(function(_, enabled)
+      log.info(string.format("Theme Browser package manager is %s", enabled and "enabled" or "disabled"))
+    end)
+    return true
+  end
+
+  return false
+end
+
 local function setup_commands()
   vim.api.nvim_create_user_command("ThemeBrowser", function(opts)
+    local argument = opts.fargs[1]
+    local action = type(argument) == "string" and string.lower(argument) or ""
+    if run_package_manager_action(action) then
+      return
+    end
+
     local picker = require("theme-browser.picker")
-    picker.pick({ initial_theme = opts.fargs[1] })
+    picker.pick({ initial_theme = argument })
   end, {
     nargs = "?",
     complete = function(arglead)
       local registry = ensure_registry_for_completion()
       local themes = registry and registry.list_themes() or {}
       local matches = {}
+      local seen = {}
+      local actions = { "enable", "disable", "toggle", "status" }
+
+      for _, action in ipairs(actions) do
+        if prefix_match(action, arglead) and not seen[action] then
+          seen[action] = true
+          table.insert(matches, action)
+        end
+      end
+
       for _, theme in ipairs(themes) do
-        if prefix_match(theme.name, arglead) then
+        if prefix_match(theme.name, arglead) and not seen[theme.name] then
+          seen[theme.name] = true
           table.insert(matches, theme.name)
         end
       end
@@ -227,44 +272,6 @@ local function setup_commands()
     complete = complete_theme_command,
   })
 
-  vim.api.nvim_create_user_command("ThemeBrowserPackageManager", function(opts)
-    local action = string.lower(opts.fargs[1] or "")
-    if action == "enable" then
-      set_package_manager_enabled(true)
-      return
-    end
-    if action == "disable" then
-      set_package_manager_enabled(false)
-      return
-    end
-    if action == "toggle" then
-      with_package_manager_state(function(_, enabled)
-        set_package_manager_enabled(not enabled)
-      end)
-      return
-    end
-    if action == "status" then
-      with_package_manager_state(function(_, enabled)
-        log.info(string.format("Theme Browser package manager is %s", enabled and "enabled" or "disabled"))
-      end)
-      return
-    end
-
-    log.warn("Usage: :ThemeBrowserPackageManager <enable|disable|toggle|status>")
-  end, {
-    nargs = 1,
-    complete = function(arglead)
-      local actions = { "enable", "disable", "toggle", "status" }
-      local matches = {}
-      for _, action in ipairs(actions) do
-        if prefix_match(action, arglead) then
-          table.insert(matches, action)
-        end
-      end
-      return matches
-    end,
-  })
-
   vim.api.nvim_create_user_command("ThemeBrowserReset", function()
     local cache = require("theme-browser.downloader.cache")
     local state = require("theme-browser.persistence.state")
@@ -282,9 +289,9 @@ local function setup_commands()
   vim.api.nvim_create_user_command("ThemeBrowserHelp", function()
     local lines = {
       "  :ThemeBrowser                       - Open theme picker",
+      "  :ThemeBrowser <op>                  - Package manager enable|disable|toggle|status",
       "  :ThemeBrowserUse <name> [variant]   - Install/load/apply and persist",
       "  :ThemeBrowserStatus [name]          - Show theme status",
-      "  :ThemeBrowserPackageManager <op>    - Package manager enable|disable|toggle|status",
       "  :ThemeBrowserRegistrySync[!]        - Sync registry from releases (! force)",
       "  :ThemeBrowserRegistryClear          - Clear synced registry cache",
       "  :ThemeBrowserValidate [output]      - Validate install/preview/use over registry",

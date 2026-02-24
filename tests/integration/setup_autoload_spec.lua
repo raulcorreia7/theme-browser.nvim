@@ -4,7 +4,6 @@ describe("Integration: setup autoload", function()
     "ThemeBrowser",
     "ThemeBrowserUse",
     "ThemeBrowserStatus",
-    "ThemeBrowserPackageManager",
     "ThemeBrowserRegistrySync",
     "ThemeBrowserRegistryClear",
     "ThemeBrowserValidate",
@@ -291,13 +290,13 @@ describe("Integration: setup autoload", function()
 
     assert.equals(2, vim.fn.exists(":ThemeBrowserReset"))
     assert.equals(2, vim.fn.exists(":ThemeBrowserUse"))
-    assert.equals(2, vim.fn.exists(":ThemeBrowserPackageManager"))
+    assert.equals(0, vim.fn.exists(":ThemeBrowserPackageManager"))
     assert.equals(0, vim.fn.exists(":ThemeBrowserInstall"))
     assert.equals(0, vim.fn.exists(":ThemeBrowserPreview"))
     assert.equals(0, vim.fn.exists(":ThemeBrowserMark"))
   end)
 
-  it("updates package manager state via ThemeBrowserPackageManager command", function()
+  it("updates package manager state via ThemeBrowser command", function()
     local pm_state = {
       enabled = true,
       mode = "manual",
@@ -347,13 +346,13 @@ describe("Integration: setup autoload", function()
     local tb = require(theme_browser_module)
     tb.setup(with_test_cache({ auto_load = false }))
 
-    vim.cmd("ThemeBrowserPackageManager disable")
+    vim.cmd("ThemeBrowser disable")
     assert.is_false(pm_state.enabled)
 
-    vim.cmd("ThemeBrowserPackageManager toggle")
+    vim.cmd("ThemeBrowser toggle")
     assert.is_true(pm_state.enabled)
 
-    vim.cmd("ThemeBrowserPackageManager enable")
+    vim.cmd("ThemeBrowser enable")
     assert.is_true(pm_state.enabled)
   end)
 
