@@ -164,6 +164,26 @@ local function complete_theme_command(arglead, cmdline)
   return matches
 end
 
+local function with_package_manager_state(callback)
+  local ok_state, state = pcall(require, "theme-browser.persistence.state")
+  if not ok_state or type(state.get_package_manager) ~= "function" or type(state.set_package_manager) ~= "function" then
+    log.warn("Theme Browser package manager state is unavailable")
+    return
+  end
+
+  local pm = state.get_package_manager() or {}
+  local mode = type(pm.mode) == "string" and pm.mode ~= "" and pm.mode or "manual"
+  local provider = type(pm.provider) == "string" and pm.provider ~= "" and pm.provider or "auto"
+  callback(state, pm.enabled == true, mode, provider)
+end
+
+local function set_package_manager_enabled(enabled)
+  with_package_manager_state(function(state, _, mode, provider)
+    state.set_package_manager(enabled == true, mode, provider)
+    log.info(string.format("Theme Browser package manager %s", enabled and "enabled" or "disabled"))
+  end)
+end
+
 local function setup_commands()
   vim.api.nvim_create_user_command("ThemeBrowser", function(opts)
     local picker = require("theme-browser.picker")
@@ -207,6 +227,44 @@ local function setup_commands()
     complete = complete_theme_command,
   })
 
+  vim.api.nvim_create_user_command("ThemeBrowserPackageManager", function(opts)
+    local action = string.lower(opts.fargs[1] or "")
+    if action == "enable" then
+      set_package_manager_enabled(true)
+      return
+    end
+    if action == "disable" then
+      set_package_manager_enabled(false)
+      return
+    end
+    if action == "toggle" then
+      with_package_manager_state(function(_, enabled)
+        set_package_manager_enabled(not enabled)
+      end)
+      return
+    end
+    if action == "status" then
+      with_package_manager_state(function(_, enabled)
+        log.info(string.format("Theme Browser package manager is %s", enabled and "enabled" or "disabled"))
+      end)
+      return
+    end
+
+    log.warn("Usage: :ThemeBrowserPackageManager <enable|disable|toggle|status>")
+  end, {
+    nargs = 1,
+    complete = function(arglead)
+      local actions = { "enable", "disable", "toggle", "status" }
+      local matches = {}
+      for _, action in ipairs(actions) do
+        if prefix_match(action, arglead) then
+          table.insert(matches, action)
+        end
+      end
+      return matches
+    end,
+  })
+
   vim.api.nvim_create_user_command("ThemeBrowserReset", function()
     local cache = require("theme-browser.downloader.cache")
     local state = require("theme-browser.persistence.state")
@@ -226,6 +284,7 @@ local function setup_commands()
       "  :ThemeBrowser                       - Open theme picker",
       "  :ThemeBrowserUse <name> [variant]   - Install/load/apply and persist",
       "  :ThemeBrowserStatus [name]          - Show theme status",
+      "  :ThemeBrowserPackageManager <op>    - Package manager enable|disable|toggle|status",
       "  :ThemeBrowserRegistrySync[!]        - Sync registry from releases (! force)",
       "  :ThemeBrowserRegistryClear          - Clear synced registry cache",
       "  :ThemeBrowserValidate [output]      - Validate install/preview/use over registry",

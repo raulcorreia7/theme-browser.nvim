@@ -4,6 +4,10 @@ describe("Integration: setup autoload", function()
     "ThemeBrowser",
     "ThemeBrowserUse",
     "ThemeBrowserStatus",
+    "ThemeBrowserPackageManager",
+    "ThemeBrowserRegistrySync",
+    "ThemeBrowserRegistryClear",
+    "ThemeBrowserValidate",
     "ThemeBrowserReset",
     "ThemeBrowserHelp",
   }
@@ -287,9 +291,70 @@ describe("Integration: setup autoload", function()
 
     assert.equals(2, vim.fn.exists(":ThemeBrowserReset"))
     assert.equals(2, vim.fn.exists(":ThemeBrowserUse"))
+    assert.equals(2, vim.fn.exists(":ThemeBrowserPackageManager"))
     assert.equals(0, vim.fn.exists(":ThemeBrowserInstall"))
     assert.equals(0, vim.fn.exists(":ThemeBrowserPreview"))
     assert.equals(0, vim.fn.exists(":ThemeBrowserMark"))
+  end)
+
+  it("updates package manager state via ThemeBrowserPackageManager command", function()
+    local pm_state = {
+      enabled = true,
+      mode = "manual",
+      provider = "auto",
+    }
+
+    package.loaded["theme-browser.persistence.state"] = {
+      initialize = function(_) end,
+      get_current_theme = function()
+        return nil
+      end,
+      get_package_manager = function()
+        return pm_state
+      end,
+      set_package_manager = function(enabled, mode, provider)
+        pm_state.enabled = enabled
+        pm_state.mode = mode
+        pm_state.provider = provider
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      initialize = function(_) end,
+      resolve = function(_, _)
+        return nil
+      end,
+      list_themes = function()
+        return {}
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.base"] = {
+      load_theme = function(_, _, _)
+        return { ok = true }
+      end,
+      has_package_manager = function()
+        return true
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      when_ready = function(callback)
+        callback()
+      end,
+    }
+
+    local tb = require(theme_browser_module)
+    tb.setup(with_test_cache({ auto_load = false }))
+
+    vim.cmd("ThemeBrowserPackageManager disable")
+    assert.is_false(pm_state.enabled)
+
+    vim.cmd("ThemeBrowserPackageManager toggle")
+    assert.is_true(pm_state.enabled)
+
+    vim.cmd("ThemeBrowserPackageManager enable")
+    assert.is_true(pm_state.enabled)
   end)
 
   it("passes optional variant to ThemeBrowserUse command", function()
