@@ -24,12 +24,12 @@ local M = {
   cache_dir = vim.fn.stdpath("cache") .. "/theme-browser",
 
   -- Auto-load persisted theme on startup
-  auto_load = true,
+  auto_load = false,
 
   -- Startup workflow configuration
   startup = {
     enabled = true,
-    write_spec = false,
+    write_spec = true,
     skip_if_already_active = true,
   },
 
@@ -44,8 +44,8 @@ local M = {
 
   -- Package manager integration
   package_manager = {
-    enabled = false,
-    mode = "plugin_only",
+    enabled = true,
+    mode = "manual",
     provider = "auto",
   },
 
@@ -72,11 +72,13 @@ local M = {
     select = { "<CR>" },
     preview = { "p" },
     install = { "i" },
-    mark = { "m" },
-    navigate_up = { "k" },
-    navigate_down = { "j" },
+    set_main = { "m" },
+    navigate_up = { "k", "<Up>", "<C-p>" },
+    navigate_down = { "j", "<Down>", "<C-n>" },
     goto_top = { "gg" },
     goto_bottom = { "G" },
+    search = { "/" },
+    clear_search = { "c" },
   },
 }
 

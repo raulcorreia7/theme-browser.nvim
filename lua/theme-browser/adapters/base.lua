@@ -62,18 +62,6 @@ local function persist_applied_theme(result, opts, current_theme)
   startup_persistence.persist_applied_theme(result.name, result.variant, result.colorscheme, opts)
 end
 
-local function pending_result(theme_name, variant, result)
-  return {
-    ok = false,
-    pending = true,
-    name = theme_name,
-    variant = variant,
-    colorscheme = nil,
-    strategy = result.strategy,
-    errors = result.errors,
-  }
-end
-
 ---Detect if package manager (lazy.nvim) is available
 ---@return boolean
 function M.has_package_manager()
@@ -88,27 +76,29 @@ function M.get_status(theme_name)
   return factory.get_theme_status(theme_name)
 end
 
----Load a theme
+---Load a theme synchronously.
+---
+---SYNC/ASYNC: SYNCHRONOUS - This function blocks until the theme is applied
+---or fails. It calls vim.cmd.colorscheme directly. This function does NOT
+---handle installation - if the theme is not available, it will fail.
+---
+---For automatic installation of missing themes, use theme_service.use() instead.
+---
 ---@param theme_name string
 ---@param variant string|nil
----@param opts table|nil
----@return table
+---@param opts table|nil Options table
+---   - notify: boolean (default true) - Show notification on success/failure
+---   - preview: boolean (default false) - If true, don't persist as current theme
+---@return table result with ok, name, variant, colorscheme, errors fields
 function M.load_theme(theme_name, variant, opts)
   opts = opts or {}
-  local current_theme = nil
+  local canonical_name, canonical_variant = canonical_theme_ref(theme_name, variant)
+  local current_theme = { name = canonical_name, variant = canonical_variant }
+
+  local _, attach_err = runtime_loader.attach_cached_runtime(theme_name, variant)
 
   local factory = require("theme-browser.adapters.factory")
   local result = factory.load_theme(theme_name, variant, opts)
-
-  if (not opts.preview) and package_manager.is_managed() then
-    local canonical_name, canonical_variant = canonical_theme_ref(theme_name, variant)
-    current_theme = { name = canonical_name, variant = canonical_variant }
-
-    if not result.ok then
-      package_manager.load_theme(theme_name, variant)
-      result = factory.load_theme(theme_name, variant, opts)
-    end
-  end
 
   if result.ok then
     persist_applied_theme(result, opts, current_theme)
@@ -117,33 +107,17 @@ function M.load_theme(theme_name, variant, opts)
     return result
   end
 
-  local reason = result.errors and (result.errors.colorscheme_error or result.errors.not_found) or "unknown error"
-  if opts.preview then
-    maybe_notify(vim.log.levels.WARN, string.format("Failed to load '%s': %s", theme_name, reason), opts)
-    return result
+  local reason = result.errors and (result.errors.runtime_error or result.errors.colorscheme_error or result.errors.not_found) or "unknown error"
+  if type(result.errors) ~= "table" then
+    result.errors = {}
+  end
+  if attach_err and result.errors.runtime_error == nil then
+    result.errors.runtime_error = attach_err
+    reason = attach_err
   end
 
-  runtime_loader.ensure_available(theme_name, variant, {
-    notify = opts.notify,
-    reason = "apply",
-  }, function(success, err)
-    if not success then
-      maybe_notify(vim.log.levels.WARN, string.format("Failed to load '%s': %s", theme_name, err or reason), opts)
-      return
-    end
-
-    local retry = factory.load_theme(theme_name, variant, opts)
-    if retry.ok then
-      persist_applied_theme(retry, opts, current_theme)
-      maybe_notify(vim.log.levels.INFO, string.format("Theme applied: %s", retry.colorscheme or retry.name), opts)
-      return
-    end
-
-    local retry_reason = retry.errors and (retry.errors.colorscheme_error or retry.errors.not_found) or "unknown error"
-    maybe_notify(vim.log.levels.WARN, string.format("Failed to load '%s': %s", theme_name, retry_reason), opts)
-  end)
-
-  return pending_result(theme_name, variant, result)
+  maybe_notify(vim.log.levels.WARN, string.format("Failed to load '%s': %s", theme_name, reason), opts)
+  return result
 end
 
 return M

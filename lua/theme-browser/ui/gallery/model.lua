@@ -1,7 +1,7 @@
 local M = {}
 
 function M.filter_entries(all_entries, query)
-  if query == "" then
+  if not query or query == "" then
     return all_entries
   end
 

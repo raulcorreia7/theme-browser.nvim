@@ -93,11 +93,11 @@ end
 
 local function build_spec_content(entry, colorscheme)
   local theme_repo = entry.repo
-  local plugin_name = entry.name or plugin_name_from_repo(theme_repo, "theme-browser-theme")
+  local plugin_name = plugin_name_from_repo(theme_repo, entry.name or "theme-browser-theme")
   return string.format(
     [[
 local theme_repo = %q
-local theme_name = %q
+local theme_plugin_name = %q
 
 local function resolve_theme_source()
   local ok_theme_browser, theme_browser = pcall(require, "theme-browser")
@@ -115,23 +115,36 @@ local function resolve_theme_source()
       if type(cache_path) == "string" and cache_path ~= "" and vim.fn.isdirectory(cache_path) == 1 then
         return {
           dir = cache_path,
-          name = theme_name,
+          name = theme_plugin_name,
         }
       end
     end
   end
 
+  local _, repo_name = theme_repo:match("([^/]+)/(.+)")
+  if type(repo_name) == "string" and repo_name ~= "" then
+    local lazy_path = vim.fn.stdpath("data") .. "/lazy/" .. repo_name
+    if vim.fn.isdirectory(lazy_path) == 1 then
+      return {
+        dir = lazy_path,
+        name = theme_plugin_name,
+      }
+    end
+  end
+
   return {
     [1] = theme_repo,
+    name = theme_plugin_name,
   }
 end
 
+local source = resolve_theme_source()
 return {
-  vim.tbl_extend("force", resolve_theme_source(), {
+  vim.tbl_extend("force", source, {
     repo = theme_repo,
     dependencies = { "rktjmp/lush.nvim" },
     lazy = false,
-    priority = 1000,
+    priority = 2000,
     config = function()
       if vim.g.colors_name == "%s" then
         return
@@ -239,6 +252,11 @@ function M.get_current_spec()
   end
 
   return nil
+end
+
+---@return boolean
+function M.has_managed_spec()
+  return vim.fn.filereadable(get_spec_file()) == 1 or vim.fn.filereadable(get_legacy_spec_file()) == 1
 end
 
 ---Migrate legacy managed spec to cache-aware template when possible.

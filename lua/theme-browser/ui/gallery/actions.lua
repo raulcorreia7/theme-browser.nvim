@@ -56,7 +56,9 @@ function M.apply_selected(session, get_selected_entry, render)
   end
 
   local theme_service = require("theme-browser.application.theme_service")
-  theme_service.apply(entry.name, entry.variant)
+  theme_service.use(entry.name, entry.variant, {
+    wait_install = true,
+  })
   render()
   M.focus_window(session)
 end
@@ -74,27 +76,7 @@ function M.preview_selected(session, get_selected_entry, render)
 end
 
 function M.install_selected(session, get_selected_entry, render)
-  local entry = get_selected_entry()
-  if not entry then
-    return
-  end
-
-  local theme_service = require("theme-browser.application.theme_service")
-  theme_service.install(entry.name, entry.variant)
-  render()
-  M.focus_window(session)
-end
-
-function M.mark_selected(session, get_selected_entry, render)
-  local entry = get_selected_entry()
-  if not entry then
-    return
-  end
-
-  local state = require("theme-browser.persistence.state")
-  state.mark_theme(entry.name, entry.variant)
-  render()
-  M.focus_window(session)
+  M.apply_selected(session, get_selected_entry, render)
 end
 
 return M

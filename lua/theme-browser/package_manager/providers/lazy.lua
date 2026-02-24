@@ -44,14 +44,31 @@ local function register_ready_hooks()
 end
 
 local function resolve_plugins(entry)
-  local plugin_refs = {}
-
-  if type(entry.repo) == "string" and entry.repo ~= "" then
-    table.insert(plugin_refs, entry.repo)
+  local function is_repo_ref(value)
+    return type(value) == "string" and value:match("^[^/]+/[^/]+$") ~= nil
   end
 
-  if type(entry.name) == "string" and entry.name ~= "" and entry.name ~= entry.repo then
-    table.insert(plugin_refs, entry.name)
+  local function push_unique(list, seen, value)
+    if type(value) ~= "string" or value == "" or seen[value] then
+      return
+    end
+    seen[value] = true
+    table.insert(list, value)
+  end
+
+  local plugin_refs = {}
+  local seen = {}
+  local repo_name = nil
+
+  if type(entry.repo) == "string" and entry.repo ~= "" then
+    push_unique(plugin_refs, seen, entry.repo)
+    local _, extracted = entry.repo:match("([^/]+)/(.+)")
+    repo_name = extracted
+  end
+
+  local entry_name = type(entry.name) == "string" and entry.name or nil
+  if is_repo_ref(entry_name) then
+    push_unique(plugin_refs, seen, entry_name)
   end
 
   local config = safe_require("lazy.core.config")
@@ -60,10 +77,17 @@ local function resolve_plugins(entry)
   end
 
   local resolved = {}
-  for _, ref in ipairs(plugin_refs) do
-    if config.plugins[ref] then
-      table.insert(resolved, ref)
-    end
+
+  if type(entry.repo) == "string" and config.plugins[entry.repo] then
+    table.insert(resolved, entry.repo)
+  end
+
+  if type(repo_name) == "string" and repo_name ~= "" and config.plugins[repo_name] then
+    table.insert(resolved, repo_name)
+  end
+
+  if type(entry_name) == "string" and entry_name ~= "" and config.plugins[entry_name] then
+    table.insert(resolved, entry_name)
   end
 
   if #resolved > 0 then
@@ -118,9 +142,12 @@ function M.load_entry(entry)
     return false
   end
 
-  pcall(lazy.load, {
-    plugins = { entry.repo, entry.name },
-  })
+  local plugins = resolve_plugins(entry)
+  if #plugins == 0 then
+    return false
+  end
+
+  pcall(lazy.load, { plugins = plugins })
   return true
 end
 

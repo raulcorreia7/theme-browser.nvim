@@ -6,6 +6,7 @@ local VALID_STRATEGIES = {
   setup_colorscheme = true,
   setup_load = true,
   vimg_colorscheme = true,
+  load = true,
 }
 
 local function safe_require(module_name)
@@ -124,6 +125,11 @@ local function load_with_setup_load(entry)
   local module, require_err = safe_require(module_name)
 
   if module then
+    -- Call setup first with opts if available
+    if type(module.setup) == "function" then
+      pcall(module.setup, entry.meta and entry.meta.opts or {})
+    end
+
     local candidate = nil
     if type(module.load) == "function" then
       candidate = module.load
@@ -145,6 +151,29 @@ local function load_with_setup_load(entry)
   }
 end
 
+
+local function load_with_load(entry)
+  apply_editor_options(entry)
+  local module_name = resolve_module_name(entry)
+  local module, require_err = safe_require(module_name)
+
+  if module and type(module.load) == "function" then
+    local args = entry.meta and entry.meta.args
+    if type(args) == "table" and #args > 0 then
+      pcall(module.load, unpack(args))
+    else
+      pcall(module.load)
+    end
+  end
+
+  local ok, cs_err, applied, tried = apply_colorscheme(entry)
+  return ok, {
+    applied_colorscheme = applied,
+    tried_colorschemes = table.concat(tried or {}, ","),
+    require_error = require_err,
+    colorscheme_error = cs_err,
+  }
+end
 local function load_with_vimg_colorscheme(entry)
   apply_editor_options(entry)
 
@@ -201,6 +230,8 @@ function M.get_adapter(entry)
         ok, errors = load_with_setup_colorscheme(target_entry)
       elseif strategy == "setup_load" then
         ok, errors = load_with_setup_load(target_entry)
+      elseif strategy == "load" then
+        ok, errors = load_with_load(target_entry)
       elseif strategy == "vimg_colorscheme" then
         ok, errors = load_with_vimg_colorscheme(target_entry)
       else
