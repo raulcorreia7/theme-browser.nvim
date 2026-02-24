@@ -70,7 +70,12 @@ function M.restore_current_theme(config, state, registry)
     return false
   end
 
-  return apply_entry(entry)
+  local success = apply_entry(entry)
+  if success and type(state.set_browser_enabled) == "function" then
+    state.set_browser_enabled(true)
+  end
+
+  return success
 end
 
 return M

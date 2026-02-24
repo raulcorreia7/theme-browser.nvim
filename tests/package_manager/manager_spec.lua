@@ -27,7 +27,7 @@ describe("theme-browser.package_manager.manager", function()
     package.loaded["theme-browser.package_manager.providers.noop"] = previous_noop_provider
   end)
 
-  it("treats auto/manual/plugin_only semantics explicitly", function()
+  it("treats auto/manual/installed_only semantics explicitly", function()
     package.loaded["lazy"] = { load = function() end }
 
     package.loaded["theme-browser.persistence.state"] = {
@@ -52,7 +52,7 @@ describe("theme-browser.package_manager.manager", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       get_package_manager = function()
-        return { enabled = true, mode = "plugin_only" }
+        return { enabled = true, mode = "installed_only" }
       end,
     }
     assert.is_false(manager.is_managed())
@@ -72,7 +72,7 @@ describe("theme-browser.package_manager.manager", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       get_package_manager = function()
-        return { enabled = true, mode = "plugin_only" }
+        return { enabled = true, mode = "installed_only" }
       end,
     }
     assert.is_false(manager.load_entry({ name = "tokyonight", repo = "folke/tokyonight.nvim" }))
@@ -133,7 +133,7 @@ describe("theme-browser.package_manager.manager", function()
     assert.is_true(load_called)
   end)
 
-  it("can force install even in plugin_only mode", function()
+  it("can force install even in installed_only mode", function()
     local install_called = false
 
     package.loaded["lazy"] = {
@@ -155,7 +155,7 @@ describe("theme-browser.package_manager.manager", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       get_package_manager = function()
-        return { enabled = false, mode = "plugin_only" }
+        return { enabled = false, mode = "installed_only" }
       end,
     }
 

@@ -292,6 +292,8 @@ local function setup_commands()
       "  :ThemeBrowser <op>                  - Package manager enable|disable|toggle|status",
       "  :ThemeBrowserUse <name> [variant]   - Install/load/apply and persist",
       "  :ThemeBrowserStatus [name]          - Show theme status",
+      "  :ThemeBrowserDisable                - Revert to pre-ThemeBrowser theme",
+      "  :ThemeBrowserEnable                 - Restore last ThemeBrowser theme",
       "  :ThemeBrowserRegistrySync[!]        - Sync registry from releases (! force)",
       "  :ThemeBrowserRegistryClear          - Clear synced registry cache",
       "  :ThemeBrowserValidate [output]      - Validate install/preview/use over registry",
@@ -363,6 +365,31 @@ local function setup_commands()
 
     log.info("Synced registry cleared, using bundled fallback")
   end, {})
+
+  vim.api.nvim_create_user_command("ThemeBrowserDisable", function()
+    local state = require("theme-browser.persistence.state")
+    state.set_browser_enabled(false)
+    log.info("Theme Browser disabled (themes will not load on startup)")
+  end, {})
+
+  vim.api.nvim_create_user_command("ThemeBrowserEnable", function()
+    local state = require("theme-browser.persistence.state")
+    local theme_service = require("theme-browser.application.theme_service")
+
+    if state.get_browser_enabled() then
+      log.info("Theme Browser is already enabled")
+      return
+    end
+
+    state.set_browser_enabled(true)
+
+    local last_theme = state.get_current_theme()
+    if last_theme then
+      theme_service.use(last_theme.name, last_theme.variant, { notify = true })
+    else
+      log.info("Theme Browser enabled (no saved theme to restore)")
+    end
+  end, {})
 end
 
 local function sync_state_from_current_colorscheme(state, registry)
@@ -420,6 +447,10 @@ end
 
 local function should_run_startup_restore(state)
   if not M.config.auto_load then
+    return false
+  end
+
+  if not state.get_browser_enabled() then
     return false
   end
 

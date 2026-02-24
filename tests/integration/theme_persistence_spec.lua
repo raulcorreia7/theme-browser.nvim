@@ -91,7 +91,7 @@ describe("Integration: theme change persistence", function()
   it("persists selected theme across state reload", function()
     local state = require("theme-browser.persistence.state")
     state.initialize({
-      package_manager = { enabled = false, mode = "plugin_only" },
+      package_manager = { enabled = false, mode = "installed_only" },
     })
 
     local registry = require("theme-browser.adapters.registry")
@@ -120,7 +120,7 @@ describe("Integration: theme change persistence", function()
   it("preview does not persist current selection", function()
     local state = require("theme-browser.persistence.state")
     state.initialize({
-      package_manager = { enabled = false, mode = "plugin_only" },
+      package_manager = { enabled = false, mode = "installed_only" },
     })
 
     local registry = require("theme-browser.adapters.registry")

@@ -121,6 +121,9 @@ describe("Integration: setup autoload", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       initialize = function(_) end,
+      get_browser_enabled = function()
+        return true
+      end,
       get_current_theme = function()
         return { name = "tokyonight", variant = "tokyonight-night" }
       end,
@@ -214,6 +217,9 @@ describe("Integration: setup autoload", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       initialize = function(_) end,
+      get_browser_enabled = function()
+        return true
+      end,
       get_current_theme = function()
         return { name = "different-theme", variant = nil }
       end,
@@ -468,6 +474,9 @@ describe("Integration: setup autoload", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       initialize = function(_) end,
+      get_browser_enabled = function()
+        return true
+      end,
       get_current_theme = function()
         return { name = "tokyonight", variant = "tokyonight-night" }
       end,
@@ -579,6 +588,9 @@ describe("Integration: setup autoload", function()
 
     package.loaded["theme-browser.persistence.state"] = {
       initialize = function(_) end,
+      get_browser_enabled = function()
+        return true
+      end,
       get_current_theme = function()
         return { name = "tokyonight", variant = "tokyonight-night" }
       end,

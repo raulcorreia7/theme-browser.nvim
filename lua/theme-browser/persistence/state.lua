@@ -13,9 +13,11 @@ local default_state = {
   },
   package_manager = {
     enabled = false,
-    mode = "plugin_only",
+    mode = "installed_only",
     provider = "auto",
   },
+  pre_browser_theme = nil,
+  browser_enabled = true,
 }
 
 ---@class State
@@ -25,6 +27,8 @@ local default_state = {
 ---@field theme_history string[]
 ---@field cache_stats table {hits, misses}
 ---@field package_manager table {enabled, mode, provider}
+---@field pre_browser_theme table|nil {name, variant} - theme before ThemeBrowser took over
+---@field browser_enabled boolean - whether ThemeBrowser management is active
 
 local state = vim.deepcopy(default_state)
 
@@ -363,6 +367,17 @@ function M.load()
       state.package_manager.provider = decoded.package_manager.provider
     end
   end
+
+  if type(decoded.pre_browser_theme) == "table" and type(decoded.pre_browser_theme.name) == "string" then
+    state.pre_browser_theme = {
+      name = decoded.pre_browser_theme.name,
+      variant = normalize_variant(decoded.pre_browser_theme.variant),
+    }
+  end
+
+  if type(decoded.browser_enabled) == "boolean" then
+    state.browser_enabled = decoded.browser_enabled
+  end
 end
 
 ---Save state to disk (debounced)
@@ -429,6 +444,17 @@ end
 ---@param name string Theme name
 ---@param variant string|nil Theme variant
 function M.set_current_theme(name, variant)
+  -- Save current theme as pre_browser_theme if this is the first ThemeBrowser theme
+  if state.browser_enabled and not state.pre_browser_theme then
+    local current = state.current_theme
+    if current and type(current.name) == "string" then
+      state.pre_browser_theme = {
+        name = current.name,
+        variant = normalize_variant(current.variant),
+      }
+    end
+  end
+
   if state.current_theme and state.current_theme.name ~= name then
     table.insert(state.theme_history, 1, state.current_theme.name)
     if #state.theme_history > 10 then
@@ -500,7 +526,7 @@ end
 
 ---Set package manager configuration
 ---@param enabled boolean
----@param mode string "auto" | "manual" | "plugin_only"
+---@param mode string "auto" | "manual" | "installed_only"
 ---@param provider string|nil "auto" | "lazy" | "noop"
 function M.set_package_manager(enabled, mode, provider)
   state.package_manager.enabled = enabled
@@ -510,6 +536,41 @@ function M.set_package_manager(enabled, mode, provider)
   if provider then
     state.package_manager.provider = provider
   end
+  M.save()
+end
+
+---Get pre-browser theme (theme before ThemeBrowser was enabled)
+---@return table|nil {name, variant}
+function M.get_pre_browser_theme()
+  return state.pre_browser_theme
+end
+
+---Set pre-browser theme
+---@param theme table|nil {name, variant}
+function M.set_pre_browser_theme(theme)
+  if theme == nil then
+    state.pre_browser_theme = nil
+  elseif type(theme) == "table" and type(theme.name) == "string" then
+    state.pre_browser_theme = {
+      name = theme.name,
+      variant = normalize_variant(theme.variant),
+    }
+  else
+    state.pre_browser_theme = nil
+  end
+  M.save()
+end
+
+---Get browser enabled state
+---@return boolean
+function M.get_browser_enabled()
+  return state.browser_enabled ~= false
+end
+
+---Set browser enabled state
+---@param enabled boolean
+function M.set_browser_enabled(enabled)
+  state.browser_enabled = enabled == true
   M.save()
 end
 

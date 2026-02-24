@@ -79,7 +79,7 @@ local log_levels = {
 local package_manager_modes = {
   auto = true,
   manual = true,
-  plugin_only = true,
+  installed_only = true,
 }
 
 local package_manager_providers = {
@@ -170,7 +170,7 @@ local function validate_nested_value(parent_key, key, value, default_value)
 
   if parent_key == "package_manager" and key == "mode" then
     if type(value) ~= "string" or not package_manager_modes[value] then
-      notify_warn(string.format("Invalid value for %s: expected auto|manual|plugin_only; keeping default", keypath))
+      notify_warn(string.format("Invalid value for %s: expected auto|manual|installed_only; keeping default", keypath))
       return default_value
     end
     return value

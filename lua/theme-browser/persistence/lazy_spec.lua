@@ -138,6 +138,14 @@ local function resolve_theme_source()
   }
 end
 
+local function is_browser_enabled()
+  local ok_state, state = pcall(require, "theme-browser.persistence.state")
+  if ok_state and type(state.get_browser_enabled) == "function" then
+    return state.get_browser_enabled()
+  end
+  return true
+end
+
 local source = resolve_theme_source()
 return {
   vim.tbl_extend("force", source, {
@@ -146,6 +154,10 @@ return {
     lazy = false,
     priority = 2000,
     config = function()
+      if not is_browser_enabled() then
+        return
+      end
+
       if vim.g.colors_name == "%s" then
         return
       end

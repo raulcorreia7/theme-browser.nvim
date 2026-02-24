@@ -37,7 +37,7 @@ describe("theme-browser.persistence.state", function()
     assert.is_nil(state.get_current_theme())
     local pm = state.get_package_manager()
     assert.is_false(pm.enabled)
-    assert.equals("plugin_only", pm.mode)
+    assert.equals("installed_only", pm.mode)
   end)
 
   it("saves and reloads selected theme", function()

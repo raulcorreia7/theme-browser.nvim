@@ -63,7 +63,7 @@ describe("theme-browser.adapters.base", function()
         calls.set_current = calls.set_current + 1
       end,
       get_package_manager = function()
-        return { enabled = false, mode = "plugin_only" }
+        return { enabled = false, mode = "installed_only" }
       end,
     }
 

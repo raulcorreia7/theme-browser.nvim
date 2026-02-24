@@ -3,7 +3,7 @@ local M = {}
 local valid_modes = {
   auto = true,
   manual = true,
-  plugin_only = true,
+  installed_only = true,
 }
 local valid_providers = {
   auto = true,
@@ -13,12 +13,12 @@ local valid_providers = {
 
 local function normalize_mode(mode)
   if type(mode) ~= "string" then
-    return "plugin_only"
+    return "installed_only"
   end
   if valid_modes[mode] then
     return mode
   end
-  return "plugin_only"
+  return "installed_only"
 end
 
 local function normalize_provider(provider)
@@ -42,7 +42,7 @@ end
 function M.get_config()
   local state = safe_require("theme-browser.persistence.state")
   if not state or type(state.get_package_manager) ~= "function" then
-    return { enabled = false, mode = "plugin_only", provider = "auto" }
+    return { enabled = false, mode = "installed_only", provider = "auto" }
   end
 
   local pm = state.get_package_manager() or {}
@@ -137,7 +137,7 @@ function M.can_manage_install(force)
   if force == true then
     return M.is_available()
   end
-  return cfg.enabled and cfg.mode ~= "plugin_only" and M.is_available()
+  return cfg.enabled and cfg.mode ~= "installed_only" and M.is_available()
 end
 
 function M.is_ready()
