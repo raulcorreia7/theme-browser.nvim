@@ -1,8 +1,5 @@
 local M = {}
 
-local log = require("theme-browser.util.log")
-local package_manager = require("theme-browser.package_manager.manager")
-
 local function resolve_entry(theme_name, variant)
   local registry = require("theme-browser.adapters.registry")
   return registry.resolve(theme_name, variant)
@@ -21,6 +18,24 @@ local function add_to_runtimepath(path)
   return false
 end
 
+local function resolve_lazy_install_path(entry)
+  if type(entry) ~= "table" or type(entry.repo) ~= "string" then
+    return nil
+  end
+
+  local _, repo_name = entry.repo:match("([^/]+)/(.+)")
+  if type(repo_name) ~= "string" or repo_name == "" then
+    return nil
+  end
+
+  local lazy_path = vim.fn.stdpath("data") .. "/lazy/" .. repo_name
+  if vim.fn.isdirectory(lazy_path) == 1 then
+    return lazy_path
+  end
+
+  return nil
+end
+
 local function cache_path_for(entry, cache_dir)
   local github = require("theme-browser.downloader.github")
   if type(github.resolve_cache_path) == "function" then
@@ -29,61 +44,53 @@ local function cache_path_for(entry, cache_dir)
   return github.get_cache_path(entry.repo, cache_dir)
 end
 
+local function resolve_cache_dir()
+  local ok_theme_browser, theme_browser = pcall(require, "theme-browser")
+  if ok_theme_browser and type(theme_browser.get_config) == "function" then
+    local config = theme_browser.get_config()
+    if type(config) == "table" and type(config.cache_dir) == "string" and config.cache_dir ~= "" then
+      return config.cache_dir
+    end
+  end
+
+  return vim.fn.stdpath("cache") .. "/theme-browser"
+end
+
 ---@param theme_name string
 ---@param variant string|nil
----@param opts table|nil {notify:boolean|nil, reason:string|nil, allow_package_manager:boolean|nil}
+---@return boolean, string|nil, string|nil
+function M.attach_cached_runtime(theme_name, variant)
+  local entry = resolve_entry(theme_name, variant)
+  if not entry or not entry.repo then
+    return false, "theme not found in index", nil
+  end
+
+  local cache_dir = resolve_cache_dir()
+  local runtime_path = cache_path_for(entry, cache_dir)
+  if vim.fn.isdirectory(runtime_path) ~= 1 then
+    runtime_path = resolve_lazy_install_path(entry)
+  end
+  if type(runtime_path) ~= "string" or runtime_path == "" then
+    return false, "theme is not cached or installed", nil
+  end
+
+  local ok = add_to_runtimepath(runtime_path)
+  if not ok then
+    return false, "theme runtime path missing", nil
+  end
+
+  return true, nil, runtime_path
+end
+
+---@param theme_name string
+---@param variant string|nil
+---@param opts table|nil {notify:boolean|nil, reason:string|nil}
 ---@param callback fun(success:boolean, err:string|nil, runtime_path:string|nil)
 function M.ensure_available(theme_name, variant, opts, callback)
   opts = opts or {}
-  local notify = opts.notify
-  if notify == nil then
-    notify = true
-  end
-
-  local entry = resolve_entry(theme_name, variant)
-  if not entry or not entry.repo then
-    callback(false, "theme not found in index", nil)
-    return
-  end
-
-  local allow_package_manager = opts.allow_package_manager ~= false
-  if allow_package_manager and type(package_manager.can_delegate_load) == "function" then
-    allow_package_manager = package_manager.can_delegate_load()
-  end
-
-  if allow_package_manager and package_manager.load_entry(entry) then
-    callback(true, nil, nil)
-    return
-  end
-
-  local config = require("theme-browser").get_config()
-  local cache_dir = config.cache_dir
-  local github = require("theme-browser.downloader.github")
-
-  if github.is_cached(entry.repo, cache_dir) then
-    local runtime_path = cache_path_for(entry, cache_dir)
-    local ok = add_to_runtimepath(runtime_path)
-    callback(ok, ok and nil or "cached theme path missing", ok and runtime_path or nil)
-    return
-  end
-
-  if notify then
-    local reason = opts.reason or "load"
-    log.info(string.format("Downloading %s in background for %s...", entry.repo, reason))
-  end
-
-  github.download(entry.repo, cache_dir, function(success, err)
-    vim.schedule(function()
-      if not success then
-        callback(false, err or "download failed", nil)
-        return
-      end
-
-      local runtime_path = cache_path_for(entry, cache_dir)
-      local ok = add_to_runtimepath(runtime_path)
-      callback(ok, ok and nil or "downloaded theme path missing", ok and runtime_path or nil)
-    end)
-  end, { notify = false })
+  local _ = opts
+  local ok, err, runtime_path = M.attach_cached_runtime(theme_name, variant)
+  callback(ok, err, runtime_path)
 end
 
 return M
