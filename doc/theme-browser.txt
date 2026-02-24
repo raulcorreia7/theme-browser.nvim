@@ -1,7 +1,7 @@
 *theme-browser.txt*  Theme Browser for Neovim
 
-Theme Browser provides a curated theme gallery, live preview/apply workflows,
-and optional startup persistence helpers.
+Theme Browser provides a curated theme gallery with install/apply persistence in
+one workflow.
 
 ==============================================================================
 CONTENTS                                                    *theme-browser-contents*
@@ -16,7 +16,7 @@ CONTENTS                                                    *theme-browser-conte
 REQUIREMENTS                                                *theme-browser-requirements*
 
 - Neovim 0.8+
-- git (for downloading missing themes)
+- package manager integration (optional, for installs)
 
 Recommended:
 - rktjmp/lush.nvim
@@ -27,11 +27,15 @@ SETUP                                                              *theme-browse
 
 >
   require("theme-browser").setup({
-    auto_load = true,
+    auto_load = false,
     startup = {
       enabled = true,
-      write_spec = false,
+      write_spec = true,
       skip_if_already_active = true,
+    },
+    package_manager = {
+      enabled = true,
+      mode = "manual",
     },
   })
 <
@@ -46,27 +50,12 @@ COMMANDS                                                        *theme-browser-c
 :ThemeBrowser [query]
     Open gallery.
 
-:ThemeBrowserTheme <name> [variant]
-:ThemeBrowserTheme <name:variant>
-    Apply and persist theme.
+:ThemeBrowserUse <name> [variant]
+:ThemeBrowserUse <name:variant>
+    Install/load/apply and persist theme.
 
-:ThemeBrowserPreview <name> [variant]
-:ThemeBrowserPreview <name:variant>
-    Preview theme without persistence.
-
-:ThemeBrowserInstall[!] <name> [variant]
-:ThemeBrowserInstall[!] <name:variant>
-    Write managed spec (cache-aware local dir when available), install and apply in
-    session (`!` waits).
-
-:ThemeBrowserMark <name> [variant]
 :ThemeBrowserStatus [name|name:variant]
-:ThemeBrowserClean
-:ThemeBrowserCacheClear
-:ThemeBrowserCacheInfo
-:ThemeBrowserUninstall
 :ThemeBrowserReset
-:ThemeBrowserFocus
 :ThemeBrowserHelp
 
 ==============================================================================
@@ -76,12 +65,12 @@ CONFIGURATION                                                      *theme-browse
   require("theme-browser").setup({
     registry_path = "", -- optional custom json path
     cache_dir = vim.fn.stdpath("cache") .. "/theme-browser",
-    auto_load = true,
+    auto_load = false,
     log_level = "info", -- error|warn|info|debug
 
     startup = {
       enabled = true,
-      write_spec = false,
+      write_spec = true,
       skip_if_already_active = true,
     },
 
@@ -91,8 +80,8 @@ CONFIGURATION                                                      *theme-browse
     },
 
     package_manager = {
-      enabled = false,
-      mode = "plugin_only", -- auto|manual|plugin_only
+      enabled = true,
+      mode = "manual", -- auto|manual|plugin_only
       provider = "auto", -- auto|lazy|noop
     },
 
@@ -110,7 +99,6 @@ CONFIGURATION                                                      *theme-browse
       select = { "<CR>" },
       preview = { "p" },
       install = { "i" },
-      mark = { "m" },
       navigate_up = { "k" },
       navigate_down = { "j" },
       goto_top = { "gg" },

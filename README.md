@@ -1,5 +1,10 @@
 # theme-browser.nvim
 
+> ⚠️ **ALPHA - NOT FOR PRODUCTION USE**
+> 
+> This plugin is under active development. APIs, commands, and behavior may change without notice.
+> Breaking changes may occur between commits. Use at your own risk.
+
 `theme-browser.nvim` is a Neovim theme gallery and loader.
 
 It lets you browse curated themes, preview them instantly, and persist your selected theme across restarts.
@@ -8,7 +13,7 @@ It lets you browse curated themes, preview them instantly, and persist your sele
 
 - Shows a compact theme browser modal inside Neovim.
 - Lists curated themes (including variants).
-- Previews themes dynamically (download + apply when needed).
+- Installs, applies, and persists themes from one workflow.
 - Persists selected theme and restores it on startup.
 - Supports different theme loading styles through adapters.
 
@@ -22,22 +27,20 @@ It lets you browse curated themes, preview them instantly, and persist your sele
 
 1. Theme Browser reads the curated index.
 2. You preview/apply a theme from the gallery.
-3. If theme files are missing, it performs a shallow download and loads from cache.
-4. Installing a theme marks it for install and starts a background prefetch.
-5. Applying a theme persists selection to state.
+3. If theme files are missing, `ThemeBrowserUse` generates a managed spec and installs with lazy.nvim.
+4. Applying a theme persists selection to state.
 6. Cache cleanup runs automatically every week by default.
 7. On startup, it restores your persisted theme using the managed startup spec.
 
-Default mode is `plugin_only` (Theme Browser manages loading directly, without requiring package-manager install).
+Default mode is `manual` with package-manager integration enabled.
 
 Registry loading prefers your configured path when readable, then falls back to the bundled registry shipped with the plugin.
 
-`startup.write_spec` defaults to `false` (safer default). Enable it if you want applies to write `theme-browser-selected.lua`.
+`startup.write_spec` defaults to `true` so startup uses a managed theme spec.
 
 ## Requirements
 
 - Neovim >= 0.8
-- `git`
 
 Recommended:
 
@@ -58,10 +61,10 @@ return {
       "rktjmp/lush.nvim",
     },
     opts = {
-      auto_load = true,
+      auto_load = false,
       package_manager = {
-        enabled = false,
-        mode = "plugin_only",
+        enabled = true,
+        mode = "manual",
       },
     },
   },
@@ -74,17 +77,21 @@ return {
 -- ~/.config/nvim/lua/plugins/theme-browser.lua
 return {
   {
-    dir = "/home/rcorreia/projects/theme-browser.nvim",
+    dir = "/home/rcorreia/projects/theme-browser-monorepo/theme-browser.nvim",
     name = "theme-browser.nvim",
     event = "VeryLazy",
     dependencies = {
       "rktjmp/lush.nvim",
     },
     opts = {
-      auto_load = true,
+      auto_load = false,
+      startup = {
+        enabled = true,
+        write_spec = true,
+      },
       package_manager = {
-        enabled = false,
-        mode = "plugin_only",
+        enabled = true,
+        mode = "manual",
       },
     },
     config = function(_, opts)
@@ -97,26 +104,21 @@ return {
 ## Commands
 
 - `:ThemeBrowser [query]` open gallery
-- `:ThemeBrowserTheme <name> [variant]` apply + persist
-- `:ThemeBrowserPreview <name> [variant]` preview (non-persistent)
-- `:ThemeBrowserTheme <name:variant>` and related commands accept `name:variant` tokens
-- `:ThemeBrowserClean` clean cache now
-- `:ThemeBrowserInstall[!] <name> [variant]` write managed spec (prefers cached local dir when available), install via lazy in-session, and apply now (`!` waits)
-- `:ThemeBrowserUninstall` remove managed spec
+- `:ThemeBrowserUse <name> [variant]` install/load/apply + persist
+- `:ThemeBrowserUse <name:variant>` also supported
 - `:ThemeBrowserStatus [name]` show status
 - `:ThemeBrowserReset` reset state + cache + managed spec
-- `:ThemeBrowserFocus` refocus gallery
 - `:ThemeBrowserHelp` show command help
 
 ## Gallery keys
 
 - `j/k`, `<C-n>/<C-p>`, `<C-j>/<C-k>` move
 - `/`, `n`, `N` search and jump
-- `<CR>` apply + persist
+- `<CR>` install/load/apply + persist
 - `p` preview
-- `i` install
-- `m` mark
+- `i` install/load/apply + persist
 - `<Esc>` clear search first, close when search context is clear
+- Shortcuts are shown in the window top bar (winbar), not inside buffer text
 
 ## Persistence files
 
@@ -127,15 +129,15 @@ return {
 
 ```lua
 require("theme-browser").setup({
-  auto_load = true,
+  auto_load = false,
   package_manager = {
-    enabled = false,
-    mode = "plugin_only", -- auto | manual | plugin_only
+    enabled = true,
+    mode = "manual", -- auto | manual | plugin_only
     provider = "auto", -- auto | lazy | noop
   },
   startup = {
     enabled = true,
-    write_spec = false,
+    write_spec = true,
     skip_if_already_active = true,
   },
   cache = {
@@ -155,7 +157,7 @@ require("theme-browser").setup({
 
 ## Testing
 
-`ThemeBrowserInstall` attempts an in-session install through `lazy.nvim` when available, so a restart is not required for installation.
+`ThemeBrowserUse` is the canonical flow and installs through `lazy.nvim` when needed.
 
 ```bash
 make verify
