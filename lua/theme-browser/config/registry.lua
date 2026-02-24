@@ -17,12 +17,25 @@ local function bundled_registry_path(root)
   return root .. "/lua/theme-browser/data/registry.json"
 end
 
+local function synced_registry_path()
+  local ok, sync = pcall(require, "theme-browser.registry.sync")
+  if ok and type(sync.get_synced_registry_path) == "function" then
+    return sync.get_synced_registry_path()
+  end
+  return nil
+end
+
 local function candidate_paths(user_path)
   local root = get_plugin_root()
   local paths = {}
 
   if type(user_path) == "string" and user_path ~= "" then
     table.insert(paths, { source = "user", path = user_path })
+  end
+
+  local synced = synced_registry_path()
+  if type(synced) == "string" and synced ~= "" then
+    table.insert(paths, { source = "synced", path = synced })
   end
 
   table.insert(paths, { source = "bundled", path = bundled_registry_path(root) })

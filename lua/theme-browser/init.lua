@@ -1,6 +1,7 @@
 local log = require("theme-browser.util.log")
 local registry_config = require("theme-browser.config.registry")
 local startup_restore = require("theme-browser.startup.restore")
+local startup_config = require("theme-browser.startup.config")
 
 ---@class ThemeBrowser
 ---@field config Config
@@ -17,24 +18,6 @@ local M = {
 local function validate_config(user_config)
   local options = require("theme-browser.config.options")
   return options.validate(user_config)
-end
-
-local function run_cache_cleanup(force, notify)
-  local cache = require("theme-browser.downloader.cache")
-  if type(cache.maybe_cleanup) == "function" then
-    local ok, reason = cache.maybe_cleanup({ force = force, notify = notify })
-    if ok then
-      log.info("Theme cache cleaned")
-      return
-    end
-    if reason ~= "not_due" and reason ~= "disabled" then
-      log.warn(string.format("Theme cache cleanup failed: %s", reason or "unknown error"))
-    end
-    return
-  end
-
-  cache.clear_all({ notify = notify })
-  log.info("Theme cache cleared")
 end
 
 local function parse_theme_token(value)
@@ -181,11 +164,10 @@ local function complete_theme_command(arglead, cmdline)
   return matches
 end
 
----Setup plugin commands
 local function setup_commands()
   vim.api.nvim_create_user_command("ThemeBrowser", function(opts)
-    local ui = require("theme-browser.ui.gallery")
-    ui.open(opts.fargs[1])
+    local picker = require("theme-browser.picker")
+    picker.pick({ initial_theme = opts.fargs[1] })
   end, {
     nargs = "?",
     complete = function(arglead)
@@ -201,22 +183,17 @@ local function setup_commands()
     end,
   })
 
-  vim.api.nvim_create_user_command("ThemeBrowserFocus", function()
-    local ui = require("theme-browser.ui.gallery")
-    if not ui.focus() then
-      ui.open()
-    end
-  end, {})
-
-  vim.api.nvim_create_user_command("ThemeBrowserTheme", function(opts)
+  vim.api.nvim_create_user_command("ThemeBrowserUse", function(opts)
     local theme_name, variant = parse_theme_args(opts.fargs)
     if not theme_name then
-      log.warn("Usage: :ThemeBrowserTheme <theme-name[:variant]> [variant]")
+      log.warn("Usage: :ThemeBrowserUse <theme-name[:variant]> [variant]")
       return
     end
 
     local theme_service = require("theme-browser.application.theme_service")
-    theme_service.apply(theme_name, variant)
+    theme_service.use(theme_name, variant, {
+      wait_install = true,
+    })
   end, {
     nargs = "*",
     complete = complete_theme_command,
@@ -227,77 +204,8 @@ local function setup_commands()
     status.show(opts.fargs[1])
   end, {
     nargs = "?",
-  })
-
-  vim.api.nvim_create_user_command("ThemeBrowserMark", function(opts)
-    local theme_name, variant = parse_theme_args(opts.fargs)
-    if not theme_name then
-      log.warn("Usage: :ThemeBrowserMark <theme-name[:variant]> [variant]")
-      return
-    end
-
-    local state = require("theme-browser.persistence.state")
-    state.mark_theme(theme_name, variant)
-    if variant and variant ~= "" then
-      log.info("Theme '" .. theme_name .. ":" .. variant .. "' marked for install")
-    else
-      log.info("Theme '" .. theme_name .. "' marked for install")
-    end
-  end, {
-    nargs = "*",
     complete = complete_theme_command,
   })
-
-  vim.api.nvim_create_user_command("ThemeBrowserCacheClear", function()
-    run_cache_cleanup(true, true)
-  end, {})
-
-  vim.api.nvim_create_user_command("ThemeBrowserClean", function()
-    run_cache_cleanup(true, true)
-  end, {})
-
-  vim.api.nvim_create_user_command("ThemeBrowserCacheInfo", function()
-    local cache = require("theme-browser.downloader.cache")
-    local stats = cache.get_stats()
-    log.info(string.format("Cache stats: %d hits, %d misses", stats.hits, stats.misses))
-  end, {})
-
-  vim.api.nvim_create_user_command("ThemeBrowserPreview", function(opts)
-    local theme_name, variant = parse_theme_args(opts.fargs)
-    if not theme_name then
-      log.warn("Usage: :ThemeBrowserPreview <theme-name[:variant]> [variant]")
-      return
-    end
-
-    local theme_service = require("theme-browser.application.theme_service")
-    theme_service.preview(theme_name, variant)
-  end, {
-    nargs = "*",
-    complete = complete_theme_command,
-  })
-
-  vim.api.nvim_create_user_command("ThemeBrowserInstall", function(opts)
-    local theme_name, variant = parse_theme_args(opts.fargs)
-    if not theme_name then
-      log.warn("Usage: :ThemeBrowserInstall <theme-name[:variant]> [variant]")
-      return
-    end
-
-    local theme_service = require("theme-browser.application.theme_service")
-    theme_service.install(theme_name, variant, {
-      wait_install = opts.bang == true,
-    })
-  end, {
-    nargs = "*",
-    bang = true,
-    complete = complete_theme_command,
-  })
-
-  vim.api.nvim_create_user_command("ThemeBrowserUninstall", function(_)
-    local lazy_spec = require("theme-browser.persistence.lazy_spec")
-    lazy_spec.remove_spec()
-    log.info("Theme removed from configuration")
-  end, {})
 
   vim.api.nvim_create_user_command("ThemeBrowserReset", function()
     local cache = require("theme-browser.downloader.cache")
@@ -315,20 +223,79 @@ local function setup_commands()
 
   vim.api.nvim_create_user_command("ThemeBrowserHelp", function()
     local lines = {
-      "  :ThemeBrowserClean                    - Clean cache now",
-      "  :ThemeBrowserCacheClear               - Clear all cache",
-      "  :ThemeBrowserCacheInfo                - Show cache statistics",
-      "  :ThemeBrowserReset                    - Reset state, cache, and managed spec",
-      "  :ThemeBrowserPreview <name> [variant] - Preview theme",
-      "  :ThemeBrowserInstall[!] <name> [variant] - Install/apply now (! waits)",
-      "  :ThemeBrowserMark <name> [variant]    - Mark theme for install",
-      "  :ThemeBrowserUninstall                - Remove theme from LazyVim config",
-      "  :ThemeBrowserStatus [name]            - Show theme status",
-      "  :ThemeBrowserTheme <name> [variant]   - Apply and persist theme",
-      "  :ThemeBrowserHelp                     - Show this help",
+      "  :ThemeBrowser                       - Open theme picker",
+      "  :ThemeBrowserUse <name> [variant]   - Install/load/apply and persist",
+      "  :ThemeBrowserStatus [name]          - Show theme status",
+      "  :ThemeBrowserRegistrySync[!]        - Sync registry from releases (! force)",
+      "  :ThemeBrowserRegistryClear          - Clear synced registry cache",
+      "  :ThemeBrowserValidate [output]      - Validate install/preview/use over registry",
+      "  :ThemeBrowserReset                  - Reset state, cache, and managed spec",
+      "  :ThemeBrowserHelp                   - Show this help",
     }
 
     vim.api.nvim_echo({ { table.concat(lines, "\n"), "Normal" } }, false, {})
+  end, {})
+
+  vim.api.nvim_create_user_command("ThemeBrowserValidate", function(opts)
+    local soak = require("theme-browser.validation.soak")
+    local output = opts.fargs[1]
+    local report = soak.run({ output_path = output })
+    if report.ok then
+      log.info(string.format(
+        "Validation passed: %d/%d entries, notifications=%d, report=%s",
+        report.ok_count,
+        report.total_entries,
+        report.notify_count,
+        report.output_path
+      ))
+    else
+      log.warn(string.format(
+        "Validation failed: ok=%d fail=%d notifications=%d, report=%s",
+        report.ok_count,
+        report.fail_count,
+        report.notify_count,
+        report.output_path
+      ))
+    end
+  end, {
+    nargs = "?",
+  })
+
+  vim.api.nvim_create_user_command("ThemeBrowserRegistrySync", function(opts)
+    local force = opts.bang
+    local registry_sync = require("theme-browser.registry.sync")
+    registry_sync.sync({ force = force }, function(success, message, count)
+      vim.schedule(function()
+        if success then
+          if message == "updated" then
+            log.info(string.format("Registry synced: %d themes", count or 0))
+          else
+            log.info("Registry is up to date")
+          end
+
+          local registry = require("theme-browser.adapters.registry")
+          local new_path = registry_sync.get_synced_registry_path()
+          if new_path then
+            registry.initialize(new_path)
+          end
+        else
+          log.warn(string.format("Registry sync failed: %s", message or "unknown error"))
+        end
+      end)
+    end)
+  end, {
+    bang = true,
+  })
+
+  vim.api.nvim_create_user_command("ThemeBrowserRegistryClear", function()
+    local registry_sync = require("theme-browser.registry.sync")
+    registry_sync.clear_synced_registry()
+
+    local registry = require("theme-browser.adapters.registry")
+    local resolved = registry_config.resolve(M.config.registry_path)
+    registry.initialize(resolved.path)
+
+    log.info("Synced registry cleared, using bundled fallback")
   end, {})
 end
 
@@ -385,6 +352,24 @@ local function migrate_managed_lazy_spec()
   end
 end
 
+local function should_run_startup_restore(state)
+  if not M.config.auto_load then
+    return false
+  end
+
+  if not state.get_current_theme() then
+    return false
+  end
+
+  local ok_lazy_spec, lazy_spec = pcall(require, "theme-browser.persistence.lazy_spec")
+  local startup = startup_config.resolve(M.config)
+  if startup.enabled and startup.write_spec and ok_lazy_spec and type(lazy_spec.has_managed_spec) == "function" and lazy_spec.has_managed_spec() then
+    return false
+  end
+
+  return true
+end
+
 ---Setup theme-browser plugin
 ---@param user_config Config|nil
 ---@return ThemeBrowser
@@ -435,7 +420,7 @@ function M.setup(user_config)
     end,
   })
 
-  if M.config.auto_load and state.get_current_theme() then
+  if should_run_startup_restore(state) then
     local package_manager = require("theme-browser.package_manager.manager")
     package_manager.when_ready(function()
       startup_restore.restore_current_theme(M.config, state, registry)
