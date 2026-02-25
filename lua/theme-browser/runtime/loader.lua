@@ -5,8 +5,18 @@ local function resolve_entry(theme_name, variant)
   return registry.resolve(theme_name, variant)
 end
 
+local function get_source(entry)
+  if entry and entry.meta and entry.meta.source then
+    return entry.meta.source
+  end
+  if entry and entry.builtin == true then
+    return "neovim"
+  end
+  return "github"
+end
+
 local function is_builtin(entry)
-  return entry and entry.builtin == true
+  return get_source(entry) == "neovim"
 end
 
 local function add_to_runtimepath(path)

@@ -11,6 +11,16 @@ local function safe_require(name)
   return nil
 end
 
+local function is_builtin(entry)
+  if not entry then
+    return false
+  end
+  if entry.meta and entry.meta.source then
+    return entry.meta.source == "neovim"
+  end
+  return entry.builtin == true
+end
+
 local function flush_callbacks()
   if #pending_callbacks == 0 then
     return
@@ -137,6 +147,10 @@ function M.load_entry(entry)
     return false
   end
 
+  if is_builtin(entry) then
+    return false
+  end
+
   local lazy = safe_require("lazy")
   if not lazy or type(lazy.load) ~= "function" then
     return false
@@ -155,6 +169,10 @@ function M.install_entry(entry, opts)
   opts = opts or {}
 
   if not entry or type(entry.repo) ~= "string" or entry.repo == "" then
+    return false
+  end
+
+  if is_builtin(entry) then
     return false
   end
 

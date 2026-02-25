@@ -46,6 +46,21 @@ local function is_builtin_theme(theme_name, variant)
   return entry and entry.builtin == true
 end
 
+local function has_conflict(theme_name, variant)
+  local ok_reg, registry = pcall(require, "theme-browser.adapters.registry")
+  if not ok_reg then
+    return false, nil
+  end
+  local entry = registry.resolve(theme_name, variant)
+  if not entry or not entry.meta or not entry.meta.conflicts then
+    return false, nil
+  end
+  if type(entry.meta.conflicts) == "table" and #entry.meta.conflicts > 0 then
+    return true, entry.meta.conflicts
+  end
+  return false, nil
+end
+
 ---Apply a theme synchronously without notifications.
 ---This is an internal helper that wraps base.load_theme.
 ---@param theme_name string
@@ -230,6 +245,15 @@ function M.use(theme_name, variant, opts, callback)
       callback(true, initial, nil)
     end
     return initial
+  end
+
+  local conflict, conflict_names = has_conflict(theme_name, variant)
+  if conflict then
+    notify.warn(string.format(
+      "Theme '%s' may conflict with built-in: %s",
+      theme_name,
+      table.concat(conflict_names, ", ")
+    ), { theme = theme_name })
   end
 
   ensure_managed_spec(theme_name, variant)

@@ -244,4 +244,119 @@ describe("theme-browser.runtime.loader", function()
     assert.is_false(success)
     assert.equals("theme not found in index", err)
   end)
+
+  describe("source detection", function()
+    it("recognizes builtin via meta.source neovim", function()
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function(_, _)
+          return {
+            name = "blue",
+            colorscheme = "blue",
+            meta = { source = "neovim", strategy = { type = "colorscheme" } },
+          }
+        end,
+      }
+
+      package.loaded["theme-browser"] = {
+        get_config = function()
+          return { cache_dir = "/nonexistent" }
+        end,
+      }
+
+      local loader = require(module_name)
+      local success, err, runtime_path
+      loader.ensure_available("blue", nil, { notify = false }, function(ok, callback_err, path)
+        success = ok
+        err = callback_err
+        runtime_path = path
+      end)
+
+      vim.wait(20)
+      assert.is_true(success)
+      assert.is_nil(err)
+      assert.equals("builtin", runtime_path)
+    end)
+
+    it("recognizes external via meta.source github", function()
+      local temp_dir = vim.fn.tempname()
+
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function(_, _)
+          return {
+            name = "tokyonight",
+            repo = "folke/tokyonight.nvim",
+            meta = { source = "github", strategy = { type = "setup" } },
+          }
+        end,
+      }
+
+      package.loaded["theme-browser.package_manager.manager"] = {
+        load_entry = function()
+          return false
+        end,
+        can_delegate_load = function()
+          return false
+        end,
+      }
+
+      package.loaded["theme-browser"] = {
+        get_config = function()
+          return { cache_dir = temp_dir }
+        end,
+      }
+
+      package.loaded["theme-browser.downloader.github"] = {
+        is_cached = function()
+          return false
+        end,
+        get_cache_path = function()
+          return temp_dir .. "/folke__tokyonight.nvim"
+        end,
+      }
+
+      local loader = require(module_name)
+      local success, err
+      loader.ensure_available("tokyonight", nil, { notify = false }, function(ok, callback_err)
+        success = ok
+        err = callback_err
+      end)
+
+      vim.wait(20)
+      assert.is_false(success)
+      assert.equals("theme is not cached or installed", err)
+
+      vim.fn.delete(temp_dir, "rf")
+    end)
+
+    it("falls back to builtin field for backward compat", function()
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function(_, _)
+          return {
+            name = "default",
+            colorscheme = "default",
+            builtin = true,
+          }
+        end,
+      }
+
+      package.loaded["theme-browser"] = {
+        get_config = function()
+          return { cache_dir = "/nonexistent" }
+        end,
+      }
+
+      local loader = require(module_name)
+      local success, err, runtime_path
+      loader.ensure_available("default", nil, { notify = false }, function(ok, callback_err, path)
+        success = ok
+        err = callback_err
+        runtime_path = path
+      end)
+
+      vim.wait(20)
+      assert.is_true(success)
+      assert.is_nil(err)
+      assert.equals("builtin", runtime_path)
+    end)
+  end)
 end)

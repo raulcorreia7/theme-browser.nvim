@@ -282,4 +282,162 @@ describe("theme-browser.application.theme_service", function()
       assert.equals(0, status)
     end)
   end)
+
+  describe("conflict detection", function()
+    it("warns when theme has conflicts in meta", function()
+      local warnings = {}
+      local original_notify = vim.notify
+      vim.notify = function(msg, level)
+        if level == vim.log.levels.WARN then
+          table.insert(warnings, msg)
+        end
+      end
+
+      finally(function()
+        vim.notify = original_notify
+      end)
+
+      package.loaded["theme-browser.adapters.base"] = {
+        load_theme = function()
+          return { ok = false, errors = { runtime_error = "not found" } }
+        end,
+      }
+
+      package.loaded["theme-browser.package_manager.manager"] = {
+        can_manage_install = function()
+          return false
+        end,
+      }
+
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function()
+          return {
+            name = "habamax",
+            repo = "ntk148v/habamax.nvim",
+            meta = {
+              source = "github",
+              conflicts = { "habamax" },
+            },
+          }
+        end,
+      }
+
+      local service = require(module_name)
+      service.use("habamax", nil, { notify = true }, function() end)
+
+      vim.wait(100)
+
+      local found_conflict_warning = false
+      for _, msg in ipairs(warnings) do
+        if msg:match("conflict") and msg:match("habamax") then
+          found_conflict_warning = true
+          break
+        end
+      end
+      assert.is_true(found_conflict_warning)
+    end)
+
+    it("does not warn when theme has no conflicts", function()
+      local warnings = {}
+      local original_notify = vim.notify
+      vim.notify = function(msg, level)
+        if level == vim.log.levels.WARN then
+          table.insert(warnings, msg)
+        end
+      end
+
+      finally(function()
+        vim.notify = original_notify
+      end)
+
+      package.loaded["theme-browser.adapters.base"] = {
+        load_theme = function()
+          return { ok = true, name = "tokyonight", colorscheme = "tokyonight" }
+        end,
+      }
+
+      package.loaded["theme-browser.package_manager.manager"] = {
+        can_manage_install = function()
+          return true
+        end,
+      }
+
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function()
+          return {
+            name = "tokyonight",
+            repo = "folke/tokyonight.nvim",
+            meta = { source = "github" },
+          }
+        end,
+      }
+
+      local service = require(module_name)
+      service.use("tokyonight", nil, { notify = true })
+
+      vim.wait(50)
+
+      local found_conflict_warning = false
+      for _, msg in ipairs(warnings) do
+        if msg:match("conflict") then
+          found_conflict_warning = true
+          break
+        end
+      end
+      assert.is_false(found_conflict_warning)
+    end)
+
+    it("handles multiple conflict names", function()
+      local warnings = {}
+      local original_notify = vim.notify
+      vim.notify = function(msg, level)
+        if level == vim.log.levels.WARN then
+          table.insert(warnings, msg)
+        end
+      end
+
+      finally(function()
+        vim.notify = original_notify
+      end)
+
+      package.loaded["theme-browser.adapters.base"] = {
+        load_theme = function()
+          return { ok = false, errors = { runtime_error = "not found" } }
+        end,
+      }
+
+      package.loaded["theme-browser.package_manager.manager"] = {
+        can_manage_install = function()
+          return false
+        end,
+      }
+
+      package.loaded["theme-browser.adapters.registry"] = {
+        resolve = function()
+          return {
+            name = "test",
+            repo = "owner/test.nvim",
+            meta = {
+              source = "github",
+              conflicts = { "blue", "darkblue" },
+            },
+          }
+        end,
+      }
+
+      local service = require(module_name)
+      service.use("test", nil, { notify = true }, function() end)
+
+      vim.wait(100)
+
+      local found_multi_conflict = false
+      for _, msg in ipairs(warnings) do
+        if msg:match("conflict") and msg:match("blue") and msg:match("darkblue") then
+          found_multi_conflict = true
+          break
+        end
+      end
+      assert.is_true(found_multi_conflict)
+    end)
+  end)
 end)
