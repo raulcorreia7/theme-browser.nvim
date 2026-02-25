@@ -502,6 +502,21 @@ function M.setup(user_config)
   local registry = require("theme-browser.adapters.registry")
   registry.initialize(M.config.registry_path)
 
+  local registry_sync = require("theme-browser.registry.sync")
+  registry_sync.sync({ notify = false }, function(success, message, count)
+    if success then
+      local synced_path = registry_sync.get_synced_registry_path()
+      if synced_path then
+        registry.initialize(synced_path)
+        if message == "updated" then
+          vim.schedule(function()
+            vim.notify(string.format("Registry updated: %d themes", count or 0), vim.log.levels.INFO)
+          end)
+        end
+      end
+    end
+  end)
+
   migrate_managed_lazy_spec()
 
   sync_state_from_current_colorscheme(state, registry)
