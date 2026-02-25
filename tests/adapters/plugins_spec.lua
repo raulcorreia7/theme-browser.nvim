@@ -15,11 +15,16 @@ describe("theme-browser.adapters.plugins", function()
       name = "everforest",
       variant = "light-soft",
       colorscheme = "everforest",
-      meta = { strategy = "vimg_colorscheme" },
+      meta = { 
+        strategy = {
+          type = "colorscheme",
+          vim = { o = {}, g = {} }
+        }
+      },
     })
 
     assert.equals("everforest", entry.colorscheme)
-    assert.equals("light", entry.meta.opts_o.background)
-    assert.equals("soft", entry.meta.opts_g.everforest_background)
+    assert.equals("light", entry.meta.strategy.vim.o.background)
+    assert.equals("soft", entry.meta.strategy.vim.g.everforest_background)
   end)
 end)

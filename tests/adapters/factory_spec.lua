@@ -19,7 +19,7 @@ describe("theme-browser.adapters.factory", function()
     package.loaded["mytheme"] = nil
   end)
 
-  it("applies vim.g options for vimg_colorscheme", function()
+  it("applies vim.g options for colorscheme strategy", function()
     local factory = require(factory_module)
     vim.g.test_theme_background = nil
 
@@ -29,9 +29,13 @@ describe("theme-browser.adapters.factory", function()
       repo = "sainnhe/everforest",
       colorscheme = "everforest",
       meta = {
-        strategy = "vimg_colorscheme",
-        opts_g = {
-          test_theme_background = "hard",
+        strategy = {
+          type = "colorscheme",
+          vim = {
+            g = {
+              test_theme_background = "hard",
+            },
+          },
         },
       },
     }
@@ -52,9 +56,13 @@ describe("theme-browser.adapters.factory", function()
       repo = "sainnhe/everforest",
       colorscheme = "everforest",
       meta = {
-        strategy = "vimg_colorscheme",
-        opts_o = {
-          background = "light",
+        strategy = {
+          type = "colorscheme",
+          vim = {
+            o = {
+              background = "light",
+            },
+          },
         },
       },
     }
@@ -66,7 +74,7 @@ describe("theme-browser.adapters.factory", function()
     vim.o.background = original_background
   end)
 
-  it("uses setup_load module methods before colorscheme fallback", function()
+  it("uses load module methods before colorscheme fallback", function()
     local factory = require(factory_module)
     local called = { load = 0 }
 
@@ -83,8 +91,10 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/fake",
       colorscheme = "fake-night",
       meta = {
-        strategy = "setup_load",
-        module = "fake.theme",
+        strategy = {
+          type = "load",
+          module = "fake.theme",
+        },
       },
     }
 
@@ -93,7 +103,7 @@ describe("theme-browser.adapters.factory", function()
     assert.equals(1, called.load)
   end)
 
-  it("uses colorscheme_only strategy as default when no strategy specified", function()
+  it("uses colorscheme strategy as default when no strategy specified", function()
     local factory = require(factory_module)
     local colorscheme_calls = {}
 
@@ -110,12 +120,12 @@ describe("theme-browser.adapters.factory", function()
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
-    assert.equals("colorscheme_only", result.strategy)
+    assert.equals("colorscheme", result.strategy)
     assert.equals(1, #colorscheme_calls)
     assert.equals("simple-theme", colorscheme_calls[1])
   end)
 
-  it("uses colorscheme_only strategy when explicitly specified", function()
+  it("uses colorscheme strategy when explicitly specified", function()
     local factory = require(factory_module)
     local colorscheme_calls = {}
 
@@ -129,18 +139,20 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/explicit-simple",
       colorscheme = "explicit-simple",
       meta = {
-        strategy = "colorscheme_only",
+        strategy = {
+          type = "colorscheme",
+        },
       },
     }
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
-    assert.equals("colorscheme_only", result.strategy)
+    assert.equals("colorscheme", result.strategy)
     assert.equals(1, #colorscheme_calls)
     assert.equals("explicit-simple", colorscheme_calls[1])
   end)
 
-  it("calls setup() then colorscheme for setup_colorscheme strategy", function()
+  it("calls setup() then colorscheme for setup strategy", function()
     local factory = require(factory_module)
     local calls = { setup = 0 }
     local setup_opts = nil
@@ -159,15 +171,17 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/fake",
       colorscheme = "fake-dark",
       meta = {
-        strategy = "setup_colorscheme",
-        module = "fake.setuptheme",
-        opts = { transparent = true },
+        strategy = {
+          type = "setup",
+          module = "fake.setuptheme",
+          opts = { transparent = true },
+        },
       },
     }
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
-    assert.equals("setup_colorscheme", result.strategy)
+    assert.equals("setup", result.strategy)
     assert.equals(1, calls.setup)
     assert.is_not_nil(setup_opts)
     assert.is_true(setup_opts.transparent)
@@ -192,9 +206,11 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/fake",
       colorscheme = "fake-load",
       meta = {
-        strategy = "load",
-        module = "fake.loadtheme",
-        args = { "arg1", "arg2" },
+        strategy = {
+          type = "load",
+          module = "fake.loadtheme",
+          args = { "arg1", "arg2" },
+        },
       },
     }
 
@@ -225,8 +241,10 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/fake",
       colorscheme = "fake-load2",
       meta = {
-        strategy = "load",
-        module = "fake.loadtheme2",
+        strategy = {
+          type = "load",
+          module = "fake.loadtheme2",
+        },
       },
     }
 
@@ -236,7 +254,7 @@ describe("theme-browser.adapters.factory", function()
     assert.equals(1, calls.load)
   end)
 
-  it("calls set() as fallback when load() not available for setup_load strategy", function()
+  it("calls set() as fallback when load() not available for load strategy", function()
     local factory = require(factory_module)
     local calls = { setup = 0, set = 0 }
 
@@ -257,14 +275,16 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/fake",
       colorscheme = "fake-ocean",
       meta = {
-        strategy = "setup_load",
-        module = "fake.settheme",
+        strategy = {
+          type = "load",
+          module = "fake.settheme",
+        },
       },
     }
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
-    assert.equals("setup_load", result.strategy)
+    assert.equals("load", result.strategy)
     assert.equals(1, calls.setup)
     assert.equals(1, calls.set)
     assert.equals("fake-ocean", calls.set_variant)
@@ -289,7 +309,9 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/mytheme",
       colorscheme = "mytheme",
       meta = {
-        strategy = "colorscheme_only",
+        strategy = {
+          type = "colorscheme",
+        },
       },
     }
 
@@ -313,7 +335,9 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/missing-theme",
       colorscheme = "missing-theme",
       meta = {
-        strategy = "colorscheme_only",
+        strategy = {
+          type = "colorscheme",
+        },
       },
     }
 
@@ -340,13 +364,37 @@ describe("theme-browser.adapters.factory", function()
       repo = "owner/mytheme",
       colorscheme = "mytheme-main",
       meta = {
-        strategy = "setup_colorscheme",
-        -- module not specified, should use entry.name
+        strategy = {
+          type = "setup",
+          -- module not specified, should use entry.name
+        },
       },
     }
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
     assert.equals(1, calls.setup)
+  end)
+
+  it("returns mode from entry", function()
+    local factory = require(factory_module)
+    local colorscheme_calls = {}
+
+    vim.cmd.colorscheme = function(cs)
+      table.insert(colorscheme_calls, cs)
+    end
+
+    local entry = {
+      id = "mytheme:dark",
+      name = "mytheme",
+      variant = "dark",
+      mode = "dark",
+      repo = "owner/mytheme",
+      colorscheme = "mytheme",
+    }
+
+    local result = factory.get_adapter(entry).load(entry)
+    assert.is_true(result.ok)
+    assert.equals("dark", result.mode)
   end)
 end)

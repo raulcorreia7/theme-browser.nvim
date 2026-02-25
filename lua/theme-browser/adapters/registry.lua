@@ -78,6 +78,10 @@ local function make_entry(theme, variant, colorscheme, display, extra_meta)
     meta = vim.tbl_extend("force", theme.meta or {}, extra_meta or {}),
   }
 
+  if theme.builtin then
+    entry.builtin = true
+  end
+
   return entry
 end
 
@@ -99,30 +103,14 @@ end
 local function expand_theme(theme)
   local base_colorscheme = theme.colorscheme or theme.name
   local base_display = theme.name
-  local add_base_entry = true
+  local has_variants = type(theme.variants) == "table" and #theme.variants > 0
 
-  if type(theme.variants) == "table" then
-    for _, variant_def in ipairs(theme.variants) do
-      if type(variant_def) == "string" then
-        if variant_def == base_colorscheme or variant_def == theme.name then
-          add_base_entry = false
-          break
-        end
-      elseif type(variant_def) == "table" then
-        local variant_colorscheme = variant_def.colorscheme or variant_def.name
-        if variant_colorscheme == base_colorscheme or variant_colorscheme == theme.name then
-          add_base_entry = false
-          break
-        end
-      end
-    end
-  end
-
-  if add_base_entry then
+  -- Skip base entry if theme has variants
+  if not has_variants then
     add_entry(make_entry(theme, nil, base_colorscheme, base_display, nil))
   end
 
-  if type(theme.variants) ~= "table" then
+  if not has_variants then
     return
   end
 
@@ -285,7 +273,18 @@ function M.resolve(name, variant)
   end
 
   if not variant or variant == "" then
-    return entry_index[theme.name] or entry_alias_index[normalize_token(name)]
+    -- If base entry exists, return it
+    local base_entry = entry_index[theme.name]
+    if base_entry then
+      return base_entry
+    end
+    -- No base entry - check if theme has variants, return first variant
+    if theme.variants and #theme.variants > 0 then
+      local first_variant = theme.variants[1]
+      local variant_name = type(first_variant) == "string" and first_variant or first_variant.name
+      return entry_index[string.format("%s:%s", theme.name, variant_name)]
+    end
+    return entry_alias_index[normalize_token(name)]
   end
 
   local entry = entry_index[string.format("%s:%s", theme.name, variant)]

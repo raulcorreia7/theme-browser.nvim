@@ -2,6 +2,21 @@ local state_labels = require("theme-browser.ui.state_labels")
 
 local M = {}
 
+local MODE_ICONS = {
+  dark = "◐",
+  light = "◑",
+}
+
+local function has_nerd_font()
+  local g = vim.g
+  return g.have_nerd_font == true or g.have_nerd_font == 1 or g.NerdFont == true
+end
+
+if has_nerd_font() then
+  MODE_ICONS.dark = ""
+  MODE_ICONS.light = ""
+end
+
 local function fit(text, width)
   if #text <= width then
     return text .. string.rep(" ", width - #text)
@@ -10,6 +25,13 @@ local function fit(text, width)
     return text:sub(1, width)
   end
   return text:sub(1, width - 1) .. "~"
+end
+
+local function get_mode_icon(mode)
+  if mode and MODE_ICONS[mode] then
+    return MODE_ICONS[mode]
+  end
+  return "○"
 end
 
 local function split_state_tokens(text)
@@ -72,6 +94,8 @@ function M.render(session, state_mod, set_cursor_to_selected)
 
   local name_width = 20
   local variant_width = 18
+  local mode_width = 3
+  local status_width = 12
   for _, entry in ipairs(session.filtered_entries) do
     local variant = entry.variant or "default"
     name_width = math.max(name_width, #entry.name)
@@ -87,15 +111,29 @@ function M.render(session, state_mod, set_cursor_to_selected)
     session.selected_idx = 1
   else
     session.row_offset = 2
-    table.insert(lines, fit("Theme", name_width) .. " " .. fit("Variant", variant_width) .. " State")
-    table.insert(lines, string.rep("-", name_width) .. " " .. string.rep("-", variant_width) .. " " .. string.rep("-", 18))
+    table.insert(lines, 
+      fit("Theme", name_width) .. " " .. 
+      fit("Variant", variant_width) .. " " .. 
+      fit("Mode", mode_width) .. " " .. 
+      "Status")
+    table.insert(lines, 
+      string.rep("-", name_width) .. " " .. 
+      string.rep("-", variant_width) .. " " .. 
+      string.rep("-", mode_width) .. " " .. 
+      string.rep("-", status_width))
 
     for _, entry in ipairs(session.filtered_entries) do
       local variant = entry.variant or "default"
+      local mode_icon = get_mode_icon(entry.mode)
       local states = state_labels.format_readable_states(state, entry, snapshot)
       local badges, tokens = format_state_badges(states)
-      local state_col = name_width + variant_width + 2
-      local line = string.format("%s %s %s", fit(entry.name, name_width), fit(variant, variant_width), badges)
+      local state_col = name_width + variant_width + mode_width + 3
+      local display_name = string.format("[%s]", entry.name)
+      local line = string.format("%s %s %s %s", 
+        fit(display_name, name_width), 
+        fit(variant, variant_width), 
+        fit(mode_icon, mode_width), 
+        badges)
       table.insert(lines, line)
       table.insert(line_meta, {
         row = #lines,

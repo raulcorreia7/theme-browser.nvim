@@ -1,7 +1,7 @@
 local M = {}
 
 local base = require("theme-browser.adapters.base")
-local log = require("theme-browser.util.log")
+local notify = require("theme-browser.util.notify")
 
 local function maybe_cleanup_preview(opts)
   if opts and opts.cleanup_preview == false then
@@ -35,6 +35,15 @@ local function get_repo_for_theme(theme_name, variant)
     return entry.repo
   end
   return nil
+end
+
+local function is_builtin_theme(theme_name, variant)
+  local ok_reg, registry = pcall(require, "theme-browser.adapters.registry")
+  if not ok_reg then
+    return false
+  end
+  local entry = registry.resolve(theme_name, variant)
+  return entry and entry.builtin == true
 end
 
 ---Apply a theme synchronously without notifications.
@@ -113,6 +122,11 @@ local function ensure_theme_available_async(theme_name, variant, opts, callback)
   local initial = apply_without_notify(theme_name, variant, opts)
   if initial and initial.ok then
     callback(true, nil, initial)
+    return
+  end
+
+  if is_builtin_theme(theme_name, variant) then
+    callback(false, "builtin theme failed to apply", initial)
     return
   end
 
@@ -210,7 +224,7 @@ function M.use(theme_name, variant, opts, callback)
   local initial = apply_without_notify(theme_name, variant, opts)
   if initial and initial.ok then
     if opts.notify ~= false then
-      log.info(string.format("Theme applied: %s", initial.colorscheme or initial.name or theme_name))
+      notify.info(string.format("Theme applied: %s", initial.colorscheme or initial.name or theme_name), { theme = theme_name })
     end
     if type(callback) == "function" then
       callback(true, initial, nil)
@@ -221,14 +235,14 @@ function M.use(theme_name, variant, opts, callback)
   ensure_managed_spec(theme_name, variant)
 
   if opts.notify ~= false then
-    log.info(string.format("Installing theme '%s'...", theme_name))
+    notify.info(string.format("Installing theme '%s'...", theme_name), { theme = theme_name })
   end
 
   ensure_theme_available_async(theme_name, variant, opts, function(success, err, result)
     vim.schedule(function()
       if success and result and result.ok then
         if opts.notify ~= false then
-          log.info(string.format("Theme applied: %s", result.colorscheme or result.name or theme_name))
+          notify.info(string.format("Theme applied: %s", result.colorscheme or result.name or theme_name), { theme = theme_name })
         end
         if type(callback) == "function" then
           callback(true, result, nil)
@@ -236,7 +250,7 @@ function M.use(theme_name, variant, opts, callback)
       else
         local reason = err or (result and result.errors and (result.errors.runtime_error or result.errors.colorscheme_error)) or "theme unavailable"
         if opts.notify ~= false then
-          log.warn(string.format("Unable to use '%s': %s", theme_name, reason))
+          notify.warn(string.format("Unable to use '%s': %s", theme_name, reason), { theme = theme_name })
         end
         if type(callback) == "function" then
           callback(false, result or initial, reason)
@@ -285,13 +299,13 @@ function M.preview(theme_name, variant, opts)
       opts.on_preview_applied(theme_name, variant)
     end
     if opts.notify ~= false then
-      log.info(string.format("Preview applied: %s", initial.colorscheme or initial.name or theme_name))
+      notify.info(string.format("Preview applied: %s", initial.colorscheme or initial.name or theme_name), { theme = theme_name })
     end
     return 0
   end
 
   if opts.notify ~= false then
-    log.info(string.format("Installing theme '%s' for preview...", theme_name))
+    notify.info(string.format("Installing theme '%s' for preview...", theme_name), { theme = theme_name })
   end
 
   local preview_opts = vim.tbl_extend("force", opts, {
@@ -306,12 +320,12 @@ function M.preview(theme_name, variant, opts)
           opts.on_preview_applied(theme_name, variant)
         end
         if opts.notify ~= false then
-          log.info(string.format("Preview applied: %s", result.colorscheme or result.name or theme_name))
+          notify.info(string.format("Preview applied: %s", result.colorscheme or result.name or theme_name), { theme = theme_name })
         end
       else
         local reason = err or (result and result.errors and (result.errors.colorscheme_error or result.errors.runtime_error)) or "theme unavailable"
         if opts.notify ~= false then
-          log.warn(string.format("Preview failed: %s", reason))
+          notify.warn(string.format("Preview failed: %s", reason), { theme = theme_name })
         end
       end
     end)

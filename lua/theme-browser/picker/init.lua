@@ -73,7 +73,7 @@ local function format_entry(theme_entry, snapshot)
   if variant and variant ~= theme_entry.colorscheme and variant ~= theme_entry.name then
     local prefix = theme_entry.name .. "-"
     local suffix = variant:sub(1, #prefix) == prefix and variant:sub(#prefix + 1) or variant
-    name = string.format("[%s] %s", suffix, name)
+    name = string.format("[%s] %s", name, suffix)
   end
   
   -- Variant count indicator

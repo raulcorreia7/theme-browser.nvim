@@ -198,4 +198,50 @@ describe("theme-browser.runtime.loader", function()
 
     vim.fn.delete(temp_dir, "rf")
   end)
+
+  it("succeeds immediately for builtin themes without cache check", function()
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function(_, _)
+        return { name = "default", colorscheme = "default", builtin = true }
+      end,
+    }
+
+    package.loaded["theme-browser"] = {
+      get_config = function()
+        return { cache_dir = "/nonexistent" }
+      end,
+    }
+
+    local loader = require(module_name)
+    local success, err, runtime_path
+    loader.ensure_available("default", nil, { notify = false }, function(ok, callback_err, path)
+      success = ok
+      err = callback_err
+      runtime_path = path
+    end)
+
+    vim.wait(20)
+    assert.is_true(success)
+    assert.is_nil(err)
+    assert.equals("builtin", runtime_path)
+  end)
+
+  it("fails for builtin themes that cannot be resolved", function()
+    package.loaded["theme-browser.adapters.registry"] = {
+      resolve = function(_, _)
+        return nil
+      end,
+    }
+
+    local loader = require(module_name)
+    local success, err
+    loader.ensure_available("nonexistent", nil, { notify = false }, function(ok, callback_err)
+      success = ok
+      err = callback_err
+    end)
+
+    vim.wait(20)
+    assert.is_false(success)
+    assert.equals("theme not found in index", err)
+  end)
 end)

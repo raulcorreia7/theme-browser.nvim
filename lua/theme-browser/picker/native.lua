@@ -135,7 +135,7 @@ local function format_item(entry, snapshot)
   local title = name
   local right = ""
   if variant then
-    title = string.format("[%s] %s", variant, name)
+    title = string.format("[%s] %s", name, variant)
     right = variant
   end
 
@@ -253,11 +253,12 @@ function M.pick(opts)
 
   local function hint_text()
     return string.format(
-      " %s apply+quit  %s set-main  %s preview  %s install  %s search  %s clear  %s/%s move  %s close",
+      " %s apply+quit  %s set-main  %s preview  %s install  %s copy  %s search  %s clear  %s/%s move  %s close",
       first_key(keymaps.select),
       first_key(keymaps.set_main),
       first_key(keymaps.preview),
       first_key(keymaps.install),
+      first_key(keymaps.copy_repo),
       first_key(keymaps.search),
       first_key(keymaps.clear_search),
       first_key(keymaps.navigate_down),
@@ -429,6 +430,9 @@ function M.pick(opts)
   local map_opts = { buffer = popup.bufnr, nowait = true, silent = true }
 
   local function map_keys(keys, fn)
+    if type(keys) ~= "table" then
+      return
+    end
     for _, lhs in ipairs(keys) do
       vim.keymap.set("n", lhs, fn, map_opts)
     end
@@ -508,7 +512,7 @@ function M.pick(opts)
     end
     local item = items[index]
     local status = theme_service.preview(item.entry.name, item.entry.variant, {
-      notify = false,
+      notify = true,
       install_missing = true,
       on_preview_applied = function()
         snapshot = state.build_state_snapshot and state.build_state_snapshot() or nil
@@ -559,6 +563,21 @@ function M.pick(opts)
 
   map_keys(keymaps.clear_search, function()
     apply_filter("")
+  end)
+
+  map_keys(keymaps.copy_repo, function()
+    if #items == 0 then
+      return
+    end
+    local item = items[index]
+    local repo = item.entry.repo
+    if repo and repo ~= "" then
+      local url = string.format("https://github.com/%s", repo)
+      vim.fn.setreg("+", url)
+      vim.notify(string.format("Copied: %s", url), vim.log.levels.INFO)
+    else
+      vim.notify("No repository URL available", vim.log.levels.WARN)
+    end
   end)
 
   map_keys(keymaps.close, function()

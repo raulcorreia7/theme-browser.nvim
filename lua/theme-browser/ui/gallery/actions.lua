@@ -79,4 +79,20 @@ function M.install_selected(session, get_selected_entry, render)
   M.apply_selected(session, get_selected_entry, render)
 end
 
+function M.copy_repo(session, get_selected_entry)
+  local entry = get_selected_entry()
+  if not entry then
+    return
+  end
+
+  local repo = entry.repo
+  if repo and repo ~= "" then
+    local url = string.format("https://github.com/%s", repo)
+    vim.fn.setreg("+", url)
+    vim.notify(string.format("Copied: %s", url), vim.log.levels.INFO)
+  else
+    vim.notify("No repository URL available", vim.log.levels.WARN)
+  end
+end
+
 return M

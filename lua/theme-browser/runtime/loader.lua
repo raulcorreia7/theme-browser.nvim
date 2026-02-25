@@ -5,6 +5,10 @@ local function resolve_entry(theme_name, variant)
   return registry.resolve(theme_name, variant)
 end
 
+local function is_builtin(entry)
+  return entry and entry.builtin == true
+end
+
 local function add_to_runtimepath(path)
   if vim.fn.isdirectory(path) == 1 then
     for _, existing in ipairs(vim.opt.runtimepath:get()) do
@@ -61,8 +65,16 @@ end
 ---@return boolean, string|nil, string|nil
 function M.attach_cached_runtime(theme_name, variant)
   local entry = resolve_entry(theme_name, variant)
-  if not entry or not entry.repo then
+  if not entry then
     return false, "theme not found in index", nil
+  end
+
+  if is_builtin(entry) then
+    return true, nil, "builtin"
+  end
+
+  if not entry.repo then
+    return false, "theme has no repo and is not builtin", nil
   end
 
   local cache_dir = resolve_cache_dir()

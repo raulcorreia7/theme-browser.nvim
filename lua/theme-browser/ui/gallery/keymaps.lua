@@ -56,6 +56,7 @@ function M.setup(session, get_config, callbacks)
   map_keys(keymaps.select or { "<CR>" }, callbacks.apply_selected)
   map_keys(keymaps.preview or { "p" }, callbacks.preview_selected)
   map_keys(keymaps.install or { "i" }, callbacks.install_selected)
+  map_keys(keymaps.copy_repo or { "Y" }, callbacks.copy_repo)
 
   vim.keymap.set("n", "n", function()
     if vim.fn.getreg("/") ~= "" then

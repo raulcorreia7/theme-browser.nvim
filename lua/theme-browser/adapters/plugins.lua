@@ -9,10 +9,10 @@ local function normalize_variant(value)
   return value:lower():gsub("_", "-")
 end
 
-local function ensure_meta(entry)
+local function ensure_strategy(entry)
   entry.meta = entry.meta or {}
-  entry.meta.opts_g = entry.meta.opts_g or {}
-  entry.meta.opts_o = entry.meta.opts_o or {}
+  entry.meta.strategy = entry.meta.strategy or {}
+  entry.meta.strategy.vim = entry.meta.strategy.vim or {}
 end
 
 local function everforest_handler(entry)
@@ -21,21 +21,28 @@ local function everforest_handler(entry)
     return entry
   end
 
-  ensure_meta(entry)
+  ensure_strategy(entry)
   entry.colorscheme = "everforest"
 
   if variant:find("light", 1, true) then
-    entry.meta.opts_o.background = "light"
+    entry.meta.strategy.vim.o = entry.meta.strategy.vim.o or {}
+    entry.meta.strategy.vim.o.background = "light"
+    entry.meta.strategy.mode = "light"
   elseif variant:find("dark", 1, true) or variant:find("night", 1, true) then
-    entry.meta.opts_o.background = "dark"
+    entry.meta.strategy.vim.o = entry.meta.strategy.vim.o or {}
+    entry.meta.strategy.vim.o.background = "dark"
+    entry.meta.strategy.mode = "dark"
   end
 
   if variant:find("soft", 1, true) then
-    entry.meta.opts_g.everforest_background = "soft"
+    entry.meta.strategy.vim.g = entry.meta.strategy.vim.g or {}
+    entry.meta.strategy.vim.g.everforest_background = "soft"
   elseif variant:find("hard", 1, true) then
-    entry.meta.opts_g.everforest_background = "hard"
+    entry.meta.strategy.vim.g = entry.meta.strategy.vim.g or {}
+    entry.meta.strategy.vim.g.everforest_background = "hard"
   elseif variant:find("medium", 1, true) then
-    entry.meta.opts_g.everforest_background = "medium"
+    entry.meta.strategy.vim.g = entry.meta.strategy.vim.g or {}
+    entry.meta.strategy.vim.g.everforest_background = "medium"
   end
 
   return entry

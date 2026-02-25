@@ -5,12 +5,12 @@ SHELL := /bin/bash
 NVIM ?= nvim
 PYTHON ?= python3
 PLENARY_RTP ?=
-# CI=true makes missing plenary/tooling a hard failure.
 CI ?=
+USE_ISOLATED ?= true
 
 ROOT := $(CURDIR)
 
-.PHONY: all setup build test lint fmt fmt-check clean package smoke verify
+.PHONY: all setup build test test-isolated lint fmt fmt-check clean package smoke verify
 
 all: verify
 
@@ -23,7 +23,7 @@ build:
 	@printf "Nothing to build (Lua plugin)\n"
 
 lint:
-	@$(PYTHON) scripts/lint_lua.py
+	@$(PYTHON) scripts/lint-lua.py
 	@if command -v luacheck >/dev/null 2>&1; then \
 		luacheck lua tests; \
 	elif [[ "$(CI)" == "1" || "$(CI)" == "true" || "$(CI)" == "TRUE" || "$(CI)" == "True" ]]; then \
@@ -51,23 +51,30 @@ fmt-check:
 	fi
 
 test:
-	@PLENARY_PATH="$(PLENARY_RTP)"; \
-	REQUIRE_PLENARY="$(CI)"; \
-	if [[ -z "$$PLENARY_PATH" && -d "$$HOME/.local/share/nvim/lazy/plenary.nvim" ]]; then \
-		PLENARY_PATH="$$HOME/.local/share/nvim/lazy/plenary.nvim"; \
-	fi; \
-	if [[ -n "$$PLENARY_PATH" && -d "$$PLENARY_PATH" ]]; then \
-		$(NVIM) --headless -u NONE \
-			"+set rtp+=$$PLENARY_PATH" \
-			"+set rtp+=$(ROOT)" \
-			"+lua require('plenary.test_harness').test_directory('tests', { minimal_init = 'tests/helpers/fixtures/plenary.lua' })" \
-			+qa; \
-	elif [[ "$$REQUIRE_PLENARY" == "1" || "$$REQUIRE_PLENARY" == "true" || "$$REQUIRE_PLENARY" == "TRUE" || "$$REQUIRE_PLENARY" == "True" || "$$REQUIRE_PLENARY" == "yes" || "$$REQUIRE_PLENARY" == "YES" || "$$REQUIRE_PLENARY" == "on" || "$$REQUIRE_PLENARY" == "ON" ]]; then \
-		printf "PLENARY_RTP not set and plenary.nvim not found; failing in CI mode\n"; \
-		exit 1; \
+	@if [[ "$(USE_ISOLATED)" == "true" ]]; then \
+		bash scripts/test-runner.sh tests; \
 	else \
-		printf "PLENARY_RTP not set; skipping plenary tests (set CI=true to fail instead)\n"; \
+		PLENARY_PATH="$(PLENARY_RTP)"; \
+		REQUIRE_PLENARY="$(CI)"; \
+		if [[ -z "$$PLENARY_PATH" && -d "$$HOME/.local/share/nvim/lazy/plenary.nvim" ]]; then \
+			PLENARY_PATH="$$HOME/.local/share/nvim/lazy/plenary.nvim"; \
+		fi; \
+		if [[ -n "$$PLENARY_PATH" && -d "$$PLENARY_PATH" ]]; then \
+			$(NVIM) --headless -u NONE \
+				"+set rtp+=$$PLENARY_PATH" \
+				"+set rtp+=$(ROOT)" \
+				"+lua require('plenary.test_harness').test_directory('tests', { minimal_init = 'tests/helpers/fixtures/plenary.lua' })" \
+				+qa; \
+		elif [[ "$$REQUIRE_PLENARY" == "1" || "$$REQUIRE_PLENARY" == "true" || "$$REQUIRE_PLENARY" == "TRUE" || "$$REQUIRE_PLENARY" == "True" || "$$REQUIRE_PLENARY" == "yes" || "$$REQUIRE_PLENARY" == "YES" || "$$REQUIRE_PLENARY" == "on" || "$$REQUIRE_PLENARY" == "ON" ]]; then \
+			printf "PLENARY_RTP not set and plenary.nvim not found; failing in CI mode\n"; \
+			exit 1; \
+		else \
+			printf "PLENARY_RTP not set; skipping plenary tests (set CI=true to fail instead)\n"; \
+		fi \
 	fi
+
+test-isolated:
+	@bash scripts/test-runner.sh tests
 
 smoke:
 	@$(PYTHON) scripts/smoke.py

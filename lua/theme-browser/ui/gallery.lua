@@ -63,6 +63,7 @@ local function update_topbar()
   local preview = first_key(keymaps_cfg.preview, "p")
   local install = first_key(keymaps_cfg.install, "i")
   local close = first_key(keymaps_cfg.close, "q")
+  local copy = first_key(keymaps_cfg.copy_repo, "Y")
 
   local crumbs = {
     "Theme Browser",
@@ -72,7 +73,7 @@ local function update_topbar()
     "n/N jump",
     string.format("%s use", use),
     string.format("%s preview", preview),
-    string.format("%s use", install),
+    string.format("%s copy", copy),
     string.format("%s close", close),
   }
 
@@ -184,6 +185,10 @@ local function install_selected()
   actions.install_selected(session, get_selected_entry, render)
 end
 
+local function copy_repo()
+  actions.copy_repo(session, get_selected_entry)
+end
+
 function M.apply_current()
   apply_selected()
 end
@@ -238,6 +243,7 @@ function M.open(query)
     focus_gallery_window = focus_gallery_window,
     sync_selection_to_cursor = sync_selection_to_cursor,
     preview_selected_on_move = preview_selected_on_move,
+    copy_repo = copy_repo,
   })
 
   render()

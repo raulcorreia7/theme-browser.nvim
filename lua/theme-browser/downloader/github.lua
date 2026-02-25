@@ -1,6 +1,8 @@
 local M = {}
 local inflight = {}
 
+local notify = require("theme-browser.util.notify")
+
 local function queue_callback(repo, callback)
   if not inflight[repo] then
     inflight[repo] = {}
@@ -16,19 +18,52 @@ local function flush_callbacks(repo, success, message)
   end
 end
 
----Ensure cache directory exists
----@param cache_dir string
 local function ensure_cache_dir(cache_dir)
   if vim.fn.isdirectory(cache_dir) == 0 then
     vim.fn.mkdir(cache_dir, "p")
   end
 end
 
----Download theme from GitHub (async)
----@param repo string GitHub repo (owner/repo)
----@param cache_dir string Cache directory
----@param callback function Callback with (success, err_or_message)
----@param opts table|nil {notify:boolean|nil, title:string|nil}
+local function has_git_credentials()
+  local result = vim.fn.systemlist("git config --get credential.helper 2>/dev/null")
+  if vim.v.shell_error == 0 and #result > 0 and result[1] ~= "" then
+    return true
+  end
+
+  result = vim.fn.systemlist("gh auth status 2>&1")
+  if vim.v.shell_error == 0 then
+    return true
+  end
+
+  result = vim.fn.systemlist("git config --global user.name 2>/dev/null")
+  if vim.v.shell_error == 0 and #result > 0 and result[1] ~= "" then
+    return true
+  end
+
+  return false
+end
+
+local function sanitize_error_message(msg)
+  if type(msg) ~= "string" then
+    return "unknown error"
+  end
+
+  local sanitized = msg
+  sanitized = sanitized:gsub("ghp_[%w]+", "ghp_***")
+  sanitized = sanitized:gsub("gho_[%w]+", "gho_***")
+  sanitized = sanitized:gsub("ghu_[%w]+", "ghu_***")
+  sanitized = sanitized:gsub("ghs_[%w]+", "ghs_***")
+  sanitized = sanitized:gsub("ghr_[%w]+", "ghr_***")
+  sanitized = sanitized:gsub("github_pat_[%w]+", "github_pat_***")
+  sanitized = sanitized:gsub("token=[%w%-_]+", "token=***")
+  sanitized = sanitized:gsub("access_token=[%w%-_]+", "access_token=***")
+  sanitized = sanitized:gsub("Authorization: token [%w%-_]+", "Authorization: token ***")
+  
+  return sanitized
+end
+
+M._sanitize_error_message = sanitize_error_message
+
 function M.download(repo, cache_dir, callback, opts)
   opts = opts or {}
   local notify_enabled = opts.notify
@@ -59,15 +94,29 @@ function M.download(repo, cache_dir, callback, opts)
   end
   queue_callback(repo, callback)
 
+  local use_credentials = has_git_credentials()
+  local clone_url
+  if use_credentials then
+    clone_url = string.format("https://github.com/%s/%s.git", owner, name)
+  else
+    clone_url = string.format("https://github.com/%s/%s.git", owner, name)
+  end
+
   local clone_args = {
     "clone",
     "--depth=1",
     "--filter=blob:none",
     "--single-branch",
     "--no-tags",
-    string.format("https://github.com/%s/%s.git", owner, name),
-    cache_path,
   }
+
+  if use_credentials then
+    table.insert(clone_args, "--config")
+    table.insert(clone_args, "credential.helper=cache --timeout=3600")
+  end
+
+  table.insert(clone_args, clone_url)
+  table.insert(clone_args, cache_path)
 
   local has_plenary, _ = pcall(require, "plenary")
 
@@ -92,23 +141,15 @@ function M.download(repo, cache_dir, callback, opts)
             local cache = require("theme-browser.downloader.cache")
             cache.record_hit()
             if notify_enabled then
-              vim.notify(
-                string.format("Downloaded: %s", repo),
-                vim.log.levels.INFO,
-                { title = title }
-              )
+              notify.info(string.format("Downloaded: %s", repo), { title = title, theme = repo })
             end
             flush_callbacks(repo, true, nil)
           else
             local cache = require("theme-browser.downloader.cache")
             cache.record_miss()
-            local stderr = table.concat(j:stderr_result(), "\n")
+            local stderr = sanitize_error_message(table.concat(j:stderr_result(), "\n"))
             if notify_enabled then
-              vim.notify(
-                string.format("Download failed (code %d): %s", code, stderr),
-                vim.log.levels.ERROR,
-                { title = title }
-              )
+              notify.error(string.format("Download failed (code %d): %s", code, stderr), { title = title, theme = repo })
             end
             flush_callbacks(repo, false, string.format("Download failed (code %d): %s", code, stderr))
           end
@@ -145,23 +186,15 @@ function M.download(repo, cache_dir, callback, opts)
           local cache = require("theme-browser.downloader.cache")
           cache.record_hit()
           if notify_enabled then
-            vim.notify(
-              string.format("Downloaded: %s", repo),
-              vim.log.levels.INFO,
-              { title = title }
-            )
+            notify.info(string.format("Downloaded: %s", repo), { title = title, theme = repo })
           end
           flush_callbacks(repo, true, nil)
         else
           local cache = require("theme-browser.downloader.cache")
           cache.record_miss()
-          local err = result.stderr or result.stdout or "unknown error"
+          local err = sanitize_error_message(result.stderr or result.stdout or "unknown error")
           if notify_enabled then
-            vim.notify(
-              string.format("Download failed (code %d): %s", result.code, err),
-              vim.log.levels.ERROR,
-              { title = title }
-            )
+            notify.error(string.format("Download failed (code %d): %s", result.code, err), { title = title, theme = repo })
           end
           flush_callbacks(repo, false, string.format("Download failed (code %d): %s", result.code, err))
         end
@@ -173,7 +206,7 @@ function M.download(repo, cache_dir, callback, opts)
     if vim.v.shell_error ~= 0 then
       local cache = require("theme-browser.downloader.cache")
       cache.record_miss()
-      flush_callbacks(repo, false, output)
+      flush_callbacks(repo, false, sanitize_error_message(output))
     else
       local cache = require("theme-browser.downloader.cache")
       cache.record_hit()

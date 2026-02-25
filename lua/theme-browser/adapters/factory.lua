@@ -1,12 +1,11 @@
 local M = {}
 local plugin_adapters = require("theme-browser.adapters.plugins")
 
-local VALID_STRATEGIES = {
-  colorscheme_only = true,
-  setup_colorscheme = true,
-  setup_load = true,
-  vimg_colorscheme = true,
+local STRATEGIES = {
+  colorscheme = true,
+  setup = true,
   load = true,
+  file = true,
 }
 
 local function safe_require(module_name)
@@ -64,21 +63,24 @@ local function apply_colorscheme(entry)
   return false, last_err, colorscheme_from_entry(entry), tried
 end
 
-local function apply_editor_options(entry)
-  if type(entry.meta) ~= "table" then
+local function apply_vim_options(entry)
+  local strategy = entry.meta and entry.meta.strategy
+  local vim_opts = strategy and strategy.vim
+
+  if type(vim_opts) ~= "table" then
     return
   end
 
-  if type(entry.meta.opts_o) == "table" then
-    for key, value in pairs(entry.meta.opts_o) do
+  if type(vim_opts.o) == "table" then
+    for key, value in pairs(vim_opts.o) do
       if type(key) == "string" and key ~= "" then
         vim.o[key] = value
       end
     end
   end
 
-  if type(entry.meta.opts_g) == "table" then
-    for key, value in pairs(entry.meta.opts_g) do
+  if type(vim_opts.g) == "table" then
+    for key, value in pairs(vim_opts.g) do
       if type(key) == "string" and key ~= "" then
         vim.g[key] = value
       end
@@ -86,28 +88,61 @@ local function apply_editor_options(entry)
   end
 end
 
-local function resolve_strategy(entry)
-  local strategy = "colorscheme_only"
-  if entry and entry.meta and VALID_STRATEGIES[entry.meta.strategy] then
-    strategy = entry.meta.strategy
+local function resolve_strategy_type(entry)
+  local strategy = entry.meta and entry.meta.strategy
+  if strategy and strategy.type and STRATEGIES[strategy.type] then
+    return strategy.type
   end
-  return strategy
+  return "colorscheme"
 end
 
 local function resolve_module_name(entry)
-  if entry.meta and type(entry.meta.module) == "string" and entry.meta.module ~= "" then
-    return entry.meta.module
+  local strategy = entry.meta and entry.meta.strategy
+  if strategy and type(strategy.module) == "string" and strategy.module ~= "" then
+    return strategy.module
   end
   return entry.name
 end
 
-local function load_with_setup_colorscheme(entry)
-  apply_editor_options(entry)
+local function resolve_opts(entry)
+  local strategy = entry.meta and entry.meta.strategy
+  if strategy and type(strategy.opts) == "table" then
+    return strategy.opts
+  end
+  return {}
+end
+
+local function resolve_args(entry)
+  local strategy = entry.meta and entry.meta.strategy
+  if strategy and type(strategy.args) == "table" then
+    return strategy.args
+  end
+  return {}
+end
+
+local function resolve_mode(entry)
+  if entry.mode then
+    return entry.mode
+  end
+  local meta = entry.meta
+  if meta then
+    if meta.mode then
+      return meta.mode
+    end
+    if meta.strategy and meta.strategy.mode then
+      return meta.strategy.mode
+    end
+  end
+  return nil
+end
+
+local function load_with_setup(entry)
+  apply_vim_options(entry)
   local module_name = resolve_module_name(entry)
   local module, require_err = safe_require(module_name)
 
   if module and type(module.setup) == "function" then
-    pcall(module.setup, entry.meta and entry.meta.opts or {})
+    pcall(module.setup, resolve_opts(entry))
   end
 
   local ok, cs_err, applied, tried = apply_colorscheme(entry)
@@ -119,15 +154,14 @@ local function load_with_setup_colorscheme(entry)
   }
 end
 
-local function load_with_setup_load(entry)
-  apply_editor_options(entry)
+local function load_with_load(entry)
+  apply_vim_options(entry)
   local module_name = resolve_module_name(entry)
   local module, require_err = safe_require(module_name)
 
   if module then
-    -- Call setup first with opts if available
     if type(module.setup) == "function" then
-      pcall(module.setup, entry.meta and entry.meta.opts or {})
+      pcall(module.setup, resolve_opts(entry))
     end
 
     local candidate = nil
@@ -138,7 +172,12 @@ local function load_with_setup_load(entry)
     end
 
     if candidate then
-      pcall(candidate, entry.colorscheme or entry.variant)
+      local args = resolve_args(entry)
+      if #args > 0 then
+        pcall(candidate, unpack(args))
+      else
+        pcall(candidate, entry.colorscheme or entry.variant)
+      end
     end
   end
 
@@ -151,59 +190,46 @@ local function load_with_setup_load(entry)
   }
 end
 
+local function load_with_colorscheme(entry)
+  apply_vim_options(entry)
+  local ok, err, applied, tried = apply_colorscheme(entry)
+  return ok, {
+    applied_colorscheme = applied,
+    tried_colorschemes = table.concat(tried or {}, ","),
+    colorscheme_error = err,
+  }
+end
 
-local function load_with_load(entry)
-  apply_editor_options(entry)
-  local module_name = resolve_module_name(entry)
-  local module, require_err = safe_require(module_name)
+local function load_with_file(entry)
+  local strategy = entry.meta and entry.meta.strategy
+  local file_path = strategy and strategy.file
 
-  if module and type(module.load) == "function" then
-    local args = entry.meta and entry.meta.args
-    if type(args) == "table" and #args > 0 then
-      pcall(module.load, unpack(args))
-    else
-      pcall(module.load)
-    end
+  if not file_path or file_path == "" then
+    return load_with_colorscheme(entry)
   end
 
-  local ok, cs_err, applied, tried = apply_colorscheme(entry)
-  return ok, {
-    applied_colorscheme = applied,
-    tried_colorschemes = table.concat(tried or {}, ","),
-    require_error = require_err,
-    colorscheme_error = cs_err,
-  }
-end
-local function load_with_vimg_colorscheme(entry)
-  apply_editor_options(entry)
+  apply_vim_options(entry)
 
-  local ok, err, applied, tried = apply_colorscheme(entry)
-  return ok, {
-    applied_colorscheme = applied,
-    tried_colorschemes = table.concat(tried or {}, ","),
+  local ok, err = pcall(dofile, file_path)
+  if not ok then
+    return load_with_colorscheme(entry)
+  end
+
+  return true, {
     colorscheme_error = err,
   }
 end
 
-local function load_with_colorscheme_only(entry)
-  apply_editor_options(entry)
-  local ok, err, applied, tried = apply_colorscheme(entry)
-  return ok, {
-    applied_colorscheme = applied,
-    tried_colorschemes = table.concat(tried or {}, ","),
-    colorscheme_error = err,
-  }
-end
-
-local function build_result(entry, strategy, ok, errors)
+local function build_result(entry, strategy_type, ok, errors)
   local result = {
     ok = ok,
     name = entry.name,
     variant = entry.variant,
+    mode = resolve_mode(entry),
     id = entry.id,
-    strategy = strategy,
+    strategy = strategy_type,
     colorscheme = colorscheme_from_entry(entry),
-    fallback = strategy ~= "colorscheme_only",
+    fallback = strategy_type ~= "colorscheme",
     errors = {},
   }
 
@@ -219,26 +245,24 @@ local function build_result(entry, strategy, ok, errors)
 end
 
 function M.get_adapter(entry)
-  local strategy = resolve_strategy(entry)
+  local strategy_type = resolve_strategy_type(entry)
   return {
-    adapter_type = strategy,
+    adapter_type = strategy_type,
     load = function(target_entry)
       local ok
       local errors
 
-      if strategy == "setup_colorscheme" then
-        ok, errors = load_with_setup_colorscheme(target_entry)
-      elseif strategy == "setup_load" then
-        ok, errors = load_with_setup_load(target_entry)
-      elseif strategy == "load" then
+      if strategy_type == "setup" then
+        ok, errors = load_with_setup(target_entry)
+      elseif strategy_type == "load" then
         ok, errors = load_with_load(target_entry)
-      elseif strategy == "vimg_colorscheme" then
-        ok, errors = load_with_vimg_colorscheme(target_entry)
+      elseif strategy_type == "file" then
+        ok, errors = load_with_file(target_entry)
       else
-        ok, errors = load_with_colorscheme_only(target_entry)
+        ok, errors = load_with_colorscheme(target_entry)
       end
 
-      return build_result(target_entry, strategy, ok, errors)
+      return build_result(target_entry, strategy_type, ok, errors)
     end,
   }
 end
@@ -253,7 +277,7 @@ function M.load_theme(theme_name, variant, opts)
       ok = false,
       name = theme_name,
       variant = variant,
-      strategy = "colorscheme_only",
+      strategy = "colorscheme",
       colorscheme = nil,
       fallback = false,
       errors = {
@@ -277,7 +301,7 @@ function M.get_theme_status(theme_name)
   if not entry then
     return {
       installed = false,
-      adapter_type = "colorscheme_only",
+      adapter_type = "colorscheme",
       variants = nil,
     }
   end
@@ -292,7 +316,7 @@ function M.get_theme_status(theme_name)
 
   return {
     installed = false,
-    adapter_type = resolve_strategy(entry),
+    adapter_type = resolve_strategy_type(entry),
     variants = #variants > 0 and variants or nil,
   }
 end

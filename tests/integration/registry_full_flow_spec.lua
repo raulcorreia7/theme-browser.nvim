@@ -89,7 +89,7 @@ describe("Integration: full registry flow", function()
 
   it("iterates preview/use across full local registry without lua errors", function()
     local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-    local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+    local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
     local tb = require(module_name)
     tb.setup({
@@ -109,9 +109,12 @@ describe("Integration: full registry flow", function()
 
     local notify_calls = 0
     local orig_notify = vim.notify
-    vim.notify = function(...)
-      notify_calls = notify_calls + 1
-      return orig_notify(...)
+    vim.notify = function(msg, level, opts)
+      opts = opts or {}
+      if opts.title == "Theme Browser" then
+        notify_calls = notify_calls + 1
+      end
+      return orig_notify(msg, level, opts)
     end
 
     local registry = require("theme-browser.adapters.registry")
@@ -209,7 +212,7 @@ describe("Integration: full registry flow", function()
 
     it("validates all tokyonight variants exist in registry", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -248,7 +251,7 @@ describe("Integration: full registry flow", function()
 
     it("validates all catppuccin variants exist in registry", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -277,7 +280,7 @@ describe("Integration: full registry flow", function()
 
     it("validates all kanagawa variants exist in registry", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -306,7 +309,7 @@ describe("Integration: full registry flow", function()
 
     it("validates all gruvbox variants exist in registry", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -335,7 +338,7 @@ describe("Integration: full registry flow", function()
 
     it("validates all onedark variants exist in registry", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -364,7 +367,7 @@ describe("Integration: full registry flow", function()
 
     it("generates test report for all top 5 themes", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -402,7 +405,7 @@ describe("Integration: full registry flow", function()
   describe("Theme Entry Resolution", function()
     it("correctly resolves theme entries by various identifiers", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({
@@ -427,7 +430,7 @@ describe("Integration: full registry flow", function()
 
     it("lists all entries for top 5 themes correctly", function()
       local plugin_root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
-      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry/themes.json", ":p")
+      local registry_path = vim.fn.fnamemodify(plugin_root .. "../theme-browser-registry-ts/artifacts/themes.json", ":p")
 
       local tb = require(module_name)
       tb.setup({

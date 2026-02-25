@@ -10,7 +10,7 @@ Neovim theme gallery and loader. Browse, preview, apply, and persist themes.
 -- ~/.config/nvim/lua/plugins/theme-browser.lua
 return {
   {
-    "rcorreia/theme-browser.nvim",
+    "raulcorreia7/theme-browser.nvim",
     event = "VeryLazy",
     dependencies = { "rktjmp/lush.nvim" },
     opts = {
@@ -115,6 +115,10 @@ See [docs/architecture.md](docs/architecture.md) for layer details.
 ```bash
 make verify
 ```
+
+## Related
+
+- [theme-browser-registry](https://github.com/raulcorreia7/theme-browser-registry) — Theme registry indexer
 
 ## License
 

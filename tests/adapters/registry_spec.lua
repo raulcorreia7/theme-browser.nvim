@@ -26,8 +26,11 @@ describe("theme-browser.adapters.registry", function()
     registry.initialize(path)
     local entries = registry.list_entries()
 
-    assert.equals(3, #entries)
+    -- Base entry excluded when variants exist - only variants shown
+    assert.equals(2, #entries)
+    -- When no variant requested, returns first variant
     assert.is_not_nil(registry.resolve("tokyonight", nil))
+    assert.equals("tokyonight-night", registry.resolve("tokyonight", nil).variant)
     assert.is_not_nil(registry.resolve("tokyonight", "tokyonight-night"))
     assert.is_not_nil(registry.resolve("tokyonight", "tokyonight-storm"))
   end)

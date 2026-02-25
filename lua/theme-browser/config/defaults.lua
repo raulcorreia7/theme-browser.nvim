@@ -79,6 +79,7 @@ local M = {
     goto_bottom = { "G" },
     search = { "/" },
     clear_search = { "c" },
+    copy_repo = { "Y" },
   },
 }
 
