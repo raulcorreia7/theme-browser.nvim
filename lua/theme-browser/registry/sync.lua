@@ -2,8 +2,8 @@ local M = {}
 
 local log = require("theme-browser.util.log")
 
-local DEFAULT_REGISTRY_URL = "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/themes-top-50.json"
-local DEFAULT_MANIFEST_URL = "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/manifest.json"
+local DEFAULT_REGISTRY_URL = "https://github.com/raulcorreia7/theme-browser-monorepo/releases/latest/download/themes-top-50.json"
+local DEFAULT_MANIFEST_URL = "https://github.com/raulcorreia7/theme-browser-monorepo/releases/latest/download/manifest.json"
 local CACHE_FILENAME = "registry-top.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
 
