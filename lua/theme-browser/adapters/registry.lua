@@ -67,7 +67,7 @@ local function clone_theme(theme)
   return vim.deepcopy(theme)
 end
 
-local function make_entry(theme, variant, colorscheme, display, extra_meta)
+local function make_entry(theme, variant, colorscheme, display, extra_meta, mode)
   local entry = {
     id = variant and string.format("%s:%s", theme.name, variant) or theme.name,
     name = theme.name,
@@ -77,6 +77,10 @@ local function make_entry(theme, variant, colorscheme, display, extra_meta)
     colorscheme = colorscheme,
     meta = vim.tbl_extend("force", theme.meta or {}, extra_meta or {}),
   }
+
+  if mode then
+    entry.mode = mode
+  end
 
   if theme.builtin then
     entry.builtin = true
@@ -122,7 +126,7 @@ local function expand_theme(theme)
       if type(colorscheme) == "string" and colorscheme ~= "" then
         local variant = variant_def.variant or variant_def.name or colorscheme
         local display = variant_def.name or colorscheme
-        add_entry(make_entry(theme, variant, colorscheme, display, variant_def.meta))
+        add_entry(make_entry(theme, variant, colorscheme, display, variant_def.meta, variant_def.mode))
       end
     end
   end

@@ -17,6 +17,9 @@ local function entry_background(entry)
   if type(meta.opts_o) == "table" and (meta.opts_o.background == "light" or meta.opts_o.background == "dark") then
     return meta.opts_o.background
   end
+  if entry.mode == "light" or entry.mode == "dark" then
+    return entry.mode
+  end
   return "dark"
 end
 
@@ -60,13 +63,8 @@ local function format_entry(theme_entry, snapshot)
   end
   
   -- Background indicator (dark/light)
-  local bg_icon = "◐"
   local bg = entry_background(theme_entry)
-  if bg == "dark" then
-    bg_icon = "◑"
-  elseif bg == "light" then
-    bg_icon = "◐"
-  end
+  local bg_icon = bg == "light" and "◐" or "◑"
   
   -- Theme name and variant
   local name = theme_entry.name
