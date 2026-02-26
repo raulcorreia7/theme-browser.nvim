@@ -41,6 +41,7 @@ jobs:
         with:
           version: latest
           token: ${{ secrets.GITHUB_TOKEN }}
+          args: lua
       
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1
