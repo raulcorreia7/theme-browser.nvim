@@ -17,6 +17,8 @@ files["tests/**/*.lua"] = {
 }
 
 ignore = {
+  "211", -- unused variable
   "212", -- unused argument
   "213", -- unused loop variable
+  "612", -- line contains only whitespace
 }
