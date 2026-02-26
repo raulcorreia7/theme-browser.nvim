@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.1.0-alpha)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      
+      - name: Setup Lua
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: '5.1'
+      
+      - name: Setup LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+      
+      - name: Install luacheck
+        run: luarocks install luacheck
+      
+      - name: Setup StyLua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          version: latest
+      
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      
+      - name: Install plenary.nvim
+        run: |
+          mkdir -p .ci
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim .ci/plenary.nvim
+      
+      - name: Run verify
+        run: make verify
+        env:
+          CI: true
+          PLENARY_RTP: ${{ github.workspace }}/.ci/plenary.nvim
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.version }}" \
+            --title "${{ steps.version.outputs.version }}" \
+            --generate-notes

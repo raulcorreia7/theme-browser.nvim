@@ -1,0 +1,231 @@
+name: E2E Integration
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+      
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      
+      - name: Create test Neovim config
+        run: |
+          mkdir -p ~/.local/share/nvim
+          mkdir -p ~/.local/state/nvim
+          mkdir -p ~/.cache/nvim
+          
+          cat > ~/.local/share/nvim/site/pack/plugins/start/plenary.nvim << 'EOF'
+          EOF
+          
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ~/.local/share/nvim/site/pack/plugins/start/plenary.nvim
+          
+          mkdir -p ~/.local/share/nvim/site/pack/plugins/start
+          ln -s $(pwd) ~/.local/share/nvim/site/pack/plugins/start/theme-browser.nvim
+      
+      - name: Setup Lazy.nvim
+        run: |
+          git clone --depth 1 https://github.com/folke/lazy.nvim ~/.local/share/nvim/site/pack/plugins/start/lazy.nvim
+      
+      - name: Create minimal init.lua for testing
+        run: |
+          mkdir -p ~/.config/nvim
+          cat > ~/.config/nvim/init.lua << 'EOF'
+          vim.opt.runtimepath:prepend(vim.fn.stdpath("data") .. "/site/pack/plugins/start/plenary.nvim")
+          vim.opt.runtimepath:prepend(vim.fn.stdpath("data") .. "/site/pack/plugins/start/theme-browser.nvim")
+          
+          require("theme-browser").setup({
+            auto_load = false,
+            startup = { enabled = false },
+            package_manager = {
+              enabled = false,
+            },
+          })
+          EOF
+      
+      - name: Verify plugin loads without errors
+        run: |
+          nvim --headless -c "lua print('Neovim started')" -c "lua print(vim.fn.stdpath('config'))" -c "q" 2>&1
+          
+          nvim --headless -c "
+            local ok, err = pcall(require, 'theme-browser')
+            if not ok then
+              print('Failed to load theme-browser: ' .. tostring(err))
+              vim.cmd('q!')
+              os.exit(1)
+            end
+            print('theme-browser loaded successfully')
+            vim.cmd('q!')
+          " 2>&1
+      
+      - name: Run registry adapter tests
+        run: |
+          nvim --headless -c "
+            local ok, err = pcall(function()
+              local registry = require('theme-browser.adapters.registry')
+              local entries = registry.list_entries()
+              print('Registry entries count: ' .. #entries)
+              assert(#entries > 0, 'Registry should have entries')
+              print('Registry adapter test passed')
+            end)
+            if not ok then
+              print('Test failed: ' .. tostring(err))
+              vim.cmd('cq')
+            else
+              vim.cmd('q!')
+            end
+          " 2>&1
+      
+      - name: Run theme resolution tests
+        run: |
+          nvim --headless -c "
+            local ok, err = pcall(function()
+              local registry = require('theme-browser.adapters.registry')
+              
+              local theme = registry.get_theme('tokyonight')
+              assert(theme ~= nil, 'tokyonight should exist')
+              assert(theme.repo == 'folke/tokyonight.nvim', 'tokyonight repo should match')
+              
+              local entry = registry.resolve('tokyonight', 'tokyonight-night')
+              assert(entry ~= nil, 'tokyonight-night should resolve')
+              
+              print('Theme resolution test passed')
+            end)
+            if not ok then
+              print('Test failed: ' .. tostring(err))
+              vim.cmd('cq')
+            else
+              vim.cmd('q!')
+            end
+          " 2>&1
+      
+      - name: Run theme service tests
+        run: |
+          nvim --headless -c "
+            local ok, err = pcall(function()
+              local service = require('theme-browser.application.theme_service')
+              
+              local ok_preview = pcall(service.preview, 'tokyonight', 'tokyonight-night', {
+                notify = false,
+                install_missing = false,
+              })
+              assert(ok_preview, 'Preview should not throw errors')
+              
+              print('Theme service test passed')
+            end)
+            if not ok then
+              print('Test failed: ' .. tostring(err))
+              vim.cmd('cq')
+            else
+              vim.cmd('q!')
+            end
+          " 2>&1
+      
+      - name: Run bundled registry test
+        run: |
+          nvim --headless -c "
+            local ok, err = pcall(function()
+              local bundled_path = vim.fn.stdpath('data') .. '/site/pack/plugins/start/theme-browser.nvim/lua/theme-browser/data/registry.json'
+              local file = io.open(bundled_path, 'r')
+              assert(file ~= nil, 'Bundled registry.json should exist')
+              local content = file:read('*a')
+              file:close()
+              
+              local data = vim.json.decode(content)
+              assert(#data > 0, 'Bundled registry should have entries')
+              assert(#data == 50, 'Bundled registry should have exactly 50 themes')
+              
+              print('Bundled registry test passed: ' .. #data .. ' themes')
+            end)
+            if not ok then
+              print('Test failed: ' .. tostring(err))
+              vim.cmd('cq')
+            else
+              vim.cmd('q!')
+            end
+          " 2>&1
+
+  e2e-with-lazy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: theme-browser.nvim
+      
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+      
+      - name: Setup Lazy.nvim bootstrap
+        run: |
+          mkdir -p ~/.local/share/nvim
+          mkdir -p ~/.local/state/nvim
+          mkdir -p ~/.cache/nvim
+          
+          mkdir -p ~/.config/nvim
+          cat > ~/.config/nvim/init.lua << 'EOF'
+          local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+          if not vim.loop.fs_stat(lazypath) then
+            vim.fn.system({
+              "git",
+              "clone",
+              "--filter=blob:none",
+              "https://github.com/folke/lazy.nvim.git",
+              "--branch=stable",
+              lazypath,
+            })
+          end
+          vim.opt.runtimepath:prepend(lazypath)
+          
+          require("lazy").setup({
+            {
+              "${{ github.repository }}",
+              path = vim.fn.getcwd() .. "/theme-browser.nvim",
+              config = function()
+                require("theme-browser").setup({
+                  auto_load = false,
+                  startup = { enabled = false },
+                })
+              end,
+            },
+          }, {
+            dev = {
+              path = vim.fn.getcwd(),
+              patterns = { "${{ github.repository_owner }}" },
+            },
+          })
+          EOF
+      
+      - name: Install plugins via Lazy
+        run: |
+          cd /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+          nvim --headless -c "Lazy! sync" -c "q" 2>&1
+      
+      - name: Test plugin with Lazy
+        run: |
+          cd /home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+          nvim --headless -c "
+            local ok, err = pcall(require, 'theme-browser')
+            if not ok then
+              print('Failed to load: ' .. tostring(err))
+              vim.cmd('cq')
+            else
+              print('Loaded via Lazy successfully')
+              vim.cmd('q!')
+            end
+          " 2>&1

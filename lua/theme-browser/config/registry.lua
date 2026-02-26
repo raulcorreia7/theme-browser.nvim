@@ -14,7 +14,7 @@ local function file_exists(path)
 end
 
 local function bundled_registry_path(root)
-  return root .. "/lua/theme-browser/data/registry.json"
+  return root .. "/lua/theme-browser/data/themes-top-50.json"
 end
 
 local function synced_registry_path()
