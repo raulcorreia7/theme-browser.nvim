@@ -82,7 +82,7 @@ function M.run(opts)
   local service = require("theme-browser.application.theme_service")
 
   local entries = registry.list_entries()
-  
+
   -- Filter to max 50 entries if sample requested
   if opts.sample_size and opts.sample_size > 0 then
     local limited = {}
@@ -91,7 +91,7 @@ function M.run(opts)
     end
     entries = limited
   end
-  
+
   local report = {
     started_at_ms = now_ms(),
     output_path = output_path,
@@ -111,7 +111,7 @@ function M.run(opts)
       total_install_ms = 0,
       total_preview_ms = 0,
       total_use_ms = 0,
-    }
+    },
   }
 
   local original_notify = vim.notify
@@ -224,7 +224,7 @@ function M.run(opts)
   report.ended_at_ms = now_ms()
   report.duration_ms = report.ended_at_ms - report.started_at_ms
   report.ok = report.fail_count == 0 and report.notify_count == 0 and ok_run
-  
+
   -- Calculate averages
   if #entries > 0 then
     report.timing.avg_install_ms = math.floor(report.timing.total_install_ms / #entries)

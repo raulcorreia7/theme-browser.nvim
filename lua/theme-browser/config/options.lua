@@ -171,7 +171,9 @@ local function validate_nested_value(parent_key, key, value, default_value)
 
   if parent_key == "package_manager" and key == "mode" then
     if type(value) ~= "string" or not package_manager_modes[value] then
-      notify_warn(string.format("Invalid value for %s: expected auto|manual|installed_only; keeping default", keypath))
+      notify_warn(
+        string.format("Invalid value for %s: expected auto|manual|installed_only; keeping default", keypath)
+      )
       return default_value
     end
     return value
@@ -211,7 +213,15 @@ local function normalize_nested(parent_key, user_value, default_value)
     local value = user_value[key]
     if value ~= nil then
       if not matches_type(value, schema[key]) then
-        notify_warn(string.format("Invalid type for %s.%s: expected %s, got %s", parent_key, key, schema[key], type(value)))
+        notify_warn(
+          string.format(
+            "Invalid type for %s.%s: expected %s, got %s",
+            parent_key,
+            key,
+            schema[key],
+            type(value)
+          )
+        )
       else
         normalized[key] = validate_nested_value(parent_key, key, value, default_value[key])
       end
@@ -256,7 +266,9 @@ function M.validate(user_config)
     if value ~= nil then
       if scalar_schema[key] then
         if not matches_type(value, scalar_schema[key]) then
-          notify_warn(string.format("Invalid type for %s: expected %s, got %s", key, scalar_schema[key], type(value)))
+          notify_warn(
+            string.format("Invalid type for %s: expected %s, got %s", key, scalar_schema[key], type(value))
+          )
         else
           validated[key] = value
         end

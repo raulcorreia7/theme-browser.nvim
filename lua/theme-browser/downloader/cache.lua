@@ -3,7 +3,8 @@ local M = {}
 local has_plenary_path, _ = pcall(require, "plenary.path")
 
 local cache_meta = vim.fn.stdpath("cache") .. "/theme-browser/meta.json"
-local cache_dir = has_plenary_path and require("plenary.path"):new(cache_meta):parent().filename or vim.fn.fnamemodify(cache_meta, ":h")
+local cache_dir = has_plenary_path and require("plenary.path"):new(cache_meta):parent().filename
+  or vim.fn.fnamemodify(cache_meta, ":h")
 local update_meta
 local cleanup_defaults = {
   auto_cleanup = true,
@@ -59,7 +60,11 @@ function M.clear_all(opts)
   else
     local err = ok and string.format("delete returned %s", tostring(result)) or tostring(result)
     if notify_enabled then
-      vim.notify(string.format("Failed to clear cache: %s", err), vim.log.levels.ERROR, { title = "Theme Browser" })
+      vim.notify(
+        string.format("Failed to clear cache: %s", err),
+        vim.log.levels.ERROR,
+        { title = "Theme Browser" }
+      )
     end
     return false, err
   end
@@ -111,7 +116,7 @@ function M.maybe_cleanup(opts)
   local notify_enabled = opts.notify == true
   local policy = read_cache_config()
 
-  if (not force) and (not policy.auto_cleanup) then
+  if (not force) and not policy.auto_cleanup then
     return false, "disabled"
   end
 
@@ -139,9 +144,13 @@ function M.maybe_cleanup(opts)
     if ok then
       vim.notify("Theme cache weekly cleanup complete", vim.log.levels.INFO, { title = "Theme Browser" })
     else
-      vim.notify(string.format("Theme cache cleanup failed: %s", err or "unknown error"), vim.log.levels.WARN, {
-        title = "Theme Browser",
-      })
+      vim.notify(
+        string.format("Theme cache cleanup failed: %s", err or "unknown error"),
+        vim.log.levels.WARN,
+        {
+          title = "Theme Browser",
+        }
+      )
     end
   end
 

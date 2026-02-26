@@ -111,16 +111,26 @@ function M.render(session, state_mod, set_cursor_to_selected)
     session.selected_idx = 1
   else
     session.row_offset = 2
-    table.insert(lines, 
-      fit("Theme", name_width) .. " " .. 
-      fit("Variant", variant_width) .. " " .. 
-      fit("Mode", mode_width) .. " " .. 
-      "Status")
-    table.insert(lines, 
-      string.rep("-", name_width) .. " " .. 
-      string.rep("-", variant_width) .. " " .. 
-      string.rep("-", mode_width) .. " " .. 
-      string.rep("-", status_width))
+    table.insert(
+      lines,
+      fit("Theme", name_width)
+        .. " "
+        .. fit("Variant", variant_width)
+        .. " "
+        .. fit("Mode", mode_width)
+        .. " "
+        .. "Status"
+    )
+    table.insert(
+      lines,
+      string.rep("-", name_width)
+        .. " "
+        .. string.rep("-", variant_width)
+        .. " "
+        .. string.rep("-", mode_width)
+        .. " "
+        .. string.rep("-", status_width)
+    )
 
     for _, entry in ipairs(session.filtered_entries) do
       local variant = entry.variant or "default"
@@ -129,11 +139,13 @@ function M.render(session, state_mod, set_cursor_to_selected)
       local badges, tokens = format_state_badges(states)
       local state_col = name_width + variant_width + mode_width + 3
       local display_name = string.format("[%s]", entry.name)
-      local line = string.format("%s %s %s %s", 
-        fit(display_name, name_width), 
-        fit(variant, variant_width), 
-        fit(mode_icon, mode_width), 
-        badges)
+      local line = string.format(
+        "%s %s %s %s",
+        fit(display_name, name_width),
+        fit(variant, variant_width),
+        fit(mode_icon, mode_width),
+        badges
+      )
       table.insert(lines, line)
       table.insert(line_meta, {
         row = #lines,
@@ -167,11 +179,21 @@ function M.render(session, state_mod, set_cursor_to_selected)
     vim.api.nvim_buf_add_highlight(session.bufnr, session.ns, meta.hl, meta.row - 1, meta.state_col, -1)
   end
 
-  if #session.filtered_entries > 0 and session.selected_idx >= 1 and session.selected_idx <= #session.filtered_entries then
-    vim.api.nvim_buf_set_extmark(session.bufnr, session.ns, state_mod.index_to_row(session, session.selected_idx) - 1, 0, {
-      line_hl_group = "ThemeBrowserRowSelected",
-      priority = 100,
-    })
+  if
+    #session.filtered_entries > 0
+    and session.selected_idx >= 1
+    and session.selected_idx <= #session.filtered_entries
+  then
+    vim.api.nvim_buf_set_extmark(
+      session.bufnr,
+      session.ns,
+      state_mod.index_to_row(session, session.selected_idx) - 1,
+      0,
+      {
+        line_hl_group = "ThemeBrowserRowSelected",
+        priority = 100,
+      }
+    )
   end
 
   vim.api.nvim_set_option_value("modifiable", false, { buf = session.bufnr })

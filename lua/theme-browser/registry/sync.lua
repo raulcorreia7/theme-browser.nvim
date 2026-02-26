@@ -2,8 +2,10 @@ local M = {}
 
 local log = require("theme-browser.util.log")
 
-local DEFAULT_REGISTRY_URL = "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/themes.json"
-local DEFAULT_MANIFEST_URL = "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/manifest.json"
+local DEFAULT_REGISTRY_URL =
+  "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/themes.json"
+local DEFAULT_MANIFEST_URL =
+  "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/manifest.json"
 local CACHE_FILENAME = "registry-full.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
 local COMPATIBLE_VERSION = "0.1"
@@ -183,11 +185,13 @@ function M.sync(opts, callback)
 
     if remote_manifest.version and not is_compatible_version(remote_manifest.version) then
       if notify then
-        log.warn(string.format(
-          "Registry version %s may be incompatible (expected %s.x)",
-          remote_manifest.version,
-          COMPATIBLE_VERSION
-        ))
+        log.warn(
+          string.format(
+            "Registry version %s may be incompatible (expected %s.x)",
+            remote_manifest.version,
+            COMPATIBLE_VERSION
+          )
+        )
       end
     end
 

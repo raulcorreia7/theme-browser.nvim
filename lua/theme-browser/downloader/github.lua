@@ -58,7 +58,7 @@ local function sanitize_error_message(msg)
   sanitized = sanitized:gsub("token=[%w%-_]+", "token=***")
   sanitized = sanitized:gsub("access_token=[%w%-_]+", "access_token=***")
   sanitized = sanitized:gsub("Authorization: token [%w%-_]+", "Authorization: token ***")
-  
+
   return sanitized
 end
 
@@ -149,7 +149,10 @@ function M.download(repo, cache_dir, callback, opts)
             cache.record_miss()
             local stderr = sanitize_error_message(table.concat(j:stderr_result(), "\n"))
             if notify_enabled then
-              notify.error(string.format("Download failed (code %d): %s", code, stderr), { title = title, theme = repo })
+              notify.error(
+                string.format("Download failed (code %d): %s", code, stderr),
+                { title = title, theme = repo }
+              )
             end
             flush_callbacks(repo, false, string.format("Download failed (code %d): %s", code, stderr))
           end
@@ -194,7 +197,10 @@ function M.download(repo, cache_dir, callback, opts)
           cache.record_miss()
           local err = sanitize_error_message(result.stderr or result.stdout or "unknown error")
           if notify_enabled then
-            notify.error(string.format("Download failed (code %d): %s", result.code, err), { title = title, theme = repo })
+            notify.error(
+              string.format("Download failed (code %d): %s", result.code, err),
+              { title = title, theme = repo }
+            )
           end
           flush_callbacks(repo, false, string.format("Download failed (code %d): %s", result.code, err))
         end

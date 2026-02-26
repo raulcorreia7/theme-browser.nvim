@@ -98,7 +98,10 @@ function M.show(theme_arg)
     local variant = selected_entry.variant or "default"
     table.insert(lines, string.format("  %s:%s", selected_entry.name, variant))
     table.insert(lines, string.format("  Repo:   %s", selected_entry.repo))
-    table.insert(lines, string.format("  States: %s", format_readable_states(state, selected_entry, snapshot)))
+    table.insert(
+      lines,
+      string.format("  States: %s", format_readable_states(state, selected_entry, snapshot))
+    )
   else
     table.insert(lines, "  (none)")
   end

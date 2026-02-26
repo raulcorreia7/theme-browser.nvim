@@ -103,11 +103,17 @@ function M.load_theme(theme_name, variant, opts)
   if result.ok then
     persist_applied_theme(result, opts, current_theme)
     local mode = opts.preview and "Preview" or "Theme"
-    maybe_notify(vim.log.levels.INFO, string.format("%s applied: %s", mode, result.colorscheme or result.name), opts)
+    maybe_notify(
+      vim.log.levels.INFO,
+      string.format("%s applied: %s", mode, result.colorscheme or result.name),
+      opts
+    )
     return result
   end
 
-  local reason = result.errors and (result.errors.runtime_error or result.errors.colorscheme_error or result.errors.not_found) or "unknown error"
+  local reason = result.errors
+      and (result.errors.runtime_error or result.errors.colorscheme_error or result.errors.not_found)
+    or "unknown error"
   if type(result.errors) ~= "table" then
     result.errors = {}
   end

@@ -24,78 +24,115 @@ describe("Integration: workflow", function()
   end
 
   local function make_registry(path, themes)
-    themes = themes or {
-      {
-        name = "tokyonight",
-        repo = "folke/tokyonight.nvim",
-        colorscheme = "tokyonight",
-        variants = {
-          { name = "tokyonight-night", colorscheme = "tokyonight-night" },
-          { name = "tokyonight-storm", colorscheme = "tokyonight-storm" },
-          { name = "tokyonight-moon", colorscheme = "tokyonight-moon" },
-          { name = "tokyonight-day", colorscheme = "tokyonight-day" },
+    themes = themes
+      or {
+        {
+          name = "tokyonight",
+          repo = "folke/tokyonight.nvim",
+          colorscheme = "tokyonight",
+          variants = {
+            { name = "tokyonight-night", colorscheme = "tokyonight-night" },
+            { name = "tokyonight-storm", colorscheme = "tokyonight-storm" },
+            { name = "tokyonight-moon", colorscheme = "tokyonight-moon" },
+            { name = "tokyonight-day", colorscheme = "tokyonight-day" },
+          },
+          meta = { strategy = "setup_colorscheme", module = "tokyonight" },
         },
-        meta = { strategy = "setup_colorscheme", module = "tokyonight" },
-      },
-      {
-        name = "catppuccin",
-        repo = "catppuccin/nvim",
-        colorscheme = "catppuccin",
-        variants = {
-          { name = "catppuccin-latte", colorscheme = "catppuccin-latte" },
-          { name = "catppuccin-frappe", colorscheme = "catppuccin-frappe" },
-          { name = "catppuccin-macchiato", colorscheme = "catppuccin-macchiato" },
-          { name = "catppuccin-mocha", colorscheme = "catppuccin-mocha" },
+        {
+          name = "catppuccin",
+          repo = "catppuccin/nvim",
+          colorscheme = "catppuccin",
+          variants = {
+            { name = "catppuccin-latte", colorscheme = "catppuccin-latte" },
+            { name = "catppuccin-frappe", colorscheme = "catppuccin-frappe" },
+            { name = "catppuccin-macchiato", colorscheme = "catppuccin-macchiato" },
+            { name = "catppuccin-mocha", colorscheme = "catppuccin-mocha" },
+          },
+          meta = { strategy = "setup_colorscheme", module = "catppuccin" },
         },
-        meta = { strategy = "setup_colorscheme", module = "catppuccin" },
-      },
-      {
-        name = "kanagawa",
-        repo = "rebelot/kanagawa.nvim",
-        colorscheme = "kanagawa",
-        variants = {
-          { name = "kanagawa-wave", colorscheme = "kanagawa-wave", meta = { adapter = "load", module = "kanagawa", args = { "wave" } } },
-          { name = "kanagawa-dragon", colorscheme = "kanagawa-dragon", meta = { adapter = "load", module = "kanagawa", args = { "dragon" } } },
-          { name = "kanagawa-lotus", colorscheme = "kanagawa-lotus", meta = { adapter = "load", module = "kanagawa", args = { "lotus" } } },
+        {
+          name = "kanagawa",
+          repo = "rebelot/kanagawa.nvim",
+          colorscheme = "kanagawa",
+          variants = {
+            {
+              name = "kanagawa-wave",
+              colorscheme = "kanagawa-wave",
+              meta = { adapter = "load", module = "kanagawa", args = { "wave" } },
+            },
+            {
+              name = "kanagawa-dragon",
+              colorscheme = "kanagawa-dragon",
+              meta = { adapter = "load", module = "kanagawa", args = { "dragon" } },
+            },
+            {
+              name = "kanagawa-lotus",
+              colorscheme = "kanagawa-lotus",
+              meta = { adapter = "load", module = "kanagawa", args = { "lotus" } },
+            },
+          },
         },
-      },
-      {
-        name = "gruvbox",
-        repo = "morhetz/gruvbox",
-        colorscheme = "gruvbox",
-        variants = {
-          { name = "gruvbox-dark", colorscheme = "gruvbox", meta = { opts_o = { background = "dark" } } },
-          { name = "gruvbox-light", colorscheme = "gruvbox", meta = { opts_o = { background = "light" } } },
+        {
+          name = "gruvbox",
+          repo = "morhetz/gruvbox",
+          colorscheme = "gruvbox",
+          variants = {
+            { name = "gruvbox-dark", colorscheme = "gruvbox", meta = { opts_o = { background = "dark" } } },
+            { name = "gruvbox-light", colorscheme = "gruvbox", meta = { opts_o = { background = "light" } } },
+          },
+          meta = { strategy = "vimg_colorscheme" },
         },
-        meta = { strategy = "vimg_colorscheme" },
-      },
-      {
-        name = "onedark",
-        repo = "navarasu/onedark.nvim",
-        colorscheme = "onedark",
-        variants = {
-          { name = "onedark_dark", colorscheme = "onedark", meta = { adapter = "setup_load", module = "onedark", opts = { style = "dark" } } },
-          { name = "onedark_darker", colorscheme = "onedark", meta = { adapter = "setup_load", module = "onedark", opts = { style = "darker" } } },
-          { name = "onedark_cool", colorscheme = "onedark", meta = { adapter = "setup_load", module = "onedark", opts = { style = "cool" } } },
-          { name = "onedark_deep", colorscheme = "onedark", meta = { adapter = "setup_load", module = "onedark", opts = { style = "deep" } } },
-          { name = "onedark_warm", colorscheme = "onedark", meta = { adapter = "setup_load", module = "onedark", opts = { style = "warm" } } },
-          { name = "onedark_warmer", colorscheme = "onedark", meta = { adapter = "setup_load", module = "onedark", opts = { style = "warmer" } } },
+        {
+          name = "onedark",
+          repo = "navarasu/onedark.nvim",
+          colorscheme = "onedark",
+          variants = {
+            {
+              name = "onedark_dark",
+              colorscheme = "onedark",
+              meta = { adapter = "setup_load", module = "onedark", opts = { style = "dark" } },
+            },
+            {
+              name = "onedark_darker",
+              colorscheme = "onedark",
+              meta = { adapter = "setup_load", module = "onedark", opts = { style = "darker" } },
+            },
+            {
+              name = "onedark_cool",
+              colorscheme = "onedark",
+              meta = { adapter = "setup_load", module = "onedark", opts = { style = "cool" } },
+            },
+            {
+              name = "onedark_deep",
+              colorscheme = "onedark",
+              meta = { adapter = "setup_load", module = "onedark", opts = { style = "deep" } },
+            },
+            {
+              name = "onedark_warm",
+              colorscheme = "onedark",
+              meta = { adapter = "setup_load", module = "onedark", opts = { style = "warm" } },
+            },
+            {
+              name = "onedark_warmer",
+              colorscheme = "onedark",
+              meta = { adapter = "setup_load", module = "onedark", opts = { style = "warmer" } },
+            },
+          },
         },
-      },
-      {
-        name = "alabaster",
-        repo = "p00f/alabaster.nvim",
-        colorscheme = "alabaster",
-        meta = { strategy = "colorscheme_only" },
-      },
-      {
-        name = "test-dep-theme",
-        repo = "test/dep-theme",
-        colorscheme = "test-dep",
-        deps = { "rktjmp/lush.nvim", "missing/dependency.nvim" },
-        meta = { strategy = "colorscheme_only" },
-      },
-    }
+        {
+          name = "alabaster",
+          repo = "p00f/alabaster.nvim",
+          colorscheme = "alabaster",
+          meta = { strategy = "colorscheme_only" },
+        },
+        {
+          name = "test-dep-theme",
+          repo = "test/dep-theme",
+          colorscheme = "test-dep",
+          deps = { "rktjmp/lush.nvim", "missing/dependency.nvim" },
+          meta = { strategy = "colorscheme_only" },
+        },
+      }
     write_file(path, { vim.json.encode(themes) })
   end
 
@@ -492,7 +529,9 @@ describe("Integration: workflow", function()
       theme_service.use("tokyonight", "tokyonight-night", { notify = false }, function()
         done1 = true
       end)
-      vim.wait(1000, function() return done1 end)
+      vim.wait(1000, function()
+        return done1
+      end)
 
       local current1 = state.get_current_theme()
       assert.equals("tokyonight", current1.name)
@@ -501,7 +540,9 @@ describe("Integration: workflow", function()
       theme_service.use("catppuccin", "catppuccin-mocha", { notify = false }, function()
         done2 = true
       end)
-      vim.wait(1000, function() return done2 end)
+      vim.wait(1000, function()
+        return done2
+      end)
 
       local current2 = state.get_current_theme()
       assert.equals("catppuccin", current2.name)

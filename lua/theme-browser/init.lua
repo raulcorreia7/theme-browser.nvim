@@ -153,7 +153,12 @@ local function complete_theme_command(arglead, cmdline)
   for _, entry in ipairs(entries) do
     if entry.name == base_name then
       local variant = entry.variant
-      if type(variant) == "string" and variant ~= "" and prefix_match(variant, arglead) and not seen[variant] then
+      if
+        type(variant) == "string"
+        and variant ~= ""
+        and prefix_match(variant, arglead)
+        and not seen[variant]
+      then
         seen[variant] = true
         table.insert(matches, variant)
       end
@@ -166,7 +171,11 @@ end
 
 local function with_package_manager_state(callback)
   local ok_state, state = pcall(require, "theme-browser.persistence.state")
-  if not ok_state or type(state.get_package_manager) ~= "function" or type(state.set_package_manager) ~= "function" then
+  if
+    not ok_state
+    or type(state.get_package_manager) ~= "function"
+    or type(state.set_package_manager) ~= "function"
+  then
     log.warn("Theme Browser package manager state is unavailable")
     return
   end
@@ -309,21 +318,25 @@ local function setup_commands()
     local output = opts.fargs[1]
     local report = soak.run({ output_path = output })
     if report.ok then
-      log.info(string.format(
-        "Validation passed: %d/%d entries, notifications=%d, report=%s",
-        report.ok_count,
-        report.total_entries,
-        report.notify_count,
-        report.output_path
-      ))
+      log.info(
+        string.format(
+          "Validation passed: %d/%d entries, notifications=%d, report=%s",
+          report.ok_count,
+          report.total_entries,
+          report.notify_count,
+          report.output_path
+        )
+      )
     else
-      log.warn(string.format(
-        "Validation failed: ok=%d fail=%d notifications=%d, report=%s",
-        report.ok_count,
-        report.fail_count,
-        report.notify_count,
-        report.output_path
-      ))
+      log.warn(
+        string.format(
+          "Validation failed: ok=%d fail=%d notifications=%d, report=%s",
+          report.ok_count,
+          report.fail_count,
+          report.notify_count,
+          report.output_path
+        )
+      )
     end
   end, {
     nargs = "?",
@@ -460,7 +473,13 @@ local function should_run_startup_restore(state)
 
   local ok_lazy_spec, lazy_spec = pcall(require, "theme-browser.persistence.lazy_spec")
   local startup = startup_config.resolve(M.config)
-  if startup.enabled and startup.write_spec and ok_lazy_spec and type(lazy_spec.has_managed_spec) == "function" and lazy_spec.has_managed_spec() then
+  if
+    startup.enabled
+    and startup.write_spec
+    and ok_lazy_spec
+    and type(lazy_spec.has_managed_spec) == "function"
+    and lazy_spec.has_managed_spec()
+  then
     return false
   end
 
@@ -481,14 +500,21 @@ function M.setup(user_config)
   local user_registry = type(user_config) == "table" and user_config.registry_path or nil
   if type(user_registry) == "string" and user_registry ~= "" and resolved_registry.source ~= "user" then
     vim.notify(
-      string.format("Configured registry_path not found: %s. Falling back to %s", user_registry, resolved_registry.path),
+      string.format(
+        "Configured registry_path not found: %s. Falling back to %s",
+        user_registry,
+        resolved_registry.path
+      ),
       vim.log.levels.WARN
     )
   end
 
   if resolved_registry.source == "missing" then
     vim.notify(
-      string.format("Theme registry not found. Tried fallback paths; expected bundled path at %s", resolved_registry.path),
+      string.format(
+        "Theme registry not found. Tried fallback paths; expected bundled path at %s",
+        resolved_registry.path
+      ),
       vim.log.levels.WARN
     )
   end

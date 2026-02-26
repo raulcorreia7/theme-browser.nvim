@@ -165,10 +165,7 @@ function M.initialize(registry_path)
 
   local file = io.open(registry_path, "r")
   if not file then
-    vim.notify(
-      string.format("Theme registry not found at: %s", registry_path),
-      vim.log.levels.WARN
-    )
+    vim.notify(string.format("Theme registry not found at: %s", registry_path), vim.log.levels.WARN)
     return
   end
 
@@ -229,9 +226,7 @@ function M.get_theme(name)
     return nil
   end
 
-  return theme_index[name]
-    or theme_index[normalize_name(name)]
-    or theme_alias_index[normalize_token(name)]
+  return theme_index[name] or theme_index[normalize_name(name)] or theme_alias_index[normalize_token(name)]
 end
 
 ---Get expanded entry by id or "theme:variant"
@@ -296,7 +291,8 @@ function M.resolve(name, variant)
     return entry
   end
 
-  local by_colorscheme = entry_index[string.format("%s:%s", theme.name, (theme.colorscheme or theme.name) .. "-" .. variant)]
+  local by_colorscheme =
+    entry_index[string.format("%s:%s", theme.name, (theme.colorscheme or theme.name) .. "-" .. variant)]
   if by_colorscheme then
     return by_colorscheme
   end
@@ -307,7 +303,9 @@ function M.resolve(name, variant)
   end
 
   for _, candidate in ipairs(entries) do
-    if candidate.name == theme.name and (candidate.variant == variant or candidate.colorscheme == variant) then
+    if
+      candidate.name == theme.name and (candidate.variant == variant or candidate.colorscheme == variant)
+    then
       return candidate
     end
   end

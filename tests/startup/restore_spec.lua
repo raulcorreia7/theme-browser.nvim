@@ -36,18 +36,14 @@ describe("theme-browser.startup.restore", function()
     vim.g.colors_name = "tokyonight-night"
 
     local restore_startup = require(module_name)
-    local should_skip = restore_startup.should_skip(
-      { startup = { skip_if_already_active = true } },
-      {
-        get_startup_theme = function()
-          return { colorscheme = "tokyonight-night" }
-        end,
-      },
-      {
-        name = "tokyonight",
-        colorscheme = "tokyonight-night",
-      }
-    )
+    local should_skip = restore_startup.should_skip({ startup = { skip_if_already_active = true } }, {
+      get_startup_theme = function()
+        return { colorscheme = "tokyonight-night" }
+      end,
+    }, {
+      name = "tokyonight",
+      colorscheme = "tokyonight-night",
+    })
 
     vim.g.colors_name = original_colors_name
     assert.is_true(should_skip)
@@ -58,18 +54,14 @@ describe("theme-browser.startup.restore", function()
     vim.g.colors_name = "tokyonight-night"
 
     local restore_startup = require(module_name)
-    local should_skip = restore_startup.should_skip(
-      { startup = { skip_if_already_active = false } },
-      {
-        get_startup_theme = function()
-          return { colorscheme = "tokyonight-night" }
-        end,
-      },
-      {
-        name = "tokyonight",
-        colorscheme = "tokyonight-night",
-      }
-    )
+    local should_skip = restore_startup.should_skip({ startup = { skip_if_already_active = false } }, {
+      get_startup_theme = function()
+        return { colorscheme = "tokyonight-night" }
+      end,
+    }, {
+      name = "tokyonight",
+      colorscheme = "tokyonight-night",
+    })
 
     vim.g.colors_name = original_colors_name
     assert.is_false(should_skip)
@@ -85,26 +77,22 @@ describe("theme-browser.startup.restore", function()
     }
 
     local restore_startup = require(module_name)
-    local restored = restore_startup.restore_current_theme(
-      { startup = { skip_if_already_active = true } },
-      {
-        get_current_theme = function()
-          return { name = "tokyonight", variant = "tokyonight-night" }
-        end,
-        get_startup_theme = function()
-          return { colorscheme = "tokyonight" }
-        end,
-      },
-      {
-        resolve = function(_, _)
-          return {
-            name = "tokyonight",
-            variant = "tokyonight-night",
-            colorscheme = "tokyonight-night",
-          }
-        end,
-      }
-    )
+    local restored = restore_startup.restore_current_theme({ startup = { skip_if_already_active = true } }, {
+      get_current_theme = function()
+        return { name = "tokyonight", variant = "tokyonight-night" }
+      end,
+      get_startup_theme = function()
+        return { colorscheme = "tokyonight" }
+      end,
+    }, {
+      resolve = function(_, _)
+        return {
+          name = "tokyonight",
+          variant = "tokyonight-night",
+          colorscheme = "tokyonight-night",
+        }
+      end,
+    })
 
     assert.is_true(restored)
     assert.is_not_nil(called)
@@ -124,26 +112,22 @@ describe("theme-browser.startup.restore", function()
     }
 
     local restore_startup = require(module_name)
-    local restored = restore_startup.restore_current_theme(
-      { startup = { skip_if_already_active = true } },
-      {
-        get_current_theme = function()
-          return { name = "tokyonight", variant = "tokyonight-night" }
-        end,
-        get_startup_theme = function()
-          return { colorscheme = "tokyonight" }
-        end,
-      },
-      {
-        resolve = function(_, _)
-          return {
-            name = "tokyonight",
-            variant = "tokyonight-night",
-            colorscheme = "tokyonight-night",
-          }
-        end,
-      }
-    )
+    local restored = restore_startup.restore_current_theme({ startup = { skip_if_already_active = true } }, {
+      get_current_theme = function()
+        return { name = "tokyonight", variant = "tokyonight-night" }
+      end,
+      get_startup_theme = function()
+        return { colorscheme = "tokyonight" }
+      end,
+    }, {
+      resolve = function(_, _)
+        return {
+          name = "tokyonight",
+          variant = "tokyonight-night",
+          colorscheme = "tokyonight-night",
+        }
+      end,
+    })
 
     assert.is_false(restored)
     assert.is_not_nil(called)
@@ -163,26 +147,22 @@ describe("theme-browser.startup.restore", function()
     }
 
     local restore_startup = require(module_name)
-    local restored = restore_startup.restore_current_theme(
-      { startup = { skip_if_already_active = true } },
-      {
-        get_current_theme = function()
-          return { name = "tokyonight", variant = "tokyonight-night" }
-        end,
-        get_startup_theme = function()
-          return { colorscheme = "tokyonight-night" }
-        end,
-      },
-      {
-        resolve = function(_, _)
-          return {
-            name = "tokyonight",
-            variant = "tokyonight-night",
-            colorscheme = "tokyonight-night",
-          }
-        end,
-      }
-    )
+    local restored = restore_startup.restore_current_theme({ startup = { skip_if_already_active = true } }, {
+      get_current_theme = function()
+        return { name = "tokyonight", variant = "tokyonight-night" }
+      end,
+      get_startup_theme = function()
+        return { colorscheme = "tokyonight-night" }
+      end,
+    }, {
+      resolve = function(_, _)
+        return {
+          name = "tokyonight",
+          variant = "tokyonight-night",
+          colorscheme = "tokyonight-night",
+        }
+      end,
+    })
 
     vim.g.colors_name = original_colors_name
     assert.is_false(restored)

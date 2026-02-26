@@ -195,7 +195,7 @@ describe("theme-browser.adapters.factory", function()
     package.loaded["fake.loadtheme"] = {
       load = function(...)
         calls.load = calls.load + 1
-        load_args = {...}
+        load_args = { ... }
       end,
     }
 

@@ -185,5 +185,4 @@ describe("theme-browser.ui.gallery search", function()
     press("<Esc>")
     assert.is_false(gallery.is_open())
   end)
-
 end)

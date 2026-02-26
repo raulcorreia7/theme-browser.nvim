@@ -12,7 +12,8 @@ function M.filter_entries(all_entries, query)
     local variant = entry.variant or "default"
     local id = string.format("%s:%s", entry.name, variant)
 
-    if entry.name:lower():find(lowered, 1, true)
+    if
+      entry.name:lower():find(lowered, 1, true)
       or variant:lower():find(lowered, 1, true)
       or (entry.repo and entry.repo:lower():find(lowered, 1, true))
       or id:lower():find(lowered, 1, true)

@@ -66,7 +66,9 @@ local function entry_background(entry)
   if meta.background == "light" or meta.background == "dark" then
     return meta.background
   end
-  if type(meta.opts_o) == "table" and (meta.opts_o.background == "light" or meta.opts_o.background == "dark") then
+  if
+    type(meta.opts_o) == "table" and (meta.opts_o.background == "light" or meta.opts_o.background == "dark")
+  then
     return meta.opts_o.background
   end
   if entry.mode == "light" or entry.mode == "dark" then
@@ -184,11 +186,16 @@ local function install_item_async(item, done)
     finish = function() end
   end
 
-  theme_service.install(item.entry.name, item.entry.variant, { notify = false }, function(success, result, err)
-    vim.schedule(function()
-      finish(success, err)
-    end)
-  end)
+  theme_service.install(
+    item.entry.name,
+    item.entry.variant,
+    { notify = false },
+    function(success, result, err)
+      vim.schedule(function()
+        finish(success, err)
+      end)
+    end
+  )
 end
 
 function M.pick(opts)
@@ -347,7 +354,16 @@ function M.pick(opts)
     end
 
     table.insert(lines, string.rep("-", 72))
-    table.insert(lines, string.format(" %d/%d selected  showing %d-%d", #items == 0 and 0 or index, #items, #items == 0 and 0 or first, #items == 0 and 0 or last))
+    table.insert(
+      lines,
+      string.format(
+        " %d/%d selected  showing %d-%d",
+        #items == 0 and 0 or index,
+        #items,
+        #items == 0 and 0 or first,
+        #items == 0 and 0 or last
+      )
+    )
 
     vim.bo[popup.bufnr].modifiable = true
     vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
@@ -552,7 +568,10 @@ function M.pick(opts)
         end)
         apply_filter(query)
       else
-        vim.notify(string.format("Failed to install %s: %s", item.entry.name, err or "unknown error"), vim.log.levels.ERROR)
+        vim.notify(
+          string.format("Failed to install %s: %s", item.entry.name, err or "unknown error"),
+          vim.log.levels.ERROR
+        )
       end
     end)
   end)

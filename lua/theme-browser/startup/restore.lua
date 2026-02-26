@@ -3,7 +3,11 @@ local M = {}
 local startup_config = require("theme-browser.startup.config")
 
 local function target_colorscheme(entry, startup_theme)
-  if type(startup_theme) == "table" and type(startup_theme.colorscheme) == "string" and startup_theme.colorscheme ~= "" then
+  if
+    type(startup_theme) == "table"
+    and type(startup_theme.colorscheme) == "string"
+    and startup_theme.colorscheme ~= ""
+  then
     return startup_theme.colorscheme
   end
 

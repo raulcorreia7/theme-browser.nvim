@@ -146,12 +146,13 @@ local function load_with_setup(entry)
   end
 
   local ok, cs_err, applied, tried = apply_colorscheme(entry)
-  return ok, {
-    applied_colorscheme = applied,
-    tried_colorschemes = table.concat(tried or {}, ","),
-    require_error = require_err,
-    colorscheme_error = cs_err,
-  }
+  return ok,
+    {
+      applied_colorscheme = applied,
+      tried_colorschemes = table.concat(tried or {}, ","),
+      require_error = require_err,
+      colorscheme_error = cs_err,
+    }
 end
 
 local function load_with_load(entry)
@@ -182,22 +183,24 @@ local function load_with_load(entry)
   end
 
   local ok, cs_err, applied, tried = apply_colorscheme(entry)
-  return ok, {
-    applied_colorscheme = applied,
-    tried_colorschemes = table.concat(tried or {}, ","),
-    require_error = require_err,
-    colorscheme_error = cs_err,
-  }
+  return ok,
+    {
+      applied_colorscheme = applied,
+      tried_colorschemes = table.concat(tried or {}, ","),
+      require_error = require_err,
+      colorscheme_error = cs_err,
+    }
 end
 
 local function load_with_colorscheme(entry)
   apply_vim_options(entry)
   local ok, err, applied, tried = apply_colorscheme(entry)
-  return ok, {
-    applied_colorscheme = applied,
-    tried_colorschemes = table.concat(tried or {}, ","),
-    colorscheme_error = err,
-  }
+  return ok,
+    {
+      applied_colorscheme = applied,
+      tried_colorschemes = table.concat(tried or {}, ","),
+      colorscheme_error = err,
+    }
 end
 
 local function load_with_file(entry)

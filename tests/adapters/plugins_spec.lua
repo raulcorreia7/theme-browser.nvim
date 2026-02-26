@@ -15,11 +15,11 @@ describe("theme-browser.adapters.plugins", function()
       name = "everforest",
       variant = "light-soft",
       colorscheme = "everforest",
-      meta = { 
+      meta = {
         strategy = {
           type = "colorscheme",
-          vim = { o = {}, g = {} }
-        }
+          vim = { o = {}, g = {} },
+        },
       },
     })
 

@@ -33,7 +33,8 @@ local default_state = {
 local state = vim.deepcopy(default_state)
 
 local state_file = vim.fn.stdpath("data") .. "/theme-browser/state.json"
-local state_dir = has_plenary_path and require("plenary.path"):new(state_file):parent().filename or vim.fn.fnamemodify(state_file, ":h")
+local state_dir = has_plenary_path and require("plenary.path"):new(state_file):parent().filename
+  or vim.fn.fnamemodify(state_file, ":h")
 
 local save_pending = false
 

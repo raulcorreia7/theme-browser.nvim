@@ -79,7 +79,9 @@ local function can_use_package_manager()
   if not ok_pm or type(package_manager.install_theme) ~= "function" then
     return false
   end
-  if type(package_manager.can_manage_install) == "function" and not package_manager.can_manage_install(true) then
+  if
+    type(package_manager.can_manage_install) == "function" and not package_manager.can_manage_install(true)
+  then
     return false
   end
   return true
@@ -239,7 +241,10 @@ function M.use(theme_name, variant, opts, callback)
   local initial = apply_without_notify(theme_name, variant, opts)
   if initial and initial.ok then
     if opts.notify ~= false then
-      notify.info(string.format("Theme applied: %s", initial.colorscheme or initial.name or theme_name), { theme = theme_name })
+      notify.info(
+        string.format("Theme applied: %s", initial.colorscheme or initial.name or theme_name),
+        { theme = theme_name }
+      )
     end
     if type(callback) == "function" then
       callback(true, initial, nil)
@@ -249,11 +254,14 @@ function M.use(theme_name, variant, opts, callback)
 
   local conflict, conflict_names = has_conflict(theme_name, variant)
   if conflict then
-    notify.warn(string.format(
-      "Theme '%s' may conflict with built-in: %s",
-      theme_name,
-      table.concat(conflict_names, ", ")
-    ), { theme = theme_name })
+    notify.warn(
+      string.format(
+        "Theme '%s' may conflict with built-in: %s",
+        theme_name,
+        table.concat(conflict_names, ", ")
+      ),
+      { theme = theme_name }
+    )
   end
 
   ensure_managed_spec(theme_name, variant)
@@ -266,13 +274,18 @@ function M.use(theme_name, variant, opts, callback)
     vim.schedule(function()
       if success and result and result.ok then
         if opts.notify ~= false then
-          notify.info(string.format("Theme applied: %s", result.colorscheme or result.name or theme_name), { theme = theme_name })
+          notify.info(
+            string.format("Theme applied: %s", result.colorscheme or result.name or theme_name),
+            { theme = theme_name }
+          )
         end
         if type(callback) == "function" then
           callback(true, result, nil)
         end
       else
-        local reason = err or (result and result.errors and (result.errors.runtime_error or result.errors.colorscheme_error)) or "theme unavailable"
+        local reason = err
+          or (result and result.errors and (result.errors.runtime_error or result.errors.colorscheme_error))
+          or "theme unavailable"
         if opts.notify ~= false then
           notify.warn(string.format("Unable to use '%s': %s", theme_name, reason), { theme = theme_name })
         end
@@ -323,7 +336,10 @@ function M.preview(theme_name, variant, opts)
       opts.on_preview_applied(theme_name, variant)
     end
     if opts.notify ~= false then
-      notify.info(string.format("Preview applied: %s", initial.colorscheme or initial.name or theme_name), { theme = theme_name })
+      notify.info(
+        string.format("Preview applied: %s", initial.colorscheme or initial.name or theme_name),
+        { theme = theme_name }
+      )
     end
     return 0
   end
@@ -344,10 +360,15 @@ function M.preview(theme_name, variant, opts)
           opts.on_preview_applied(theme_name, variant)
         end
         if opts.notify ~= false then
-          notify.info(string.format("Preview applied: %s", result.colorscheme or result.name or theme_name), { theme = theme_name })
+          notify.info(
+            string.format("Preview applied: %s", result.colorscheme or result.name or theme_name),
+            { theme = theme_name }
+          )
         end
       else
-        local reason = err or (result and result.errors and (result.errors.colorscheme_error or result.errors.runtime_error)) or "theme unavailable"
+        local reason = err
+          or (result and result.errors and (result.errors.colorscheme_error or result.errors.runtime_error))
+          or "theme unavailable"
         if opts.notify ~= false then
           notify.warn(string.format("Preview failed: %s", reason), { theme = theme_name })
         end
