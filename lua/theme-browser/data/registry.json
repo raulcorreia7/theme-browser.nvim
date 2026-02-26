@@ -233,7 +233,7 @@
     "name": "catppuccin",
     "colorscheme": "catppuccin",
     "repo": "catppuccin/nvim",
-    "stars": 7217,
+    "stars": 7216,
     "strategy": "setup",
     "module": "catppuccin",
     "variants": [
@@ -853,7 +853,7 @@
     "name": "vim-dogrun",
     "colorscheme": "dogrun",
     "repo": "wadackel/vim-dogrun",
-    "stars": 665,
+    "stars": 664,
     "strategy": "colorscheme"
   },
   {
