@@ -3,7 +3,6 @@ SHELL := /bin/bash
 .ONESHELL:
 
 NVIM ?= nvim
-PYTHON ?= python3
 PLENARY_RTP ?=
 CI ?=
 USE_ISOLATED ?= true
@@ -16,14 +15,13 @@ all: verify
 
 setup:
 	@command -v $(NVIM) >/dev/null
-	@command -v $(PYTHON) >/dev/null
-	@printf "Environment OK (nvim + python)\n"
+	@printf "Environment OK (nvim)\n"
 
 build:
 	@printf "Nothing to build (Lua plugin)\n"
 
 lint:
-	@$(PYTHON) scripts/lint-lua.py
+	@bash scripts/lint-lua.sh
 	@if command -v luacheck >/dev/null 2>&1; then \
 		luacheck lua tests; \
 	elif [[ "$(CI)" == "1" || "$(CI)" == "true" || "$(CI)" == "TRUE" || "$(CI)" == "True" ]]; then \
@@ -77,7 +75,7 @@ test-isolated:
 	@bash scripts/test-runner.sh tests
 
 smoke:
-	@$(PYTHON) scripts/smoke.py
+	@bash scripts/smoke.sh
 
 verify: setup lint fmt-check smoke test
 

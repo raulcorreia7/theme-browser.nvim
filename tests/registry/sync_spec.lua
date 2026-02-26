@@ -2,9 +2,6 @@ describe("theme-browser.registry.sync", function()
   local module_name = "theme-browser.registry.sync"
   local sync
   local original_vim_system
-  local _schedule_queue = {}
-  local schedule_depth = 0
-  local max_depth = 100
 
   local function reload_sync()
     package.loaded[module_name] = nil
@@ -65,7 +62,6 @@ describe("theme-browser.registry.sync", function()
 
   before_each(function()
     original_vim_system = vim.system
-    _schedule_queue = {}
   end)
 
   after_each(function()
