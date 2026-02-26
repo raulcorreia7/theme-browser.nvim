@@ -2,7 +2,7 @@ describe("theme-browser.registry.sync", function()
   local module_name = "theme-browser.registry.sync"
   local sync
   local original_vim_system
-  local schedule_queue = {}
+  local _schedule_queue = {}
   local schedule_depth = 0
   local max_depth = 100
 
@@ -65,7 +65,7 @@ describe("theme-browser.registry.sync", function()
 
   before_each(function()
     original_vim_system = vim.system
-    schedule_queue = {}
+    _schedule_queue = {}
   end)
 
   after_each(function()
