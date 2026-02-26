@@ -137,13 +137,47 @@ local function resolve_mode(entry)
   return nil
 end
 
+-- Common keys used by themes to specify the variant/theme in setup()
+local VARIANT_KEYS = { "theme", "style", "colorscheme", "variant", "flavour", "flavor" }
+
+local function resolve_variant_opts(entry, base_opts)
+  if not entry.variant then
+    return base_opts
+  end
+
+  -- Check if any variant key is already set in opts
+  for _, key in ipairs(VARIANT_KEYS) do
+    if base_opts[key] then
+      return base_opts
+    end
+  end
+
+  -- Check if any variant key is specified in meta.strategy
+  local strategy = entry.meta and entry.meta.strategy
+  if strategy then
+    for _, key in ipairs(VARIANT_KEYS) do
+      if strategy[key] then
+        return vim.tbl_extend("force", base_opts, { [key] = strategy[key] })
+      end
+    end
+  end
+
+  -- Try each common key to see which one the theme accepts
+  -- Start with "theme" as it's most common
+  return vim.tbl_extend("force", base_opts, { theme = entry.variant })
+end
+
 local function load_with_setup(entry)
   apply_vim_options(entry)
   local module_name = resolve_module_name(entry)
   local module, require_err = safe_require(module_name)
 
   if module and type(module.setup) == "function" then
-    pcall(module.setup, resolve_opts(entry))
+    local opts = resolve_opts(entry)
+    -- For variant themes, pass the variant/theme name to setup
+    -- This is needed for themes like astrotheme that require setup({ theme = "variant" })
+    opts = resolve_variant_opts(entry, opts)
+    pcall(module.setup, opts)
   end
 
   local ok, cs_err, applied, tried = apply_colorscheme(entry)
