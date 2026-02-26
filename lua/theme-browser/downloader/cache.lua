@@ -162,13 +162,8 @@ function M.record_hit()
   state.increment_cache_hit()
 end
 
-function M.record_miss()
-  state.increment_cache_miss()
-end
-
 ---Increment cache miss
 function M.record_miss()
-  local state = require("theme-browser.persistence.state")
   state.increment_cache_miss()
 end
 
