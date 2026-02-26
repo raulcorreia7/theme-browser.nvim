@@ -1,6 +1,6 @@
 local M = {}
 
-local has_plenary_path, plenary_path = pcall(require, "plenary.path")
+local has_plenary_path, _ = pcall(require, "plenary.path")
 
 local cache_meta = vim.fn.stdpath("cache") .. "/theme-browser/meta.json"
 local cache_dir = has_plenary_path and require("plenary.path"):new(cache_meta):parent().filename or vim.fn.fnamemodify(cache_meta, ":h")

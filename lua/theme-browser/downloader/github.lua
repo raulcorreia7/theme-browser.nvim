@@ -30,7 +30,7 @@ local function has_git_credentials()
     return true
   end
 
-  result = vim.fn.systemlist("gh auth status 2>&1")
+  _ = vim.fn.systemlist("gh auth status 2>&1")
   if vim.v.shell_error == 0 then
     return true
   end
