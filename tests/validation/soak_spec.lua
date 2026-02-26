@@ -356,10 +356,10 @@ describe("theme-browser.validation.soak", function()
     assert.is_true(vim.fn.filereadable(checkpoint_path) ~= 1)
 
     local file = io.open(checkpoint_path, "w")
-    file:write(vim.json.encode({ 
-      last_index = 1, 
-      items = { { name = "theme-a", ok = true } }, 
-      started_at_ms = mock_time() 
+    file:write(vim.json.encode({
+      last_index = 1,
+      items = { { name = "theme-a", ok = true } },
+      started_at_ms = mock_time(),
     }))
     file:close()
 

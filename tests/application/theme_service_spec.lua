@@ -119,10 +119,15 @@ describe("theme-browser.application.theme_service", function()
     }
 
     local service = require(module_name)
-    local result = service.use("tokyonight", "tokyonight-night", { notify = false }, function(success, res, err)
-      callback_called = true
-      callback_result = { success = success, res = res, err = err }
-    end)
+    local result = service.use(
+      "tokyonight",
+      "tokyonight-night",
+      { notify = false },
+      function(success, res, err)
+        callback_called = true
+        callback_result = { success = success, res = res, err = err }
+      end
+    )
 
     assert.is_true(result.ok or result.async_pending)
 
@@ -165,10 +170,15 @@ describe("theme-browser.application.theme_service", function()
     }
 
     local service = require(module_name)
-    local result = service.use("tokyonight", "tokyonight-night", { notify = false }, function(success, res, err)
-      callback_called = true
-      callback_result = { success = success, res = res, err = err }
-    end)
+    local result = service.use(
+      "tokyonight",
+      "tokyonight-night",
+      { notify = false },
+      function(success, res, err)
+        callback_called = true
+        callback_result = { success = success, res = res, err = err }
+      end
+    )
 
     assert.is_true(result.async_pending)
 

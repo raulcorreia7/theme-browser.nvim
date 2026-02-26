@@ -110,5 +110,4 @@ describe("theme-browser.startup.persistence", function()
     assert.equals(1, startup_state_calls)
     assert.equals(1, spec_calls)
   end)
-
 end)
