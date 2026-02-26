@@ -6,6 +6,7 @@ local DEFAULT_REGISTRY_URL = "https://github.com/raulcorreia7/theme-browser-regi
 local DEFAULT_MANIFEST_URL = "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/manifest.json"
 local CACHE_FILENAME = "registry-full.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
+local COMPATIBLE_VERSION = "0.1"
 
 local function get_cache_dir()
   local ok_tb, tb = pcall(require, "theme-browser")
@@ -111,6 +112,17 @@ local function is_fresh_manifest(cached_manifest, remote_manifest)
   return false
 end
 
+local function is_compatible_version(version)
+  if type(version) ~= "string" then
+    return true
+  end
+  local major_minor = version:match("^(%d+%.%d+)")
+  if not major_minor then
+    return true
+  end
+  return major_minor == COMPATIBLE_VERSION
+end
+
 function M.get_synced_registry_path()
   local cached = get_cached_registry_path()
   if vim.fn.filereadable(cached) == 1 then
@@ -167,6 +179,16 @@ function M.sync(opts, callback)
         callback(false, "invalid manifest")
       end
       return
+    end
+
+    if remote_manifest.version and not is_compatible_version(remote_manifest.version) then
+      if notify then
+        log.warn(string.format(
+          "Registry version %s may be incompatible (expected %s.x)",
+          remote_manifest.version,
+          COMPATIBLE_VERSION
+        ))
+      end
     end
 
     if not force and is_fresh_manifest(cached_manifest, remote_manifest) then
