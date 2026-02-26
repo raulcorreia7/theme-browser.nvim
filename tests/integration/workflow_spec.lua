@@ -412,54 +412,6 @@ describe("Integration: workflow", function()
       assert.is_false(callback_result.success)
     end)
 
-    pending("handles theme with missing dependencies", function()
-      local registry_path = temp_root .. "/registry.json"
-      make_registry(registry_path)
-
-      local state = require("theme-browser.persistence.state")
-      state.initialize({ package_manager = { enabled = true, mode = "manual" } })
-
-      local registry = require("theme-browser.adapters.registry")
-      registry.initialize(registry_path)
-
-      local dep_checked = false
-      package.loaded["theme-browser.adapters.base"] = {
-        load_theme = function(name, variant, opts)
-          if name == "test-dep-theme" then
-            dep_checked = true
-            return {
-              ok = false,
-              errors = { runtime_error = "Missing required dependency: missing/dependency.nvim" },
-            }
-          end
-          return { ok = true, name = name, variant = variant }
-        end,
-      }
-
-      mock_package_manager()
-
-      local theme = registry.get_theme("test-dep-theme")
-      assert.is_not_nil(theme)
-      assert.is_not_nil(theme.deps)
-      assert.is_true(#theme.deps > 0)
-
-      local theme_service = require("theme-browser.application.theme_service")
-      local callback_called = false
-      local callback_result = nil
-      theme_service.use("test-dep-theme", nil, { notify = false }, function(success, res, err)
-        callback_called = true
-        callback_result = { success = success, res = res, err = err }
-      end)
-
-      vim.wait(1000, function()
-        return callback_called
-      end)
-
-      assert.is_true(callback_called)
-      assert.is_false(callback_result.success)
-      assert.is_true(dep_checked)
-    end)
-
     it("handles network failure during install gracefully", function()
       local registry_path = temp_root .. "/registry.json"
       make_registry(registry_path)
