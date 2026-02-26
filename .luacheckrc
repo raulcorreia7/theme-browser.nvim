@@ -1,6 +1,7 @@
 std = "max+busted"
 globals = {
   "vim",
+  "_",
 }
 
 files["tests/**/*.lua"] = {

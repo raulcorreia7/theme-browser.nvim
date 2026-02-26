@@ -231,6 +231,7 @@ function M.pick(opts)
   local last_cursor_move_time = 0
   local keymaps = get_keymaps()
   local hint_popup = nil
+  local popup = nil
 
   local function close_popups()
     if hint_popup then
@@ -270,7 +271,7 @@ function M.pick(opts)
     )
   end
 
-  local popup = Popup({
+  popup = Popup({
     enter = true,
     focusable = true,
     border = {

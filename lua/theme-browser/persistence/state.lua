@@ -1,6 +1,6 @@
 local M = {}
 
-local has_plenary_path, plenary_path = pcall(require, "plenary.path")
+local has_plenary_path, _ = pcall(require, "plenary.path")
 
 local default_state = {
   current_theme = nil,

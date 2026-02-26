@@ -1,6 +1,6 @@
 local M = {}
 
-local has_telescope, telescope = pcall(require, "telescope")
+local has_telescope, _ = pcall(require, "telescope")
 local has_fzf, fzf_lua = pcall(require, "fzf-lua")
 
 local registry = require("theme-browser.adapters.registry")
@@ -76,7 +76,6 @@ local function format_entry(theme_entry, snapshot)
   
   -- Variant count indicator
   local variant_count = ""
-  variant_count = ""
   
   return {
     status_icon = status_icon,
