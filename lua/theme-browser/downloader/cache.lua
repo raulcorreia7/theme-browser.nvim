@@ -5,6 +5,7 @@ local has_plenary_path, _ = pcall(require, "plenary.path")
 local cache_meta = vim.fn.stdpath("cache") .. "/theme-browser/meta.json"
 local cache_dir = has_plenary_path and require("plenary.path"):new(cache_meta):parent().filename
   or vim.fn.fnamemodify(cache_meta, ":h")
+local state = require("theme-browser.persistence.state")
 local update_meta
 local cleanup_defaults = {
   auto_cleanup = true,
@@ -73,7 +74,6 @@ end
 ---Get cache statistics
 ---@return table {hits, misses}
 function M.get_stats()
-  local state = require("theme-browser.persistence.state")
   return state.get_cache_stats()
 end
 
@@ -159,8 +159,11 @@ end
 
 ---Increment cache hit
 function M.record_hit()
-  local state = require("theme-browser.persistence.state")
   state.increment_cache_hit()
+end
+
+function M.record_miss()
+  state.increment_cache_miss()
 end
 
 ---Increment cache miss

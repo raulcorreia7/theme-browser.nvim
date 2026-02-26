@@ -1,6 +1,7 @@
 local M = {}
 
 local log = require("theme-browser.util.notify")
+local factory = require("theme-browser.adapters.factory")
 local package_manager = require("theme-browser.package_manager.manager")
 local runtime_loader = require("theme-browser.runtime.loader")
 local startup_persistence = require("theme-browser.startup.persistence")
@@ -72,7 +73,6 @@ end
 ---@param theme_name string
 ---@return table {installed: boolean, variants: string[]|nil}
 function M.get_status(theme_name)
-  local factory = require("theme-browser.adapters.factory")
   return factory.get_theme_status(theme_name)
 end
 
@@ -97,7 +97,6 @@ function M.load_theme(theme_name, variant, opts)
 
   local _, attach_err = runtime_loader.attach_cached_runtime(theme_name, variant)
 
-  local factory = require("theme-browser.adapters.factory")
   local result = factory.load_theme(theme_name, variant)
 
   if result.ok then

@@ -1,5 +1,6 @@
 local M = {}
 local plugin_adapters = require("theme-browser.adapters.plugins")
+local registry = require("theme-browser.adapters.registry")
 
 local STRATEGIES = {
   colorscheme = true,
@@ -271,7 +272,6 @@ function M.get_adapter(entry)
 end
 
 function M.load_theme(theme_name, variant)
-  local registry = require("theme-browser.adapters.registry")
   local entry = registry.resolve(theme_name, variant)
 
   if not entry then
@@ -298,7 +298,6 @@ function M.preview_theme(theme_name, variant)
 end
 
 function M.get_theme_status(theme_name)
-  local registry = require("theme-browser.adapters.registry")
   local entry = registry.resolve(theme_name)
   if not entry then
     return {

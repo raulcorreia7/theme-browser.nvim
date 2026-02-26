@@ -2,6 +2,7 @@ local M = {}
 local inflight = {}
 
 local notify = require("theme-browser.util.notify")
+local cache = require("theme-browser.downloader.cache")
 
 local function queue_callback(repo, callback)
   if not inflight[repo] then
@@ -133,14 +134,12 @@ function M.download(repo, cache_dir, callback, opts)
           end
 
           if code == 0 then
-            local cache = require("theme-browser.downloader.cache")
             cache.record_hit()
             if notify_enabled then
               notify.info(string.format("Downloaded: %s", repo), { title = title, theme = repo })
             end
             flush_callbacks(repo, true, nil)
           else
-            local cache = require("theme-browser.downloader.cache")
             cache.record_miss()
             local stderr = sanitize_error_message(table.concat(j:stderr_result(), "\n"))
             if notify_enabled then
@@ -181,14 +180,12 @@ function M.download(repo, cache_dir, callback, opts)
         end
 
         if result.code == 0 then
-          local cache = require("theme-browser.downloader.cache")
           cache.record_hit()
           if notify_enabled then
             notify.info(string.format("Downloaded: %s", repo), { title = title, theme = repo })
           end
           flush_callbacks(repo, true, nil)
         else
-          local cache = require("theme-browser.downloader.cache")
           cache.record_miss()
           local err = sanitize_error_message(result.stderr or result.stdout or "unknown error")
           if notify_enabled then
@@ -205,11 +202,9 @@ function M.download(repo, cache_dir, callback, opts)
     local output = vim.fn.system(vim.list_extend({ "git" }, clone_args))
 
     if vim.v.shell_error ~= 0 then
-      local cache = require("theme-browser.downloader.cache")
       cache.record_miss()
       flush_callbacks(repo, false, sanitize_error_message(output))
     else
-      local cache = require("theme-browser.downloader.cache")
       cache.record_hit()
       flush_callbacks(repo, true, nil)
     end
