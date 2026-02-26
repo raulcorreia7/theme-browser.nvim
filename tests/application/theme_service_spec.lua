@@ -303,10 +303,6 @@ describe("theme-browser.application.theme_service", function()
         end
       end
 
-      finally(function()
-        vim.notify = original_notify
-      end)
-
       package.loaded["theme-browser.adapters.base"] = {
         load_theme = function()
           return { ok = false, errors = { runtime_error = "not found" } }
@@ -344,6 +340,8 @@ describe("theme-browser.application.theme_service", function()
           break
         end
       end
+
+      vim.notify = original_notify
       assert.is_true(found_conflict_warning)
     end)
 
@@ -355,10 +353,6 @@ describe("theme-browser.application.theme_service", function()
           table.insert(warnings, msg)
         end
       end
-
-      finally(function()
-        vim.notify = original_notify
-      end)
 
       package.loaded["theme-browser.adapters.base"] = {
         load_theme = function()
@@ -394,6 +388,8 @@ describe("theme-browser.application.theme_service", function()
           break
         end
       end
+
+      vim.notify = original_notify
       assert.is_false(found_conflict_warning)
     end)
 
@@ -405,10 +401,6 @@ describe("theme-browser.application.theme_service", function()
           table.insert(warnings, msg)
         end
       end
-
-      finally(function()
-        vim.notify = original_notify
-      end)
 
       package.loaded["theme-browser.adapters.base"] = {
         load_theme = function()
@@ -447,6 +439,8 @@ describe("theme-browser.application.theme_service", function()
           break
         end
       end
+
+      vim.notify = original_notify
       assert.is_true(found_multi_conflict)
     end)
   end)
