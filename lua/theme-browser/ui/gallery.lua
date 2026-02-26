@@ -61,7 +61,7 @@ local function update_topbar()
   local bottom = first_key(keymaps_cfg.goto_bottom, "G")
   local use = first_key(keymaps_cfg.select, "<CR>")
   local preview = first_key(keymaps_cfg.preview, "p")
-  local install = first_key(keymaps_cfg.install, "i")
+  local _install = first_key(keymaps_cfg.install, "i")
   local close = first_key(keymaps_cfg.close, "q")
   local copy = first_key(keymaps_cfg.copy_repo, "Y")
 
