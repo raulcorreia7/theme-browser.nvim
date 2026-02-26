@@ -355,7 +355,7 @@ describe("Integration: full registry flow", function()
       -- Just verify it has the expected structure
       assert.is_not_nil(theme.repo)
       assert.is_not_nil(theme.colorscheme)
-      
+
       -- If the theme has variants, validate them
       if theme.variants and #theme.variants > 0 then
         for _, variant in ipairs(theme.variants) do
