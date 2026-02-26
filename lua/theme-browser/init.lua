@@ -534,11 +534,6 @@ function M.setup(user_config)
       local synced_path = registry_sync.get_synced_registry_path()
       if synced_path then
         registry.initialize(synced_path)
-        if message == "updated" then
-          vim.schedule(function()
-            vim.notify(string.format("Registry updated: %d themes", count or 0), vim.log.levels.INFO)
-          end)
-        end
       end
     end
   end)

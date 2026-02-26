@@ -1,27 +1,28 @@
 local M = {}
 
 -- Setup highlight groups for the picker UI
+-- Uses linked groups to adapt to user's colorscheme (light/dark variants)
 function M.setup()
   local highlights = {
-    -- Status indicators
-    ThemeBrowserStatusCurrent = { fg = "#00ff00", bold = true },
-    ThemeBrowserStatusInstalled = { fg = "#00aa00" },
-    ThemeBrowserStatusDownloaded = { fg = "#ffaa00" },
-    ThemeBrowserStatusDefault = { fg = "#666666" },
+    -- Status indicators - linked to semantic groups
+    ThemeBrowserStatusCurrent = { link = "DiagnosticOk", default = true },
+    ThemeBrowserStatusInstalled = { link = "String", default = true },
+    ThemeBrowserStatusDownloaded = { link = "WarningMsg", default = true },
+    ThemeBrowserStatusDefault = { link = "Comment", default = true },
 
-    -- Background indicators
+    -- Background indicators - semantic colors (keep fixed for recognizability)
     ThemeBrowserDark = { fg = "#4444ff" },
     ThemeBrowserLight = { fg = "#ffcc00" },
 
-    -- Theme names
-    ThemeBrowserName = { fg = "#ffffff" },
-    ThemeBrowserVariant = { fg = "#888888" },
+    -- Theme names - linked to standard UI groups
+    ThemeBrowserName = { link = "Normal", default = true },
+    ThemeBrowserVariant = { link = "Comment", default = true },
 
-    -- Preview window
-    ThemeBrowserPreview = { bg = "#1a1a1a" },
+    -- Preview window - linked to float/popup background
+    ThemeBrowserPreview = { link = "NormalFloat", default = true },
 
-    -- Selection
-    ThemeBrowserSelected = { bg = "#2a3f5f", bold = true },
+    -- Selection - linked to standard selection highlight
+    ThemeBrowserSelected = { link = "PmenuSel", default = true },
   }
 
   for name, opts in pairs(highlights) do

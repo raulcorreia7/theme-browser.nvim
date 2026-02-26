@@ -98,7 +98,7 @@ local function format_item(entry, snapshot)
     status_icon = "●"
     status_hl = "ThemeBrowserStatusInstalled"
   elseif status == "downloaded" then
-    status_icon = "◐"
+    status_icon = "◍"
     status_hl = "ThemeBrowserStatusDownloaded"
   end
 
@@ -113,6 +113,8 @@ local function format_item(entry, snapshot)
     right = variant
   end
 
+  local line = string.format("%s %s %-48s", status_icon, bg_icon, title)
+
   return {
     entry = entry,
     status = status,
@@ -124,7 +126,12 @@ local function format_item(entry, snapshot)
     title = title,
     right = right,
     sort_key = string.format("%s %s", name:lower(), (variant or ""):lower()),
-    line = string.format("%s %s %-48s", status_icon, bg_icon, title),
+    line = line,
+    status_col_start = 0,
+    status_col_end = #status_icon + 1,
+    bg_col_start = #status_icon + 1 + 1,
+    bg_col_end = #status_icon + 1 + 1 + #bg_icon + 1,
+    name_col_start = #status_icon + 1 + 1 + #bg_icon + 1,
   }
 end
 
@@ -233,7 +240,7 @@ function M.pick(opts)
 
   local function hint_text()
     return string.format(
-      " %s apply+quit  %s set-main  %s preview  %s install  %s copy  %s search  %s clear  %s/%s move  %s close",
+      " %s apply+quit  %s set-main  %s preview  %s install  %s copy  %s search  %s clear  %s/%s move  %s resize  %s close",
       first_key(keymaps.select),
       first_key(keymaps.set_main),
       first_key(keymaps.preview),
@@ -241,15 +248,24 @@ function M.pick(opts)
       first_key(keymaps.copy_repo),
       first_key(keymaps.search),
       first_key(keymaps.clear_search),
-      first_key(keymaps.navigate_down),
       first_key(keymaps.navigate_up),
+      first_key(keymaps.navigate_down),
+      "^w+-/+",
       first_key(keymaps.close)
     )
   end
 
+  local editor_width = vim.o.columns
+  local editor_height = vim.o.lines
+  local min_width = math.min(80, math.floor(editor_width * 0.7))
+  local min_height = math.min(25, math.floor(editor_height * 0.6))
+  local popup_width = math.max(min_width, math.floor(editor_width * 0.5))
+  local popup_height = math.max(min_height, math.floor(editor_height * 0.5))
+
   popup = Popup({
     enter = true,
     focusable = true,
+    relative = "editor",
     border = {
       style = "rounded",
       text = {
@@ -257,10 +273,13 @@ function M.pick(opts)
         top_align = "center",
       },
     },
-    position = "50%",
+    position = {
+      row = math.floor((editor_height - popup_height) / 2),
+      col = math.floor((editor_width - popup_width) / 2),
+    },
     size = {
-      width = "60%",
-      height = "40%",
+      width = popup_width,
+      height = popup_height,
     },
     win_options = {
       cursorline = true,
@@ -341,11 +360,11 @@ function M.pick(opts)
     for i = first, last do
       local item = items[i]
       local row = (i - first + 1) + 2
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.status_hl, row - 1, 2, 4)
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.bg_hl, row - 1, 5, 7)
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserName", row - 1, 8, -1)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.status_hl, row - 1, item.status_col_start, item.status_col_end)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.bg_hl, row - 1, item.bg_col_start, item.bg_col_end)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserName", row - 1, item.name_col_start, -1)
       if item.right ~= "" then
-        vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserVariant", row - 1, 8, 24)
+        vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserVariant", row - 1, item.name_col_start, item.name_col_start + 24)
       end
       if i == index then
         vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSelected", row - 1, 0, -1)
@@ -576,6 +595,61 @@ function M.pick(opts)
     close_popups()
   end)
 
+  local resize_step = 5
+  local current_width = popup_width
+  local current_height = popup_height
+
+  local function clamp_size(w, h)
+    local min_w = 40
+    local min_h = 15
+    local max_w = vim.o.columns - 4
+    local max_h = vim.o.lines - 4
+    return math.max(min_w, math.min(max_w, w)), math.max(min_h, math.min(max_h, h))
+  end
+
+  local function apply_size()
+    local w, h = clamp_size(current_width, current_height)
+    current_width, current_height = w, h
+    local row = math.floor((vim.o.lines - h) / 2)
+    local col = math.floor((vim.o.columns - w) / 2)
+    popup:update_layout({
+      position = { row = row, col = col },
+      size = { width = w, height = h },
+    })
+    hint_popup:update_layout({
+      position = { row = h, col = 0 },
+      size = { width = w, height = 1 },
+    })
+    render()
+  end
+
+  vim.keymap.set("n", "<C-w>+", function()
+    current_height = current_height + resize_step
+    apply_size()
+  end, map_opts)
+
+  vim.keymap.set("n", "<C-w>-", function()
+    current_height = current_height - resize_step
+    apply_size()
+  end, map_opts)
+
+  vim.keymap.set("n", "<C-w>>", function()
+    current_width = current_width + resize_step
+    apply_size()
+  end, map_opts)
+
+  vim.keymap.set("n", "<C-w><", function()
+    current_width = current_width - resize_step
+    apply_size()
+  end, map_opts)
+
+  vim.keymap.set("n", "=", function()
+    local ew, eh = vim.o.columns, vim.o.lines
+    current_width = math.max(math.min(80, math.floor(ew * 0.7)), math.floor(ew * 0.5))
+    current_height = math.max(math.min(25, math.floor(eh * 0.6)), math.floor(eh * 0.5))
+    apply_size()
+  end, map_opts)
+
   popup:mount()
   picker_highlights.setup()
 
@@ -585,11 +659,11 @@ function M.pick(opts)
     relative = "win",
     win = popup.winid,
     position = {
-      row = vim.api.nvim_win_get_height(popup.winid),
+      row = current_height,
       col = 0,
     },
     size = {
-      width = vim.api.nvim_win_get_width(popup.winid),
+      width = current_width,
       height = 1,
     },
     border = {
