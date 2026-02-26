@@ -31,7 +31,7 @@ return {
 }
 ```
 
-Open gallery: `:ThemeBrowser`
+Open picker: `:ThemeBrowser`
 
 ### Persistence
 
@@ -57,22 +57,21 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 | `:ThemeBrowserRegistryClear` | Clear cached registry |
 | `:ThemeBrowserHelp` | Show help |
 
-## Gallery Keys
+## Picker Keys
 
 | Key | Action |
 |-----|--------|
 | `j/k` | Navigate |
-| `/` | Search |
-| `<CR>` or `i` | Apply theme |
-| `p` | Preview |
+| `/<C-s>` | Search |
+| `<CR>` | Apply theme |
 | `<Esc>` | Close |
 
 ## How It Works
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│   Gallery   │───▶│ ThemeService │───▶│   Adapters  │
-│   (UI)      │    │ (orchestr.)  │    │ (loaders)   │
+│   Picker    │───▶│ ThemeService │───▶│   Adapters  │
+│ (vim.ui)    │    │ (orchestr.)  │    │ (loaders)   │
 └─────────────┘    └──────────────┘    └─────────────┘
                            │
                            ▼
