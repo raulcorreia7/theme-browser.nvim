@@ -10,6 +10,7 @@ local state = require("theme-browser.persistence.state")
 local theme_service = require("theme-browser.application.theme_service")
 local picker_highlights = require("theme-browser.picker.highlights")
 local defaults = require("theme-browser.config.defaults")
+local entry_utils = require("theme-browser.ui.entry")
 
 local function get_plugin_config()
   local ok_tb, tb = pcall(require, "theme-browser")
@@ -61,38 +62,6 @@ local function get_keymaps()
   }
 end
 
-local function entry_background(entry)
-  local meta = entry.meta or {}
-  if meta.background == "light" or meta.background == "dark" then
-    return meta.background
-  end
-  if
-    type(meta.opts_o) == "table" and (meta.opts_o.background == "light" or meta.opts_o.background == "dark")
-  then
-    return meta.opts_o.background
-  end
-  if entry.mode == "light" or entry.mode == "dark" then
-    return entry.mode
-  end
-  return "dark"
-end
-
-local function entry_status(entry, snapshot)
-  local current = state.get_current_theme()
-  if current and current.name == entry.name and (current.variant or "") == (entry.variant or "") then
-    return "current"
-  end
-
-  local entry_state = state.get_entry_state(entry, { snapshot = snapshot }) or {}
-  if entry_state.installed then
-    return "installed"
-  end
-  if entry_state.cached then
-    return "downloaded"
-  end
-  return "available"
-end
-
 local function compact_variant(entry)
   if type(entry.display) == "string" and entry.display ~= "" and entry.display ~= entry.name then
     return entry.display
@@ -116,8 +85,8 @@ local function compact_variant(entry)
 end
 
 local function format_item(entry, snapshot)
-  local status = entry_status(entry, snapshot)
-  local bg = entry_background(entry)
+  local status = entry_utils.entry_status(entry, snapshot)
+  local bg = entry_utils.entry_background(entry)
   local variant = compact_variant(entry)
 
   local status_icon = "○"

@@ -1,27 +1,7 @@
 local M = {}
 
-local ICONS = {
-  current = "●",
-  installed = "◆",
-  dark = "◐",
-  light = "◑",
-  available = "○",
-  marked = "★",
-}
-
-local function has_nerd_font()
-  local g = vim.g
-  return g.have_nerd_font == true or g.have_nerd_font == 1 or g.NerdFont == true
-end
-
-if has_nerd_font() then
-  ICONS.current = ""
-  ICONS.installed = ""
-  ICONS.dark = ""
-  ICONS.light = ""
-  ICONS.available = ""
-  ICONS.marked = ""
-end
+local icons = require("theme-browser.util.icons")
+local ICONS = icons.STATE_ICONS
 
 function M.get_icons()
   return ICONS

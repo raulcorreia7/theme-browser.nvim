@@ -1,5 +1,8 @@
 local M = {}
 
+local icons = require("theme-browser.util.icons")
+local has_nerd_font = icons.has_nerd_font
+
 local has_plenary_path, _ = pcall(require, "plenary.path")
 
 local default_state = {
@@ -39,19 +42,6 @@ local state_dir = has_plenary_path and require("plenary.path"):new(state_file):p
 local save_pending = false
 
 local state_order = { "active", "installed", "cached", "marked" }
-
-local function has_nerd_font()
-  if vim.g.have_nerd_font == true then
-    return true
-  end
-
-  local guifont = vim.o.guifont
-  if type(guifont) == "string" and guifont:lower():find("nerd", 1, true) then
-    return true
-  end
-
-  return false
-end
 
 local function state_short_label(name)
   if name == "active" then

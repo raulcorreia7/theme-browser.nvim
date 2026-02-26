@@ -61,14 +61,6 @@ function M.cleanup()
   remove_preview_rtp_paths()
 end
 
-function M.register_applied_preview(theme_name, variant)
-  add_preview_record(theme_name, variant)
-end
-
-function M.track_runtimepath(path)
-  track_preview_runtimepath(path)
-end
-
 ---@return table
 function M.list_previews()
   local result = {}

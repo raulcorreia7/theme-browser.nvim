@@ -1,4 +1,4 @@
-local log = require("theme-browser.util.log")
+local log = require("theme-browser.util.notify")
 local registry_config = require("theme-browser.config.registry")
 local startup_restore = require("theme-browser.startup.restore")
 local startup_config = require("theme-browser.startup.config")

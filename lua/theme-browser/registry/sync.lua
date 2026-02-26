@@ -1,6 +1,6 @@
 local M = {}
 
-local log = require("theme-browser.util.log")
+local log = require("theme-browser.util.notify")
 
 local DEFAULT_REGISTRY_URL =
   "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/themes.json"

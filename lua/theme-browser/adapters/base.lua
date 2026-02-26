@@ -1,6 +1,6 @@
 local M = {}
 
-local log = require("theme-browser.util.log")
+local log = require("theme-browser.util.notify")
 local package_manager = require("theme-browser.package_manager.manager")
 local runtime_loader = require("theme-browser.runtime.loader")
 local startup_persistence = require("theme-browser.startup.persistence")
@@ -98,7 +98,7 @@ function M.load_theme(theme_name, variant, opts)
   local _, attach_err = runtime_loader.attach_cached_runtime(theme_name, variant)
 
   local factory = require("theme-browser.adapters.factory")
-  local result = factory.load_theme(theme_name, variant, opts)
+  local result = factory.load_theme(theme_name, variant)
 
   if result.ok then
     persist_applied_theme(result, opts, current_theme)

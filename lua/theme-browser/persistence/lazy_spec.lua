@@ -1,5 +1,5 @@
 local M = {}
-local log = require("theme-browser.util.log")
+local log = require("theme-browser.util.notify")
 
 local function get_spec_file()
   return vim.fn.stdpath("config") .. "/lua/plugins/theme-browser-selected.lua"

@@ -106,11 +106,8 @@ end
 
 ---@param theme_name string
 ---@param variant string|nil
----@param opts table|nil {notify:boolean|nil, reason:string|nil}
 ---@param callback fun(success:boolean, err:string|nil, runtime_path:string|nil)
-function M.ensure_available(theme_name, variant, opts, callback)
-  opts = opts or {}
-  local _ = opts
+function M.ensure_available(theme_name, variant, callback)
   local ok, err, runtime_path = M.attach_cached_runtime(theme_name, variant)
   callback(ok, err, runtime_path)
 end

@@ -74,7 +74,7 @@ describe("theme-browser.runtime.loader", function()
 
     local loader = require(module_name)
     local success, err = nil, nil
-    loader.ensure_available("demo", nil, { notify = false, reason = "test" }, function(ok, callback_err)
+    loader.ensure_available("demo", nil, function(ok, callback_err)
       success = ok
       err = callback_err
     end)
@@ -124,7 +124,7 @@ describe("theme-browser.runtime.loader", function()
 
     local loader = require(module_name)
     local success, runtime_path
-    loader.ensure_available("demo", nil, { notify = false }, function(ok, _, path)
+    loader.ensure_available("demo", nil, function(ok, _, path)
       success = ok
       runtime_path = path
     end)
@@ -174,12 +174,12 @@ describe("theme-browser.runtime.loader", function()
 
     local loader = require(module_name)
     local calls = 0
-    loader.ensure_available("demo", nil, { notify = false }, function(ok)
+    loader.ensure_available("demo", nil, function(ok)
       if ok then
         calls = calls + 1
       end
     end)
-    loader.ensure_available("demo", nil, { notify = false }, function(ok)
+    loader.ensure_available("demo", nil, function(ok)
       if ok then
         calls = calls + 1
       end
@@ -214,7 +214,7 @@ describe("theme-browser.runtime.loader", function()
 
     local loader = require(module_name)
     local success, err, runtime_path
-    loader.ensure_available("default", nil, { notify = false }, function(ok, callback_err, path)
+    loader.ensure_available("default", nil, function(ok, callback_err, path)
       success = ok
       err = callback_err
       runtime_path = path
@@ -235,7 +235,7 @@ describe("theme-browser.runtime.loader", function()
 
     local loader = require(module_name)
     local success, err
-    loader.ensure_available("nonexistent", nil, { notify = false }, function(ok, callback_err)
+    loader.ensure_available("nonexistent", nil, function(ok, callback_err)
       success = ok
       err = callback_err
     end)
@@ -265,7 +265,7 @@ describe("theme-browser.runtime.loader", function()
 
       local loader = require(module_name)
       local success, err, runtime_path
-      loader.ensure_available("blue", nil, { notify = false }, function(ok, callback_err, path)
+      loader.ensure_available("blue", nil, function(ok, callback_err, path)
         success = ok
         err = callback_err
         runtime_path = path
@@ -316,7 +316,7 @@ describe("theme-browser.runtime.loader", function()
 
       local loader = require(module_name)
       local success, err
-      loader.ensure_available("tokyonight", nil, { notify = false }, function(ok, callback_err)
+      loader.ensure_available("tokyonight", nil, function(ok, callback_err)
         success = ok
         err = callback_err
       end)
@@ -347,7 +347,7 @@ describe("theme-browser.runtime.loader", function()
 
       local loader = require(module_name)
       local success, err, runtime_path
-      loader.ensure_available("default", nil, { notify = false }, function(ok, callback_err, path)
+    loader.ensure_available("default", nil, function(ok, callback_err, path)
         success = ok
         err = callback_err
         runtime_path = path

@@ -15,7 +15,7 @@ describe("Integration: workflow", function()
     package.loaded["theme-browser.application.theme_service"] = nil
     package.loaded["theme-browser.runtime.loader"] = nil
     package.loaded["theme-browser.package_manager.manager"] = nil
-    package.loaded["theme-browser.ui.gallery"] = nil
+    package.loaded["theme-browser.picker.native"] = nil
   end
 
   local function write_file(path, lines)
@@ -216,8 +216,8 @@ describe("Integration: workflow", function()
     end
   end)
 
-  describe("Full Gallery Workflow", function()
-    it("opens gallery, searches, navigates, previews, applies theme, verifies state", function()
+  describe("Full Picker Workflow", function()
+    it("opens picker, searches, navigates, previews, applies theme, verifies state", function()
       local registry_path = temp_root .. "/registry.json"
       make_registry(registry_path)
 
@@ -230,37 +230,27 @@ describe("Integration: workflow", function()
       local base = mock_base_adapter()
       mock_package_manager()
 
-      local gallery_calls = {}
-      package.loaded["theme-browser.ui.gallery"] = {
-        open = function(query)
-          table.insert(gallery_calls, { action = "open", query = query })
-        end,
-        close = function()
-          table.insert(gallery_calls, { action = "close" })
-        end,
-        is_open = function()
-          return #gallery_calls > 0 and gallery_calls[#gallery_calls].action ~= "close"
-        end,
-        get_filtered_entries = function()
-          return registry.search_themes("tokyo")
+      local picker_calls = {}
+      package.loaded["theme-browser.picker.native"] = {
+        pick = function(opts)
+          table.insert(picker_calls, { action = "pick", opts = opts })
         end,
       }
 
-      local gallery = require("theme-browser.ui.gallery")
-      gallery.open()
+      local picker = require("theme-browser.picker.native")
+      picker.pick({ initial_theme = "tokyonight" })
 
-      assert.equals(1, #gallery_calls)
-      assert.equals("open", gallery_calls[1].action)
+      assert.equals(1, #picker_calls)
+      assert.equals("pick", picker_calls[1].action)
+      assert.equals("tokyonight", picker_calls[1].opts.initial_theme)
 
       local search_results = registry.search_themes("tokyonight")
       assert.is_true(#search_results >= 1)
       assert.equals("tokyonight", search_results[1].name)
 
       local service = require("theme-browser.application.theme_service")
-      -- preview returns 0 on success, not a table
       local preview_result = service.preview("tokyonight", "tokyonight-night", { notify = false })
 
-      -- preview returns 0 on success
       assert.equals(0, preview_result)
 
       local use_result = service.use("tokyonight", "tokyonight-night", { notify = false })
@@ -271,14 +261,10 @@ describe("Integration: workflow", function()
       assert.equals("tokyonight", current.name)
       assert.equals("tokyonight-night", current.variant)
 
-      gallery.close()
-      assert.equals(2, #gallery_calls)
-      assert.equals("close", gallery_calls[2].action)
-
       table.insert(test_report, {
-        test = "Full Gallery Workflow",
+        test = "Full Picker Workflow",
         status = "PASS",
-        details = "Gallery opened, searched, previewed, applied, state persisted",
+        details = "Picker opened, searched, previewed, applied, state persisted",
       })
     end)
 

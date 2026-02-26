@@ -95,12 +95,7 @@ function M.download(repo, cache_dir, callback, opts)
   queue_callback(repo, callback)
 
   local use_credentials = has_git_credentials()
-  local clone_url
-  if use_credentials then
-    clone_url = string.format("https://github.com/%s/%s.git", owner, name)
-  else
-    clone_url = string.format("https://github.com/%s/%s.git", owner, name)
-  end
+  local clone_url = string.format("https://github.com/%s/%s.git", owner, name)
 
   local clone_args = {
     "clone",

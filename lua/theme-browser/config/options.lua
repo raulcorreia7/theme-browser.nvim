@@ -286,8 +286,4 @@ function M.validate(user_config)
   return validated
 end
 
-function M.get_expected_type(type_string)
-  return type_string
-end
-
 return M

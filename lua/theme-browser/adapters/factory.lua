@@ -270,8 +270,7 @@ function M.get_adapter(entry)
   }
 end
 
-function M.load_theme(theme_name, variant, opts)
-  local _ = opts
+function M.load_theme(theme_name, variant)
   local registry = require("theme-browser.adapters.registry")
   local entry = registry.resolve(theme_name, variant)
 
@@ -295,7 +294,7 @@ function M.load_theme(theme_name, variant, opts)
 end
 
 function M.preview_theme(theme_name, variant)
-  return M.load_theme(theme_name, variant, { preview = true, notify = false })
+  return M.load_theme(theme_name, variant)
 end
 
 function M.get_theme_status(theme_name)

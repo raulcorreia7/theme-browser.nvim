@@ -1,7 +1,5 @@
 local M = {}
 
-local handlers = {}
-
 local function normalize_variant(value)
   if type(value) ~= "string" then
     return nil
@@ -15,7 +13,7 @@ local function ensure_strategy(entry)
   entry.meta.strategy.vim = entry.meta.strategy.vim or {}
 end
 
-local function everforest_handler(entry)
+local function apply_everforest(entry)
   local variant = normalize_variant(entry.variant)
   if not variant or variant == "" then
     return entry
@@ -48,24 +46,16 @@ local function everforest_handler(entry)
   return entry
 end
 
-handlers.everforest = everforest_handler
-
-function M.register(theme_name, handler)
-  if type(theme_name) ~= "string" or theme_name == "" then
-    return
-  end
-  if type(handler) ~= "function" then
-    return
-  end
-  handlers[theme_name] = handler
-end
+local HANDLERS = {
+  everforest = apply_everforest,
+}
 
 function M.apply(entry)
   if type(entry) ~= "table" or type(entry.name) ~= "string" then
     return entry
   end
 
-  local handler = handlers[entry.name]
+  local handler = HANDLERS[entry.name]
   if not handler then
     return entry
   end
@@ -76,10 +66,7 @@ function M.apply(entry)
     return entry
   end
 
-  if type(result) == "table" then
-    return result
-  end
-  return cloned
+  return type(result) == "table" and result or cloned
 end
 
 return M

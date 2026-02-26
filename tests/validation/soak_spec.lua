@@ -295,6 +295,69 @@ describe("theme-browser.validation.soak", function()
     assert.is_false(report.items[1].colorscheme_ok)
   end)
 
+  it("reports failure when installation fails", function()
+    package.loaded["theme-browser"] = {
+      get_config = function()
+        return { cache_dir = vim.fn.stdpath("cache") .. "/theme-browser-test" }
+      end,
+    }
+
+    local entries = {
+      { id = "a", name = "theme-a", variant = nil, repo = "owner/a" },
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      list_entries = function()
+        return entries
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.state"] = {
+      build_state_snapshot = function()
+        return {}
+      end,
+      get_entry_state = function()
+        return { installed = false, cached = false }
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      install_theme = function()
+        return false
+      end,
+    }
+
+    package.loaded["theme-browser.downloader.github"] = {
+      download = function(_, _, callback, _)
+        callback(false, "network error")
+      end,
+    }
+
+    package.loaded["theme-browser.application.theme_service"] = {
+      preview = function()
+        return 0
+      end,
+      use = function(name)
+        vim.g.colors_name = name
+        return { ok = true }
+      end,
+    }
+
+    vim.g.colors_name = "theme-a"
+
+    local soak = require(module_name)
+    local report = soak.run({ timeout_ms = 1000 })
+
+    assert.is_false(report.ok)
+    assert.equals(0, report.ok_count)
+    assert.equals(1, report.fail_count)
+    assert.is_not_nil(report.items[1])
+    assert.is_false(report.items[1].installed)
+    assert.is_false(report.items[1].ok)
+    assert.is_true(#report.items[1].errors > 0)
+    assert.is_true(report.items[1].errors[1]:match("install") ~= nil)
+  end)
+
   it("saves and resumes from checkpoint", function()
     package.loaded["theme-browser"] = {
       get_config = function()
