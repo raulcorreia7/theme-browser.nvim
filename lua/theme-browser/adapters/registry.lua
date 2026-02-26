@@ -357,17 +357,13 @@ function M.search_themes(query)
   local results = {}
 
   for _, theme in ipairs(themes) do
-    if theme.disabled then
-      goto continue
+    if not theme.disabled then
+      local description = type(theme.description) == "string" and theme.description or ""
+
+      if theme.name:lower():find(query_lower, 1, true) or description:lower():find(query_lower, 1, true) then
+        table.insert(results, theme)
+      end
     end
-
-    local description = type(theme.description) == "string" and theme.description or ""
-
-    if theme.name:lower():find(query_lower, 1, true) or description:lower():find(query_lower, 1, true) then
-      table.insert(results, theme)
-    end
-
-    ::continue::
   end
 
   return results
