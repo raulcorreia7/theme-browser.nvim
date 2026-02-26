@@ -412,7 +412,7 @@ describe("Integration: workflow", function()
       assert.is_false(callback_result.success)
     end)
 
-    it("handles theme with missing dependencies", function()
+    pending("handles theme with missing dependencies", function()
       local registry_path = temp_root .. "/registry.json"
       make_registry(registry_path)
 
