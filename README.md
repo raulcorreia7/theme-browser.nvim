@@ -15,7 +15,17 @@ return {
     dependencies = { "rktjmp/lush.nvim" },
     opts = {
       auto_load = true,
-      package_manager = { enabled = true, mode = "manual" },
+      startup = {
+        enabled = true,
+        write_spec = true,
+        skip_if_already_active = true,
+      },
+      ui = {
+        preview_on_move = true,
+      },
+      package_manager = {
+        enabled = true,
+      },
     },
   },
 }
@@ -23,16 +33,29 @@ return {
 
 Open gallery: `:ThemeBrowser`
 
+### Persistence
+
+With `startup.write_spec = true`, selecting a theme generates:
+```
+~/.config/nvim/lua/plugins/theme-browser-selected.lua
+```
+
+This managed spec ensures your theme loads on startup without manual lazy.nvim specs.
+
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `:ThemeBrowser` | Open theme gallery |
+| `:ThemeBrowser [query]` | Open theme gallery (optional search query) |
 | `:ThemeBrowserUse <name> [variant]` | Install, apply, persist theme |
+| `:ThemeBrowserStatus [name]` | Show theme status |
 | `:ThemeBrowserDisable` | Disable theme loading on startup |
 | `:ThemeBrowserEnable` | Re-enable and restore last theme |
-| `:ThemeBrowserStatus [name]` | Show theme status |
 | `:ThemeBrowserReset` | Clear state, cache, managed spec |
+| `:ThemeBrowserValidate [name]` | Validate theme can load |
+| `:ThemeBrowserRegistrySync [url]` | Sync registry from URL |
+| `:ThemeBrowserRegistryClear` | Clear cached registry |
+| `:ThemeBrowserHelp` | Show help |
 
 ## Gallery Keys
 

@@ -51,12 +51,32 @@ COMMANDS                                                        *theme-browser-c
     Open gallery.
 
 :ThemeBrowserUse <name> [variant]
-:ThemeBrowserUse <name:variant>
+:ThemeBrowserUse <name:variant]
     Install/load/apply and persist theme.
 
 :ThemeBrowserStatus [name|name:variant]
+    Show theme status.
+
+:ThemeBrowserDisable
+    Disable theme loading on startup.
+
+:ThemeBrowserEnable
+    Re-enable and restore last theme.
+
 :ThemeBrowserReset
+    Clear state, cache, managed spec.
+
+:ThemeBrowserValidate [name]
+    Validate theme can load.
+
+:ThemeBrowserRegistrySync [url]
+    Sync registry from URL.
+
+:ThemeBrowserRegistryClear
+    Clear cached registry.
+
 :ThemeBrowserHelp
+    Show help.
 
 ==============================================================================
 CONFIGURATION                                                      *theme-browser-config*
