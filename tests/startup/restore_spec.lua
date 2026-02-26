@@ -1,34 +1,19 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.startup.restore", function()
   local module_name = "theme-browser.startup.restore"
-  local snapshots = {}
-
-  local function snapshot(name)
-    snapshots[name] = package.loaded[name]
-  end
-
-  local function restore(name)
-    local previous = snapshots[name]
-    if previous == nil then
-      package.loaded[name] = nil
-    else
-      package.loaded[name] = previous
-    end
-  end
+  local modules = {
+    module_name,
+    "theme-browser.startup.config",
+    "theme-browser.adapters.base",
+  }
 
   before_each(function()
-    snapshots = {}
-    snapshot(module_name)
-    snapshot("theme-browser.startup.config")
-    snapshot("theme-browser.adapters.base")
-    package.loaded[module_name] = nil
-    package.loaded["theme-browser.startup.config"] = nil
-    package.loaded["theme-browser.adapters.base"] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    restore(module_name)
-    restore("theme-browser.startup.config")
-    restore("theme-browser.adapters.base")
+    test_utils.restore_all(modules)
   end)
 
   it("skips restore when target colorscheme is already active", function()

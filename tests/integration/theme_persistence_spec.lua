@@ -1,4 +1,5 @@
 describe("Integration: theme change persistence", function()
+  local test_utils = require("tests.helpers.test_utils")
   local original_stdpath = vim.fn.stdpath
   local original_theme = vim.g.colors_name
 
@@ -6,13 +7,13 @@ describe("Integration: theme change persistence", function()
   local temp_rtp
   local registry_path
 
-  local function reset_modules()
-    package.loaded["theme-browser.adapters.registry"] = nil
-    package.loaded["theme-browser.adapters.factory"] = nil
-    package.loaded["theme-browser.adapters.base"] = nil
-    package.loaded["theme-browser.persistence.state"] = nil
-    package.loaded["theme-browser"] = nil
-  end
+  local modules = {
+    "theme-browser",
+    "theme-browser.adapters.registry",
+    "theme-browser.adapters.factory",
+    "theme-browser.adapters.base",
+    "theme-browser.persistence.state",
+  }
 
   local function write_file(path, lines)
     vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
@@ -65,7 +66,7 @@ describe("Integration: theme change persistence", function()
     end
 
     vim.opt.runtimepath:prepend(temp_rtp)
-    reset_modules()
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
@@ -85,7 +86,7 @@ describe("Integration: theme change persistence", function()
     end
 
     vim.fn.stdpath = original_stdpath
-    reset_modules()
+    test_utils.restore_all(modules)
   end)
 
   it("persists selected theme across state reload", function()

@@ -1,19 +1,16 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.persistence.state formatting", function()
   local state_module = "theme-browser.persistence.state"
   local github_module = "theme-browser.downloader.github"
-
-  local previous_state
-  local previous_github
+  local modules = { state_module, github_module }
 
   before_each(function()
-    previous_state = package.loaded[state_module]
-    previous_github = package.loaded[github_module]
-    package.loaded[state_module] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    package.loaded[state_module] = previous_state
-    package.loaded[github_module] = previous_github
+    test_utils.restore_all(modules)
   end)
 
   it("shows readable full state labels", function()

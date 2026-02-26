@@ -1,12 +1,15 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.adapters.plugins", function()
   local module_name = "theme-browser.adapters.plugins"
+  local modules = { module_name }
 
   before_each(function()
-    package.loaded[module_name] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    package.loaded[module_name] = nil
+    test_utils.restore_all(modules)
   end)
 
   it("applies everforest variant options for light mode", function()

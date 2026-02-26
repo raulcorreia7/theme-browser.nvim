@@ -1,5 +1,8 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.adapters.registry", function()
   local registry_module = "theme-browser.adapters.registry"
+  local modules = { registry_module }
 
   local function reload_registry()
     package.loaded[registry_module] = nil
@@ -11,6 +14,14 @@ describe("theme-browser.adapters.registry", function()
     vim.fn.writefile({ vim.json.encode(payload) }, path)
     return path
   end
+
+  before_each(function()
+    test_utils.reset_all(modules)
+  end)
+
+  after_each(function()
+    test_utils.restore_all(modules)
+  end)
 
   it("expands default and variant entries", function()
     local registry = reload_registry()

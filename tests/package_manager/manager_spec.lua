@@ -1,30 +1,23 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.package_manager.manager", function()
   local module_name = "theme-browser.package_manager.manager"
-  local previous_lazy
-  local previous_lazy_provider
-  local previous_noop_provider
+  local modules = {
+    module_name,
+    "theme-browser.persistence.state",
+    "lazy",
+    "lazy.core.config",
+    "lazy.manage.reloader",
+    "theme-browser.package_manager.providers.lazy",
+    "theme-browser.package_manager.providers.noop",
+  }
 
   before_each(function()
-    previous_lazy = package.loaded["lazy"]
-    previous_lazy_provider = package.loaded["theme-browser.package_manager.providers.lazy"]
-    previous_noop_provider = package.loaded["theme-browser.package_manager.providers.noop"]
-    package.loaded[module_name] = nil
-    package.loaded["theme-browser.persistence.state"] = nil
-    package.loaded["lazy"] = nil
-    package.loaded["lazy.core.config"] = nil
-    package.loaded["lazy.manage.reloader"] = nil
-    package.loaded["theme-browser.package_manager.providers.lazy"] = nil
-    package.loaded["theme-browser.package_manager.providers.noop"] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    package.loaded[module_name] = nil
-    package.loaded["theme-browser.persistence.state"] = nil
-    package.loaded["lazy"] = previous_lazy
-    package.loaded["lazy.core.config"] = nil
-    package.loaded["lazy.manage.reloader"] = nil
-    package.loaded["theme-browser.package_manager.providers.lazy"] = previous_lazy_provider
-    package.loaded["theme-browser.package_manager.providers.noop"] = previous_noop_provider
+    test_utils.restore_all(modules)
   end)
 
   it("treats auto/manual/installed_only semantics explicitly", function()

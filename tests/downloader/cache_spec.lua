@@ -1,10 +1,30 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.downloader.cache", function()
   local original_stdpath = vim.fn.stdpath
-  local previous_theme_browser
-  local previous_state
-  local previous_delete
   local temp_root
   local config
+  local modules = {
+    "theme-browser",
+    "theme-browser.persistence.state",
+    "theme-browser.downloader.cache",
+  }
+
+  local function setup_mocks()
+    package.loaded["theme-browser"] = {
+      get_config = function()
+        return config
+      end,
+    }
+
+    package.loaded["theme-browser.persistence.state"] = {
+      get_cache_stats = function()
+        return { hits = 0, misses = 0 }
+      end,
+      increment_cache_hit = function() end,
+      increment_cache_miss = function() end,
+    }
+  end
 
   before_each(function()
     temp_root = vim.fn.tempname()
@@ -20,9 +40,6 @@ describe("theme-browser.downloader.cache", function()
       return original_stdpath(kind)
     end
 
-    previous_theme_browser = package.loaded["theme-browser"]
-    previous_state = package.loaded["theme-browser.persistence.state"]
-
     config = {
       cache_dir = temp_root .. "/cache/theme-browser",
       cache = {
@@ -31,30 +48,13 @@ describe("theme-browser.downloader.cache", function()
       },
     }
 
-    package.loaded["theme-browser"] = {
-      get_config = function()
-        return config
-      end,
-    }
-
-    package.loaded["theme-browser.persistence.state"] = {
-      get_cache_stats = function()
-        return { hits = 0, misses = 0 }
-      end,
-      increment_cache_hit = function() end,
-      increment_cache_miss = function() end,
-    }
-
-    package.loaded["theme-browser.downloader.cache"] = nil
-    previous_delete = vim.fn.delete
+    test_utils.reset_all(modules)
+    setup_mocks()
   end)
 
   after_each(function()
     vim.fn.stdpath = original_stdpath
-    package.loaded["theme-browser"] = previous_theme_browser
-    package.loaded["theme-browser.persistence.state"] = previous_state
-    package.loaded["theme-browser.downloader.cache"] = nil
-    vim.fn.delete = previous_delete
+    test_utils.restore_all(modules)
     if temp_root and vim.fn.isdirectory(temp_root) == 1 then
       vim.fn.delete(temp_root, "rf")
     end
@@ -102,6 +102,8 @@ describe("theme-browser.downloader.cache", function()
 
   it("maybe_cleanup can be disabled", function()
     config.cache.auto_cleanup = false
+    package.loaded["theme-browser.downloader.cache"] = nil
+    setup_mocks()
     local cache = require("theme-browser.downloader.cache")
     local delete_calls = 0
     vim.fn.delete = function(_, _)

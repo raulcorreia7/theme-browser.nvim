@@ -1,44 +1,27 @@
 describe("Integration: lazy-managed theme loading", function()
+  local test_utils = require("tests.helpers.test_utils")
   local base_module = "theme-browser.adapters.base"
 
   local original_notify = vim.notify
   local original_colorscheme = vim.cmd.colorscheme
-  local snapshots = {}
 
-  local function restore_loaded(name, previous)
-    if previous == nil then
-      package.loaded[name] = nil
-    else
-      package.loaded[name] = previous
-    end
-  end
-
-  local function snapshot_modules()
-    snapshots = {
-      ["theme-browser.adapters.factory"] = package.loaded["theme-browser.adapters.factory"],
-      ["theme-browser.persistence.state"] = package.loaded["theme-browser.persistence.state"],
-      ["theme-browser.persistence.lazy_spec"] = package.loaded["theme-browser.persistence.lazy_spec"],
-      ["theme-browser.adapters.registry"] = package.loaded["theme-browser.adapters.registry"],
-      ["lazy"] = package.loaded["lazy"],
-      [base_module] = package.loaded[base_module],
-    }
-  end
-
-  local function restore_modules()
-    for name, previous in pairs(snapshots) do
-      restore_loaded(name, previous)
-    end
-    snapshots = {}
-  end
+  local modules = {
+    "theme-browser.adapters.factory",
+    "theme-browser.persistence.state",
+    "theme-browser.persistence.lazy_spec",
+    "theme-browser.adapters.registry",
+    "lazy",
+    base_module,
+  }
 
   before_each(function()
-    snapshot_modules()
+    test_utils.reset_all(modules)
     vim.notify = function(_, _, _) end
     vim.cmd.colorscheme = function(_) end
   end)
 
   after_each(function()
-    restore_modules()
+    test_utils.restore_all(modules)
     vim.notify = original_notify
     vim.cmd.colorscheme = original_colorscheme
   end)

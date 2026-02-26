@@ -1,36 +1,21 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.startup.persistence", function()
   local module_name = "theme-browser.startup.persistence"
-  local snapshots = {}
-
-  local function snapshot(name)
-    snapshots[name] = package.loaded[name]
-  end
-
-  local function restore(name)
-    if snapshots[name] == nil then
-      package.loaded[name] = nil
-    else
-      package.loaded[name] = snapshots[name]
-    end
-  end
+  local modules = {
+    module_name,
+    "theme-browser.startup.config",
+    "theme-browser.persistence.state",
+    "theme-browser.persistence.lazy_spec",
+    "theme-browser.adapters.registry",
+  }
 
   before_each(function()
-    snapshots = {}
-    snapshot(module_name)
-    snapshot("theme-browser.startup.config")
-    snapshot("theme-browser.persistence.state")
-    snapshot("theme-browser.persistence.lazy_spec")
-    snapshot("theme-browser.adapters.registry")
-
-    package.loaded[module_name] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    restore(module_name)
-    restore("theme-browser.startup.config")
-    restore("theme-browser.persistence.state")
-    restore("theme-browser.persistence.lazy_spec")
-    restore("theme-browser.adapters.registry")
+    test_utils.restore_all(modules)
   end)
 
   it("does not write managed startup spec when write_spec is disabled", function()

@@ -1,41 +1,23 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.adapters.base", function()
   local module_name = "theme-browser.adapters.base"
-  local snapshots = {}
-
-  local function snapshot(name)
-    snapshots[name] = package.loaded[name]
-  end
-
-  local function restore(name)
-    local prev = snapshots[name]
-    if prev == nil then
-      package.loaded[name] = nil
-    else
-      package.loaded[name] = prev
-    end
-  end
+  local modules = {
+    module_name,
+    "theme-browser.adapters.factory",
+    "theme-browser.adapters.registry",
+    "theme-browser.runtime.loader",
+    "theme-browser.persistence.state",
+    "theme-browser.package_manager.manager",
+    "theme-browser.startup.persistence",
+  }
 
   before_each(function()
-    snapshots = {}
-    snapshot(module_name)
-    snapshot("theme-browser.adapters.factory")
-    snapshot("theme-browser.adapters.registry")
-    snapshot("theme-browser.runtime.loader")
-    snapshot("theme-browser.persistence.state")
-    snapshot("theme-browser.package_manager.manager")
-    snapshot("theme-browser.startup.persistence")
-
-    package.loaded[module_name] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    restore(module_name)
-    restore("theme-browser.adapters.factory")
-    restore("theme-browser.adapters.registry")
-    restore("theme-browser.runtime.loader")
-    restore("theme-browser.persistence.state")
-    restore("theme-browser.package_manager.manager")
-    restore("theme-browser.startup.persistence")
+    test_utils.restore_all(modules)
   end)
 
   it("fails fast when theme assets are missing", function()

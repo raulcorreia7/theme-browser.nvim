@@ -1,3 +1,5 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.persistence.lazy_spec", function()
   local module_name = "theme-browser.persistence.lazy_spec"
   local original_stdpath = vim.fn.stdpath
@@ -5,6 +7,11 @@ describe("theme-browser.persistence.lazy_spec", function()
 
   local temp_root = nil
   local state_calls = 0
+  local modules = {
+    module_name,
+    "theme-browser.adapters.registry",
+    "theme-browser.persistence.state",
+  }
 
   local function reset_module()
     package.loaded[module_name] = nil
@@ -23,6 +30,8 @@ describe("theme-browser.persistence.lazy_spec", function()
       end
       return original_stdpath(kind)
     end
+
+    test_utils.reset_all(modules)
 
     package.loaded["theme-browser.adapters.registry"] = {
       resolve = function(_, variant)
@@ -52,9 +61,7 @@ describe("theme-browser.persistence.lazy_spec", function()
     vim.fn.stdpath = original_stdpath
     vim.notify = original_notify
 
-    package.loaded[module_name] = nil
-    package.loaded["theme-browser.adapters.registry"] = nil
-    package.loaded["theme-browser.persistence.state"] = nil
+    test_utils.restore_all(modules)
 
     if temp_root and vim.fn.isdirectory(temp_root) == 1 then
       vim.fn.delete(temp_root, "rf")

@@ -1,11 +1,20 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.package_manager.providers.lazy", function()
   local module_name = "theme-browser.package_manager.providers.lazy"
+  local modules = {
+    module_name,
+    "lazy",
+    "lazy.core.config",
+    "lazy.manage.reloader",
+  }
 
   before_each(function()
-    package.loaded[module_name] = nil
-    package.loaded["lazy"] = nil
-    package.loaded["lazy.core.config"] = nil
-    package.loaded["lazy.manage.reloader"] = nil
+    test_utils.reset_all(modules)
+  end)
+
+  after_each(function()
+    test_utils.restore_all(modules)
   end)
 
   describe("is_builtin", function()

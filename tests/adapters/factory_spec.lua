@@ -1,33 +1,34 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.adapters.factory", function()
   local factory_module = "theme-browser.adapters.factory"
-
+  local modules = {
+    factory_module,
+    "fake.theme",
+    "fake.setuptheme",
+    "fake.loadtheme",
+    "fake.loadtheme2",
+    "fake.settheme",
+    "mytheme",
+  }
   local original_colorscheme = vim.cmd.colorscheme
 
   before_each(function()
-    package.loaded[factory_module] = nil
+    test_utils.reset_all(modules)
     vim.cmd.colorscheme = function(_) end
   end)
 
   after_each(function()
+    test_utils.restore_all(modules)
     vim.cmd.colorscheme = original_colorscheme
-    package.loaded[factory_module] = nil
-    package.loaded["fake.theme"] = nil
-    package.loaded["fake.setuptheme"] = nil
-    package.loaded["fake.loadtheme"] = nil
-    package.loaded["fake.loadtheme2"] = nil
-    package.loaded["fake.settheme"] = nil
-    package.loaded["mytheme"] = nil
   end)
 
   it("applies vim.g options for colorscheme strategy", function()
     local factory = require(factory_module)
     vim.g.test_theme_background = nil
 
-    local entry = {
-      id = "everforest",
-      name = "everforest",
+    local entry = test_utils.make_theme_entry("everforest", {
       repo = "sainnhe/everforest",
-      colorscheme = "everforest",
       meta = {
         strategy = {
           type = "colorscheme",
@@ -38,7 +39,7 @@ describe("theme-browser.adapters.factory", function()
           },
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -49,12 +50,9 @@ describe("theme-browser.adapters.factory", function()
     local factory = require(factory_module)
     local original_background = vim.o.background
 
-    local entry = {
-      id = "everforest:light",
-      name = "everforest",
+    local entry = test_utils.make_theme_entry("everforest", {
       variant = "light",
       repo = "sainnhe/everforest",
-      colorscheme = "everforest",
       meta = {
         strategy = {
           type = "colorscheme",
@@ -65,7 +63,7 @@ describe("theme-browser.adapters.factory", function()
           },
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -84,11 +82,8 @@ describe("theme-browser.adapters.factory", function()
       end,
     }
 
-    local entry = {
-      id = "fake:night",
-      name = "fake",
+    local entry = test_utils.make_theme_entry("fake", {
       variant = "night",
-      repo = "owner/fake",
       colorscheme = "fake-night",
       meta = {
         strategy = {
@@ -96,7 +91,7 @@ describe("theme-browser.adapters.factory", function()
           module = "fake.theme",
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -111,12 +106,10 @@ describe("theme-browser.adapters.factory", function()
       table.insert(colorscheme_calls, cs)
     end
 
-    local entry = {
-      id = "simple-theme",
-      name = "simple-theme",
+    local entry = test_utils.make_theme_entry("simple-theme", {
       repo = "owner/simple-theme",
-      colorscheme = "simple-theme",
-    }
+    })
+    entry.meta = nil
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -133,17 +126,9 @@ describe("theme-browser.adapters.factory", function()
       table.insert(colorscheme_calls, cs)
     end
 
-    local entry = {
-      id = "explicit-simple",
-      name = "explicit-simple",
+    local entry = test_utils.make_theme_entry("explicit-simple", {
       repo = "owner/explicit-simple",
-      colorscheme = "explicit-simple",
-      meta = {
-        strategy = {
-          type = "colorscheme",
-        },
-      },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -164,11 +149,8 @@ describe("theme-browser.adapters.factory", function()
       end,
     }
 
-    local entry = {
-      id = "fake:dark",
-      name = "fake",
+    local entry = test_utils.make_theme_entry("fake", {
       variant = "dark",
-      repo = "owner/fake",
       colorscheme = "fake-dark",
       meta = {
         strategy = {
@@ -177,7 +159,7 @@ describe("theme-browser.adapters.factory", function()
           opts = { transparent = true },
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -199,11 +181,8 @@ describe("theme-browser.adapters.factory", function()
       end,
     }
 
-    local entry = {
-      id = "fake:load",
-      name = "fake",
+    local entry = test_utils.make_theme_entry("fake", {
       variant = "load",
-      repo = "owner/fake",
       colorscheme = "fake-load",
       meta = {
         strategy = {
@@ -212,7 +191,7 @@ describe("theme-browser.adapters.factory", function()
           args = { "arg1", "arg2" },
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -234,11 +213,8 @@ describe("theme-browser.adapters.factory", function()
       end,
     }
 
-    local entry = {
-      id = "fake:load2",
-      name = "fake",
+    local entry = test_utils.make_theme_entry("fake", {
       variant = "load2",
-      repo = "owner/fake",
       colorscheme = "fake-load2",
       meta = {
         strategy = {
@@ -246,7 +222,7 @@ describe("theme-browser.adapters.factory", function()
           module = "fake.loadtheme2",
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -268,11 +244,8 @@ describe("theme-browser.adapters.factory", function()
       end,
     }
 
-    local entry = {
-      id = "fake:set",
-      name = "fake",
+    local entry = test_utils.make_theme_entry("fake", {
       variant = "ocean",
-      repo = "owner/fake",
       colorscheme = "fake-ocean",
       meta = {
         strategy = {
@@ -280,7 +253,7 @@ describe("theme-browser.adapters.factory", function()
           module = "fake.settheme",
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -296,27 +269,17 @@ describe("theme-browser.adapters.factory", function()
 
     vim.cmd.colorscheme = function(cs)
       table.insert(colorscheme_calls, cs)
-      -- Fail on first call, succeed on second
       if #colorscheme_calls == 1 then
         error("colorscheme not found: " .. cs)
       end
     end
 
-    local entry = {
-      id = "mytheme:dark",
-      name = "mytheme",
+    local entry = test_utils.make_theme_entry("mytheme", {
       variant = "dark",
       repo = "owner/mytheme",
-      colorscheme = "mytheme",
-      meta = {
-        strategy = {
-          type = "colorscheme",
-        },
-      },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
-    -- Should try mytheme, then dark, then mytheme-dark, then mytheme again
     assert.is_true(result.ok)
     assert.is_true(#colorscheme_calls >= 1)
     assert.equals("mytheme", colorscheme_calls[1])
@@ -329,17 +292,9 @@ describe("theme-browser.adapters.factory", function()
       error("colorscheme not available")
     end
 
-    local entry = {
-      id = "missing-theme",
-      name = "missing-theme",
+    local entry = test_utils.make_theme_entry("missing-theme", {
       repo = "owner/missing-theme",
-      colorscheme = "missing-theme",
-      meta = {
-        strategy = {
-          type = "colorscheme",
-        },
-      },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_false(result.ok)
@@ -357,19 +312,15 @@ describe("theme-browser.adapters.factory", function()
       end,
     }
 
-    local entry = {
-      id = "mytheme:main",
-      name = "mytheme",
+    local entry = test_utils.make_theme_entry("mytheme", {
       variant = "main",
-      repo = "owner/mytheme",
       colorscheme = "mytheme-main",
       meta = {
         strategy = {
           type = "setup",
-          -- module not specified, should use entry.name
         },
       },
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)
@@ -384,14 +335,11 @@ describe("theme-browser.adapters.factory", function()
       table.insert(colorscheme_calls, cs)
     end
 
-    local entry = {
-      id = "mytheme:dark",
-      name = "mytheme",
+    local entry = test_utils.make_theme_entry("mytheme", {
       variant = "dark",
       mode = "dark",
       repo = "owner/mytheme",
-      colorscheme = "mytheme",
-    }
+    })
 
     local result = factory.get_adapter(entry).load(entry)
     assert.is_true(result.ok)

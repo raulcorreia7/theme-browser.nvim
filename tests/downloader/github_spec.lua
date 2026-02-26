@@ -1,10 +1,17 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.downloader.github", function()
   local module_name = "theme-browser.downloader.github"
+  local modules = { module_name }
   local github
 
   before_each(function()
-    package.loaded[module_name] = nil
+    test_utils.reset_all(modules)
     github = require(module_name)
+  end)
+
+  after_each(function()
+    test_utils.restore_all(modules)
   end)
 
   it("uses owner-aware cache paths to avoid collisions", function()

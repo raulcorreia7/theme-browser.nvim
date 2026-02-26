@@ -1,10 +1,9 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.persistence.state", function()
   local original_stdpath = vim.fn.stdpath
   local temp_root
-
-  local function reset_state_module()
-    package.loaded["theme-browser.persistence.state"] = nil
-  end
+  local modules = { "theme-browser.persistence.state" }
 
   before_each(function()
     temp_root = vim.fn.tempname()
@@ -19,12 +18,12 @@ describe("theme-browser.persistence.state", function()
       end
       return original_stdpath(kind)
     end
-    reset_state_module()
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
     vim.fn.stdpath = original_stdpath
-    reset_state_module()
+    test_utils.restore_all(modules)
     if temp_root and vim.fn.isdirectory(temp_root) == 1 then
       vim.fn.delete(temp_root, "rf")
     end

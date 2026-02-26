@@ -92,6 +92,7 @@ main() {
 	export XDG_DATA_HOME="$DATA_HOME"
 	export XDG_CACHE_HOME="$TEMP_DIR/cache"
 	export XDG_STATE_HOME="$TEMP_DIR/state"
+	export THEME_BROWSER_PLUGIN_ROOT="$PLUGIN_ROOT"
 
 	$NVIM --headless \
 		-u "$CONFIG_HOME/nvim/init.lua" \

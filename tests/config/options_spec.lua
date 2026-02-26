@@ -1,30 +1,16 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.config.options", function()
   local module_name = "theme-browser.config.options"
   local defaults_name = "theme-browser.config.defaults"
-  local snapshots = {}
-
-  local function snapshot(name)
-    snapshots[name] = package.loaded[name]
-  end
-
-  local function restore(name)
-    if snapshots[name] == nil then
-      package.loaded[name] = nil
-    else
-      package.loaded[name] = snapshots[name]
-    end
-  end
+  local modules = { module_name, defaults_name }
 
   before_each(function()
-    snapshots = {}
-    snapshot(module_name)
-    snapshot(defaults_name)
-    package.loaded[module_name] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    restore(module_name)
-    restore(defaults_name)
+    test_utils.restore_all(modules)
   end)
 
   it("returns normalized defaults when config is missing", function()
@@ -38,22 +24,8 @@ describe("theme-browser.config.options", function()
   end)
 
   it("warns and keeps defaults for unknown/invalid nested values", function()
+    local notify_mock = test_utils.mock_vim_notify()
     local options = require(module_name)
-    local notifications = {}
-    local original_notify = vim.notify
-
-    local function has_notification(message)
-      for _, item in ipairs(notifications) do
-        if item.msg == message then
-          return true
-        end
-      end
-      return false
-    end
-
-    vim.notify = function(msg, level, _)
-      table.insert(notifications, { msg = msg, level = level })
-    end
 
     local validated = options.validate({
       default_theme = "tokyonight",
@@ -79,7 +51,7 @@ describe("theme-browser.config.options", function()
       unknown_top = true,
     })
 
-    vim.notify = original_notify
+    notify_mock.restore()
 
     assert.is_true(validated.startup.write_spec)
     assert.equals(7, validated.cache.cleanup_interval_days)
@@ -90,8 +62,8 @@ describe("theme-browser.config.options", function()
     assert.same({ "i" }, validated.keymaps.install)
     assert.is_true(validated.ui.preview_on_move)
     assert.is_nil(validated.default_theme)
-    assert.is_true(has_notification("Unknown config option: default_theme"))
-    assert.is_true(has_notification("Unknown config option: show_preview (use ui.preview_on_move)"))
-    assert.is_true(#notifications > 0)
+    assert.is_true(notify_mock.has_warning("Unknown config option: default_theme"))
+    assert.is_true(notify_mock.has_warning("Unknown config option: show_preview"))
+    assert.is_true(#notify_mock.calls > 0)
   end)
 end)

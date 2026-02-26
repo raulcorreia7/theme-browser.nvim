@@ -1,31 +1,15 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.startup.config", function()
   local module_name = "theme-browser.startup.config"
-  local snapshots = {}
-
-  local function snapshot(name)
-    snapshots[name] = package.loaded[name]
-  end
-
-  local function restore(name)
-    local previous = snapshots[name]
-    if previous == nil then
-      package.loaded[name] = nil
-    else
-      package.loaded[name] = previous
-    end
-  end
+  local modules = { module_name, "theme-browser" }
 
   before_each(function()
-    snapshots = {}
-    snapshot(module_name)
-    snapshot("theme-browser")
-    package.loaded[module_name] = nil
-    package.loaded["theme-browser"] = nil
+    test_utils.reset_all(modules)
   end)
 
   after_each(function()
-    restore(module_name)
-    restore("theme-browser")
+    test_utils.restore_all(modules)
   end)
 
   it("resolves startup defaults when config is missing", function()

@@ -1,6 +1,3 @@
--- Test environment isolation
--- Sets up isolated XDG directories to avoid affecting user's Neovim config
-
 local M = {}
 
 local test_root = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":p:h:h:h")
@@ -125,6 +122,32 @@ vim.opt.rtp:prepend("%s")
   )
   M.write_init_lua(env, init)
   return env
+end
+
+function M.create_test_config(opts)
+  opts = opts or {}
+  local temp_dir = vim.fn.tempname()
+  mkdirp(temp_dir)
+
+  return vim.tbl_extend("force", {
+    registry_path = opts.registry_path,
+    cache_dir = joinpath(temp_dir, "cache"),
+    auto_load = opts.auto_load or false,
+    package_manager = opts.package_manager or {
+      enabled = false,
+      mode = "manual",
+      provider = "noop",
+    },
+  }, opts)
+end
+
+function M.with_isolated_env(fn)
+  local env = M.setup()
+  local ok, err = pcall(fn, env)
+  M.teardown(env)
+  if not ok then
+    error(err, 0)
+  end
 end
 
 return M

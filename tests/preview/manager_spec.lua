@@ -1,10 +1,20 @@
+local test_utils = require("tests.helpers.test_utils")
+
 describe("theme-browser.preview.manager", function()
   local module_name = "theme-browser.preview.manager"
   local original_rtp
+  local modules = {
+    module_name,
+    "theme-browser.downloader.github",
+    "theme-browser",
+    "theme-browser.adapters.base",
+    "theme-browser.adapters.registry",
+    "theme-browser.package_manager.manager",
+  }
 
   before_each(function()
     original_rtp = vim.o.runtimepath
-    package.loaded[module_name] = nil
+    test_utils.reset_all(modules)
     package.loaded["theme-browser.downloader.github"] = {
       get_cache_path = function(_, _)
         return "/tmp/theme-browser-preview-cache"
@@ -37,12 +47,7 @@ describe("theme-browser.preview.manager", function()
 
   after_each(function()
     vim.o.runtimepath = original_rtp
-    package.loaded[module_name] = nil
-    package.loaded["theme-browser.downloader.github"] = nil
-    package.loaded["theme-browser"] = nil
-    package.loaded["theme-browser.adapters.base"] = nil
-    package.loaded["theme-browser.adapters.registry"] = nil
-    package.loaded["theme-browser.package_manager.manager"] = nil
+    test_utils.restore_all(modules)
   end)
 
   it("tracks and clears preview records", function()
