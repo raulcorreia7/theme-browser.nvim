@@ -347,7 +347,7 @@ describe("theme-browser.runtime.loader", function()
 
       local loader = require(module_name)
       local success, err, runtime_path
-    loader.ensure_available("default", nil, function(ok, callback_err, path)
+      loader.ensure_available("default", nil, function(ok, callback_err, path)
         success = ok
         err = callback_err
         runtime_path = path
