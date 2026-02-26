@@ -77,10 +77,7 @@ describe("theme-browser.registry.sync", function()
       local remote_manifest = { sha256 = "abc123", count = 10 }
 
       with_temp_cache_dir(function(cache_dir)
-        vim.fn.writefile(
-          { vim.json.encode(cached_manifest) },
-          cache_dir .. "/registry-manifest.json"
-        )
+        vim.fn.writefile({ vim.json.encode(cached_manifest) }, cache_dir .. "/registry-manifest.json")
 
         vim.system = mock_vim_system({
           { code = 0, stdout = vim.json.encode(remote_manifest) },
@@ -106,10 +103,7 @@ describe("theme-browser.registry.sync", function()
       local remote_manifest = { sha256 = "xyz789", count = 10 }
 
       with_temp_cache_dir(function(cache_dir)
-        vim.fn.writefile(
-          { vim.json.encode(cached_manifest) },
-          cache_dir .. "/registry-manifest.json"
-        )
+        vim.fn.writefile({ vim.json.encode(cached_manifest) }, cache_dir .. "/registry-manifest.json")
 
         vim.system = mock_vim_system({
           { code = 0, stdout = vim.json.encode(remote_manifest) },
@@ -160,14 +154,8 @@ describe("theme-browser.registry.sync", function()
       local remote_manifest = { generated_at = "2024-01-01", count = 10 }
 
       with_temp_cache_dir(function(cache_dir)
-        vim.fn.writefile(
-          { vim.json.encode(cached_manifest) },
-          cache_dir .. "/registry-manifest.json"
-        )
-        vim.fn.writefile(
-          { vim.json.encode({ { name = "existing" } }) },
-          cache_dir .. "/registry-full.json"
-        )
+        vim.fn.writefile({ vim.json.encode(cached_manifest) }, cache_dir .. "/registry-manifest.json")
+        vim.fn.writefile({ vim.json.encode({ { name = "existing" } }) }, cache_dir .. "/registry-full.json")
 
         vim.system = mock_vim_system({
           { code = 0, stdout = vim.json.encode(remote_manifest) },
@@ -293,14 +281,8 @@ describe("theme-browser.registry.sync", function()
         local cached_manifest = { sha256 = "abc123", count = 5 }
         local remote_manifest = { sha256 = "abc123", count = 5 }
 
-        vim.fn.writefile(
-          { vim.json.encode(cached_manifest) },
-          cache_dir .. "/registry-manifest.json"
-        )
-        vim.fn.writefile(
-          { vim.json.encode({ { name = "existing" } }) },
-          cache_dir .. "/registry-full.json"
-        )
+        vim.fn.writefile({ vim.json.encode(cached_manifest) }, cache_dir .. "/registry-manifest.json")
+        vim.fn.writefile({ vim.json.encode({ { name = "existing" } }) }, cache_dir .. "/registry-full.json")
 
         vim.system = mock_vim_system({
           { code = 0, stdout = vim.json.encode(remote_manifest) },
@@ -326,10 +308,7 @@ describe("theme-browser.registry.sync", function()
         local cached_manifest = { sha256 = "abc123", count = 5 }
         local remote_manifest = { sha256 = "abc123", count = 5 }
 
-        vim.fn.writefile(
-          { vim.json.encode(cached_manifest) },
-          cache_dir .. "/registry-manifest.json"
-        )
+        vim.fn.writefile({ vim.json.encode(cached_manifest) }, cache_dir .. "/registry-manifest.json")
 
         vim.system = mock_vim_system({
           { code = 0, stdout = vim.json.encode(remote_manifest) },
