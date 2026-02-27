@@ -87,6 +87,19 @@ jobs:
 
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Build release assets
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          mkdir -p dist
+
+          git archive --format=tar.gz --output="dist/theme-browser.nvim-${VERSION}.tar.gz" "$VERSION"
+          git archive --format=zip --output="dist/theme-browser.nvim-${VERSION}.zip" "$VERSION"
+
+          sha256sum \
+            "dist/theme-browser.nvim-${VERSION}.tar.gz" \
+            "dist/theme-browser.nvim-${VERSION}.zip" \
+            > "dist/SHA256SUMS.txt"
+
       - name: Create or update release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -136,3 +149,29 @@ jobs:
               --title "$VERSION" \
               --notes-file "$NOTES_FILE"
           fi
+
+          gh release upload "$VERSION" \
+            "dist/theme-browser.nvim-${VERSION}.tar.gz" \
+            "dist/theme-browser.nvim-${VERSION}.zip" \
+            "dist/SHA256SUMS.txt" \
+            --clobber
+
+      - name: Validate release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.value }}"
+          expected=(
+            "theme-browser.nvim-${VERSION}.tar.gz"
+            "theme-browser.nvim-${VERSION}.zip"
+            "SHA256SUMS.txt"
+          )
+
+          for name in "${expected[@]}"; do
+            size=$(gh release view "$VERSION" --json assets --jq ".assets[] | select(.name == \"$name\") | .size")
+            if [[ -z "$size" || "$size" -le 0 ]]; then
+              echo "Missing or empty release asset: $name" >&2
+              exit 1
+            fi
+            echo "Validated release asset: $name (${size} bytes)"
+          done

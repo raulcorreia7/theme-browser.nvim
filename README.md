@@ -153,6 +153,8 @@ make verify
 - Keep `CHANGELOG.md` updated before tagging.
 - Tags follow SemVer: `vX.Y.Z`.
 - Release workflow uses `CHANGELOG.md` section for release notes when available.
+- Release workflow publishes `tar.gz`, `.zip`, and `SHA256SUMS.txt` assets.
+- Release workflow validates uploaded assets (exists and non-zero size).
 
 ## Related
 

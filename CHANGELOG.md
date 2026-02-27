@@ -14,6 +14,8 @@ The format is based on Keep a Changelog, and this project follows SemVer.
 ### Changed
 - Updated command completion and help text to reflect inline command flow.
 - Expanded integration coverage for command completion and shorthand command behavior.
+- Release pipeline now uploads versioned archive assets and `SHA256SUMS.txt`.
+- Release pipeline validates uploaded assets before completing.
 
 ## [0.3.2] - 2026-02-27
 
