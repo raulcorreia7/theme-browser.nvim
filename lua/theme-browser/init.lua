@@ -176,8 +176,21 @@ local function complete_theme_browser_command(arglead, cmdline)
   local action = type(args[1]) == "string" and string.lower(args[1]) or ""
 
   if argc <= 1 then
-    local values =
-      { "pick", "focus", "use", "status", "pm", "browser", "registry", "validate", "reset", "help" }
+    local values = {
+      "pick",
+      "focus",
+      "use",
+      "status",
+      "pm",
+      "browser",
+      "enable",
+      "disable",
+      "toggle",
+      "registry",
+      "validate",
+      "reset",
+      "help",
+    }
     local matches = complete_from_values(values, arglead)
     for _, value in ipairs(complete_theme_targets(arglead)) do
       table.insert(matches, value)
@@ -460,6 +473,7 @@ local function run_help_action()
     "  :ThemeBrowser status [name]            - Show theme status",
     "  :ThemeBrowser pm <enable|disable|toggle|status> - Package manager controls",
     "  :ThemeBrowser browser <enable|disable|toggle|status> - Startup restore controls",
+    "  :ThemeBrowser <enable|disable|toggle> - Shorthand for browser controls",
     "  :ThemeBrowser registry <sync|clear>    - Sync or clear registry cache",
     "  :ThemeBrowser! registry sync           - Force registry sync",
     "  :ThemeBrowser validate [output]        - Validate install/preview/use over registry",
@@ -521,6 +535,11 @@ local function setup_commands()
     if action == "status" then
       local status = require("theme-browser.ui.status")
       status.show(opts.fargs[2])
+      return
+    end
+
+    if action == "enable" or action == "disable" or action == "toggle" then
+      run_browser_action(action)
       return
     end
 

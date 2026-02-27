@@ -189,7 +189,69 @@ describe("Integration: autoload", function()
     local root_matches = vim.fn.getcompletion("ThemeBrowser r", "cmdline")
     assert.is_true(vim.tbl_contains(root_matches, "registry"))
 
+    local disable_matches = vim.fn.getcompletion("ThemeBrowser d", "cmdline")
+    assert.is_true(vim.tbl_contains(disable_matches, "disable"))
+
     local pm_matches = vim.fn.getcompletion("ThemeBrowser pm e", "cmdline")
     assert.is_true(vim.tbl_contains(pm_matches, "enable"))
+  end)
+
+  it("accepts disable shorthand as browser disable", function()
+    local browser_enabled = true
+    local picker_opened = false
+
+    package.loaded["theme-browser.persistence.state"] = {
+      initialize = function() end,
+      get_current_theme = function()
+        return nil
+      end,
+      get_browser_enabled = function()
+        return browser_enabled
+      end,
+      set_browser_enabled = function(value)
+        browser_enabled = value == true
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      initialize = function() end,
+      resolve = function() end,
+      list_themes = function()
+        return {}
+      end,
+      list_entries = function()
+        return {}
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.base"] = {
+      has_package_manager = function()
+        return true
+      end,
+      load_theme = function()
+        return { ok = true }
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      when_ready = function(cb)
+        cb()
+      end,
+    }
+
+    package.loaded["theme-browser.picker"] = {
+      focus = function()
+        return false
+      end,
+      pick = function()
+        picker_opened = true
+      end,
+    }
+
+    setup()
+    vim.cmd("ThemeBrowser disable")
+
+    assert.is_false(browser_enabled)
+    assert.is_false(picker_opened)
   end)
 end)
