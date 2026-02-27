@@ -91,14 +91,22 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.value }}"
           mkdir -p dist
+          cp lua/theme-browser/data/registry.json dist/themes.json
 
-          git archive --format=tar.gz --output="dist/theme-browser.nvim-${VERSION}.tar.gz" "$VERSION"
-          git archive --format=zip --output="dist/theme-browser.nvim-${VERSION}.zip" "$VERSION"
+          THEMES_SHA256="$(sha256sum dist/themes.json | cut -d' ' -f1)"
+          GENERATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          THEMES_SIZE="$(wc -c < dist/themes.json | tr -d ' ')"
 
-          sha256sum \
-            "dist/theme-browser.nvim-${VERSION}.tar.gz" \
-            "dist/theme-browser.nvim-${VERSION}.zip" \
-            > "dist/SHA256SUMS.txt"
+          cat > dist/manifest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "generated_at": "${GENERATED_AT}",
+            "sha256": "${THEMES_SHA256}",
+            "themes_file": "themes.json",
+            "themes_size_bytes": ${THEMES_SIZE},
+            "schema": "theme-browser-registry-v1"
+          }
+          EOF
 
       - name: Create or update release
         env:
@@ -151,9 +159,8 @@ jobs:
           fi
 
           gh release upload "$VERSION" \
-            "dist/theme-browser.nvim-${VERSION}.tar.gz" \
-            "dist/theme-browser.nvim-${VERSION}.zip" \
-            "dist/SHA256SUMS.txt" \
+            "dist/themes.json" \
+            "dist/manifest.json" \
             --clobber
 
       - name: Validate release assets
@@ -162,9 +169,8 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.value }}"
           expected=(
-            "theme-browser.nvim-${VERSION}.tar.gz"
-            "theme-browser.nvim-${VERSION}.zip"
-            "SHA256SUMS.txt"
+            "themes.json"
+            "manifest.json"
           )
 
           for name in "${expected[@]}"; do
