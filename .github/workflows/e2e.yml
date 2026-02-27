@@ -62,22 +62,25 @@ jobs:
       
       - name: Verify plugin loads without errors
         run: |
-          nvim --headless -c "lua print('Neovim started')" -c "lua print(vim.fn.stdpath('config'))" -c "q" 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua print('Neovim started')" \
+            -c "lua print(vim.fn.stdpath('config'))" \
+            -c "qa!" 2>&1
           
-          nvim --headless -c "
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
             local ok, err = pcall(require, 'theme-browser')
             if not ok then
               print('Failed to load theme-browser: ' .. tostring(err))
-              vim.cmd('q!')
+              vim.cmd('cq')
               os.exit(1)
             end
             print('theme-browser loaded successfully')
-            vim.cmd('q!')
+            vim.cmd('qa!')
           " 2>&1
       
       - name: Run registry adapter tests
         run: |
-          nvim --headless -c "
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
             local ok, err = pcall(function()
               local registry = require('theme-browser.adapters.registry')
               local entries = registry.list_entries()
@@ -95,7 +98,7 @@ jobs:
       
       - name: Run theme resolution tests
         run: |
-          nvim --headless -c "
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
             local ok, err = pcall(function()
               local registry = require('theme-browser.adapters.registry')
               
@@ -118,7 +121,7 @@ jobs:
       
       - name: Run theme service tests
         run: |
-          nvim --headless -c "
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
             local ok, err = pcall(function()
               local service = require('theme-browser.application.theme_service')
               
@@ -140,7 +143,7 @@ jobs:
       
       - name: Run bundled registry test
         run: |
-          nvim --headless -c "
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
             local ok, err = pcall(function()
               local bundled_path = vim.fn.stdpath('data') .. '/site/pack/plugins/start/theme-browser.nvim/lua/theme-browser/data/registry.json'
               local file = io.open(bundled_path, 'r')
@@ -220,12 +223,14 @@ jobs:
       - name: Install plugins via Lazy
         run: |
           cd $GITHUB_WORKSPACE
-          nvim --headless -c "Lazy! sync" -c "q" 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "Lazy! sync" \
+            -c "qa!" 2>&1
       
       - name: Test plugin with Lazy
         run: |
           cd $GITHUB_WORKSPACE
-          nvim --headless -c "
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
             local ok, err = pcall(require, 'theme-browser')
             if not ok then
               print('Failed to load: ' .. tostring(err))
