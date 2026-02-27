@@ -3,6 +3,14 @@ local M = {}
 local base = require("theme-browser.adapters.base")
 local notify = require("theme-browser.util.notify")
 
+local function resolve_entry(theme_name, variant)
+  local ok_reg, registry = pcall(require, "theme-browser.adapters.registry")
+  if not ok_reg then
+    return nil
+  end
+  return registry.resolve(theme_name, variant)
+end
+
 local function maybe_cleanup_preview(opts)
   if opts and opts.cleanup_preview == false then
     return
@@ -26,11 +34,7 @@ local function resolve_cache_dir()
 end
 
 local function get_repo_for_theme(theme_name, variant)
-  local ok_reg, registry = pcall(require, "theme-browser.adapters.registry")
-  if not ok_reg then
-    return nil
-  end
-  local entry = registry.resolve(theme_name, variant)
+  local entry = resolve_entry(theme_name, variant)
   if entry and type(entry.repo) == "string" then
     return entry.repo
   end
@@ -38,20 +42,12 @@ local function get_repo_for_theme(theme_name, variant)
 end
 
 local function is_builtin_theme(theme_name, variant)
-  local ok_reg, registry = pcall(require, "theme-browser.adapters.registry")
-  if not ok_reg then
-    return false
-  end
-  local entry = registry.resolve(theme_name, variant)
+  local entry = resolve_entry(theme_name, variant)
   return entry and entry.builtin == true
 end
 
 local function has_conflict(theme_name, variant)
-  local ok_reg, registry = pcall(require, "theme-browser.adapters.registry")
-  if not ok_reg then
-    return false, nil
-  end
-  local entry = registry.resolve(theme_name, variant)
+  local entry = resolve_entry(theme_name, variant)
   if not entry or not entry.meta or not entry.meta.conflicts then
     return false, nil
   end
@@ -194,6 +190,65 @@ local function ensure_theme_available_async(theme_name, variant, opts, callback)
       callback(result and result.ok, result and result.errors and result.errors.colorscheme_error, result)
     end)
   end
+end
+
+local function ensure_theme_installed_async(theme_name, variant, opts, callback)
+  local loader = require("theme-browser.runtime.loader")
+  local is_available, _, _ = loader.attach_cached_runtime(theme_name, variant)
+  if is_available then
+    callback(true, nil)
+    return
+  end
+
+  if is_builtin_theme(theme_name, variant) then
+    callback(false, "builtin theme does not require install")
+    return
+  end
+
+  if can_use_package_manager() then
+    install_with_package_manager_async(theme_name, variant, opts, function(pm_success)
+      if pm_success then
+        local attached, attach_err = loader.attach_cached_runtime(theme_name, variant)
+        if attached then
+          callback(true, nil)
+        else
+          callback(false, attach_err or "installed but runtime unavailable")
+        end
+        return
+      end
+
+      download_with_github_async(theme_name, variant, opts, function(dl_success, dl_err)
+        if not dl_success then
+          callback(false, dl_err or "install failed")
+          return
+        end
+
+        local attached, attach_err = loader.attach_cached_runtime(theme_name, variant)
+        if not attached then
+          callback(false, attach_err or "downloaded but runtime unavailable")
+          return
+        end
+
+        callback(true, nil)
+      end)
+    end)
+    return
+  end
+
+  download_with_github_async(theme_name, variant, opts, function(dl_success, dl_err)
+    if not dl_success then
+      callback(false, dl_err or "install failed")
+      return
+    end
+
+    local attached, attach_err = loader.attach_cached_runtime(theme_name, variant)
+    if not attached then
+      callback(false, attach_err or "downloaded but runtime unavailable")
+      return
+    end
+
+    callback(true, nil)
+  end)
 end
 
 local function ensure_managed_spec(theme_name, variant)
@@ -382,7 +437,7 @@ function M.preview(theme_name, variant, opts)
   return 0
 end
 
----Install a theme asynchronously (alias for use()).
+---Install a theme asynchronously without applying it.
 ---
 ---ASYNC: Always non-blocking. Use callback to know when complete.
 ---
@@ -392,7 +447,47 @@ end
 ---@param callback function|nil Called with (success:boolean, result:table|nil, err:string|nil)
 ---@return table result with async_pending=true
 function M.install(theme_name, variant, opts, callback)
-  return M.use(theme_name, variant, opts, callback)
+  opts = opts or {}
+  maybe_cleanup_preview(opts)
+
+  if opts.notify ~= false then
+    notify.info(string.format("Installing theme '%s'...", theme_name), { theme = theme_name })
+  end
+
+  ensure_theme_installed_async(theme_name, variant, opts, function(success, err)
+    vim.schedule(function()
+      if success then
+        if opts.notify ~= false then
+          notify.info(string.format("Theme installed: %s", theme_name), { theme = theme_name })
+        end
+        if type(callback) == "function" then
+          callback(true, {
+            ok = true,
+            name = theme_name,
+            variant = variant,
+            installed = true,
+          }, nil)
+        end
+        return
+      end
+
+      local reason = err or "theme unavailable"
+      if opts.notify ~= false then
+        notify.warn(string.format("Unable to install '%s': %s", theme_name, reason), { theme = theme_name })
+      end
+      if type(callback) == "function" then
+        callback(false, nil, reason)
+      end
+    end)
+  end)
+
+  return {
+    ok = true,
+    async_pending = true,
+    name = theme_name,
+    variant = variant,
+    message = string.format("Theme '%s' installation queued", theme_name),
+  }
 end
 
 return M

@@ -60,6 +60,9 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 | `j/k` | Navigate |
 | `/<C-s>` | Search |
 | `<CR>` | Apply theme |
+| `i` | Install + mark for later |
+| `Y` | Copy selected theme repo URL |
+| `O` | Open selected theme repo URL |
 | `<Esc>` | Close |
 
 ## How It Works

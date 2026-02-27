@@ -45,6 +45,7 @@ local nested_schema = {
     search = "table|string",
     clear_search = "table|string",
     copy_repo = "table|string",
+    open_repo = "table|string",
   },
   status_display = {
     show_adapter = "boolean",

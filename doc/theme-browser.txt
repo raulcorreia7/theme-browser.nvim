@@ -124,11 +124,16 @@ CONFIGURATION                                                      *theme-browse
       close = { "q", "<Esc>" },
       select = { "<CR>" },
       preview = { "p" },
+      set_main = { "m" },
       install = { "i" },
       navigate_up = { "k" },
       navigate_down = { "j" },
       goto_top = { "gg" },
       goto_bottom = { "G" },
+      search = { "/" },
+      clear_search = { "c" },
+      copy_repo = { "Y" },
+      open_repo = { "O" },
     },
   })
 <

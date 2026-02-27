@@ -82,6 +82,7 @@ local M = {
     search = { "/" },
     clear_search = { "c" },
     copy_repo = { "Y" },
+    open_repo = { "O" },
   },
 }
 

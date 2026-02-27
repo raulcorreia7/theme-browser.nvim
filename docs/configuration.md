@@ -56,6 +56,17 @@ ui = {
 }
 ```
 
+## Keymaps
+
+```lua
+keymaps = {
+  select = { "<CR>" },
+  install = { "i" },
+  copy_repo = { "Y" },
+  open_repo = { "O" },
+}
+```
+
 ## Full Example
 
 ```lua

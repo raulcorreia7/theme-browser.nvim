@@ -6,6 +6,8 @@ describe("theme-browser.application.theme_service", function()
   local function setup_mocks(opts)
     opts = opts or {}
     local load_calls = 0
+    local install_calls = 0
+    local attach_calls = 0
 
     package.loaded["theme-browser.adapters.base"] = {
       load_theme = function(name, variant, _)
@@ -33,12 +35,18 @@ describe("theme-browser.application.theme_service", function()
         return opts.is_ready ~= false
       end,
       install_theme = function()
+        install_calls = install_calls + 1
         return opts.install_success ~= false
       end,
     }
 
     package.loaded["theme-browser.runtime.loader"] = {
       attach_cached_runtime = function()
+        attach_calls = attach_calls + 1
+        if type(opts.attach_sequence) == "table" then
+          local idx = math.min(attach_calls, #opts.attach_sequence)
+          return opts.attach_sequence[idx] == true, nil
+        end
         return opts.attach_success ~= false, nil
       end,
     }
@@ -56,9 +64,14 @@ describe("theme-browser.application.theme_service", function()
       end,
     }
 
-    return function()
-      return load_calls
-    end
+    return {
+      load_calls = function()
+        return load_calls
+      end,
+      install_calls = function()
+        return install_calls
+      end,
+    }
   end
 
   before_each(function()
@@ -85,13 +98,13 @@ describe("theme-browser.application.theme_service", function()
 
   describe("use function", function()
     it("uses already available theme without install", function()
-      local get_calls = setup_mocks({ load_success = true, can_manage = true })
+      local counters = setup_mocks({ load_success = true, can_manage = true })
 
       service = require(module_name)
       local result = service.use("tokyonight", "tokyonight-night", { notify = false })
 
       assert.is_true(result.ok)
-      assert.equals(1, get_calls())
+      assert.equals(1, counters.load_calls())
     end)
 
     it("installs missing theme then retries apply via callback", function()
@@ -148,12 +161,36 @@ describe("theme-browser.application.theme_service", function()
       assert.is_false(callback_result.success)
     end)
 
-    it("keeps install as alias to use", function()
-      setup_mocks({ load_success = true, can_manage = true })
+    it("installs without applying the theme", function()
+      local counters = setup_mocks({
+        can_manage = true,
+        attach_sequence = { false, true },
+      })
 
       service = require(module_name)
-      local result = service.install("tokyonight", "tokyonight-night", { notify = false })
-      assert.is_true(result.ok)
+      local callback_called = false
+      local callback_result = nil
+
+      local result = service.install(
+        "tokyonight",
+        "tokyonight-night",
+        { notify = false },
+        function(success, res, err)
+          callback_called = true
+          callback_result = { success = success, res = res, err = err }
+        end
+      )
+
+      assert.is_true(result.async_pending)
+
+      vim.wait(2000, function()
+        return callback_called
+      end)
+
+      assert.is_true(callback_called)
+      assert.is_true(callback_result.success)
+      assert.equals(0, counters.load_calls())
+      assert.equals(1, counters.install_calls())
     end)
   end)
 

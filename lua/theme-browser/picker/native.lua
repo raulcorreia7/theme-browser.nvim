@@ -66,6 +66,7 @@ local function get_keymaps()
     preview = pick("preview"),
     install = pick("install"),
     copy_repo = pick("copy_repo"),
+    open_repo = pick("open_repo"),
     navigate_up = pick("navigate_up"),
     navigate_down = pick("navigate_down"),
     goto_top = pick("goto_top"),
@@ -405,13 +406,14 @@ function M.pick(opts)
 
   local function hint_text()
     return string.format(
-      " %s apply  %s set-main  %s preview  %s install  %s copy  "
+      " %s apply  %s set-main  %s preview  %s install  %s copy  %s open  "
         .. "%s search  %s/%s move  %s/%s page  %s close",
       first_key(keymaps.select),
       first_key(keymaps.set_main),
       first_key(keymaps.preview),
       first_key(keymaps.install),
       first_key(keymaps.copy_repo),
+      first_key(keymaps.open_repo),
       first_key(keymaps.search),
       first_key(keymaps.navigate_up),
       first_key(keymaps.navigate_down),
@@ -815,7 +817,10 @@ function M.pick(opts)
     local item = items[index]
     install_item_async(item, function(ok, err)
       if ok then
-        vim.notify(string.format("Installed %s", item.entry.name), vim.log.levels.INFO)
+        if type(state.mark_theme) == "function" then
+          state.mark_theme(item.entry.name, item.entry.variant)
+        end
+        vim.notify(string.format("Installed and marked %s", item.entry.name), vim.log.levels.INFO)
         if previewed_key == entry_key(item.entry) then
           previewed_key = nil
         end
@@ -849,18 +854,53 @@ function M.pick(opts)
     apply_filter("")
   end)
 
-  map_keys(keymaps.copy_repo, function()
+  local function selected_repo_url()
     if #items == 0 then
-      return
+      return nil
     end
+
     local item = items[index]
     local repo = item.entry.repo
-    if repo and repo ~= "" then
-      local url = string.format("https://github.com/%s", repo)
-      vim.fn.setreg("+", url)
-      vim.notify(string.format("Copied: %s", url), vim.log.levels.INFO)
-    else
+    if type(repo) ~= "string" or repo == "" then
+      return nil
+    end
+
+    return string.format("https://github.com/%s", repo)
+  end
+
+  map_keys(keymaps.copy_repo, function()
+    local url = selected_repo_url()
+    if not url then
       vim.notify("No repository URL available", vim.log.levels.WARN)
+      return
+    end
+
+    vim.fn.setreg("+", url)
+    vim.fn.setreg('"', url)
+    vim.notify(string.format("Copied: %s", url), vim.log.levels.INFO)
+  end)
+
+  map_keys(keymaps.open_repo, function()
+    local url = selected_repo_url()
+    if not url then
+      vim.notify("No repository URL available", vim.log.levels.WARN)
+      return
+    end
+
+    if type(vim.ui.open) ~= "function" then
+      vim.notify("vim.ui.open is unavailable on this Neovim version", vim.log.levels.WARN)
+      return
+    end
+
+    local ok_open, open_result, open_err = pcall(vim.ui.open, url)
+    if not ok_open then
+      vim.notify(string.format("Failed to open URL: %s", open_result), vim.log.levels.ERROR)
+      return
+    end
+
+    if open_result == nil then
+      vim.notify(string.format("Failed to open URL: %s", open_err or "unknown error"), vim.log.levels.ERROR)
+      return
     end
   end)
 
