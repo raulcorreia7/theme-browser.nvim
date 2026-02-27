@@ -118,4 +118,29 @@ describe("theme-browser.adapters.registry", function()
     local entries = registry.list_entries()
     assert.equals(2, #entries)
   end)
+
+  it("copies root strategy and module into expanded entries", function()
+    local registry = reload_registry()
+    local path = write_temp_registry({
+      {
+        name = "astrotheme",
+        repo = "AstroNvim/astrotheme",
+        colorscheme = "astrotheme",
+        strategy = "setup",
+        module = "astrotheme",
+        variants = {
+          { name = "astrolight", colorscheme = "astrolight" },
+        },
+      },
+    })
+
+    registry.initialize(path)
+    local entry = registry.resolve("astrotheme", "astrolight")
+
+    assert.is_not_nil(entry)
+    assert.is_not_nil(entry.meta)
+    assert.is_not_nil(entry.meta.strategy)
+    assert.equals("setup", entry.meta.strategy.type)
+    assert.equals("astrotheme", entry.meta.strategy.module)
+  end)
 end)

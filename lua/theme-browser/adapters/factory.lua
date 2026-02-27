@@ -91,7 +91,9 @@ end
 
 local function resolve_strategy_type(entry)
   local strategy = entry.meta and entry.meta.strategy
-  if strategy and strategy.type and STRATEGIES[strategy.type] then
+  if type(strategy) == "string" and STRATEGIES[strategy] then
+    return strategy
+  elseif type(strategy) == "table" and strategy.type and STRATEGIES[strategy.type] then
     return strategy.type
   end
   return "colorscheme"
@@ -99,7 +101,7 @@ end
 
 local function resolve_module_name(entry)
   local strategy = entry.meta and entry.meta.strategy
-  if strategy and type(strategy.module) == "string" and strategy.module ~= "" then
+  if type(strategy) == "table" and type(strategy.module) == "string" and strategy.module ~= "" then
     return strategy.module
   end
   return entry.name
@@ -137,57 +139,87 @@ local function resolve_mode(entry)
   return nil
 end
 
--- Common keys used by themes to specify the variant/theme in setup()
-local VARIANT_KEYS = { "theme", "style", "colorscheme", "variant", "flavour", "flavor" }
+-- Common keys used by themes to specify the variant/palette in setup().
+local VARIANT_KEYS = { "theme", "palette", "style", "colorscheme", "variant", "flavour", "flavor" }
 
-local function resolve_variant_opts(entry, base_opts)
-  if not entry.variant then
-    return base_opts
+local function has_variant_key(opts)
+  if type(opts) ~= "table" then
+    return false
   end
 
-  -- Check if any variant key is already set in opts
   for _, key in ipairs(VARIANT_KEYS) do
-    if base_opts[key] then
-      return base_opts
+    if opts[key] ~= nil then
+      return true
     end
   end
 
-  -- Check if any variant key is specified in meta.strategy
+  return false
+end
+
+local function resolve_variant_keys(entry)
   local strategy = entry.meta and entry.meta.strategy
-  if strategy then
-    for _, key in ipairs(VARIANT_KEYS) do
-      if strategy[key] then
-        return vim.tbl_extend("force", base_opts, { [key] = strategy[key] })
-      end
+  if type(strategy) ~= "table" then
+    return VARIANT_KEYS
+  end
+
+  if type(strategy.variant_key) == "string" and strategy.variant_key ~= "" then
+    return { strategy.variant_key }
+  end
+
+  for _, key in ipairs(VARIANT_KEYS) do
+    if strategy[key] ~= nil then
+      return { key }
     end
   end
 
-  -- Try each common key to see which one the theme accepts
-  -- Start with "theme" as it's most common
-  return vim.tbl_extend("force", base_opts, { theme = entry.variant })
+  return VARIANT_KEYS
 end
 
 local function load_with_setup(entry)
   apply_vim_options(entry)
   local module_name = resolve_module_name(entry)
   local module, require_err = safe_require(module_name)
+  local setup_err = nil
+
+  local function format_result(ok, cs_err, applied, tried)
+    return ok,
+      {
+        applied_colorscheme = applied,
+        tried_colorschemes = table.concat(tried or {}, ","),
+        require_error = require_err,
+        setup_error = setup_err,
+        colorscheme_error = cs_err,
+      }
+  end
 
   if module and type(module.setup) == "function" then
-    local opts = resolve_opts(entry)
-    -- For variant themes, pass the variant/theme name to setup
-    -- This is needed for themes like astrotheme that require setup({ theme = "variant" })
-    opts = resolve_variant_opts(entry, opts)
-    pcall(module.setup, opts)
+    local base_opts = resolve_opts(entry)
+
+    if entry.variant and not has_variant_key(base_opts) then
+      local variant_keys = resolve_variant_keys(entry)
+
+      for _, key in ipairs(variant_keys) do
+        local opts = vim.tbl_extend("force", base_opts, { [key] = entry.variant })
+        local setup_ok, setup_error = pcall(module.setup, opts)
+        if not setup_ok then
+          setup_err = setup_error
+        end
+
+        local ok, cs_err, applied, tried = apply_colorscheme(entry)
+        if ok then
+          return format_result(ok, cs_err, applied, tried)
+        end
+      end
+    else
+      local setup_ok, setup_error = pcall(module.setup, base_opts)
+      if not setup_ok then
+        setup_err = setup_error
+      end
+    end
   end
 
   local ok, cs_err, applied, tried = apply_colorscheme(entry)
-  return ok,
-    {
-      applied_colorscheme = applied,
-      tried_colorschemes = table.concat(tried or {}, ","),
-      require_error = require_err,
-      colorscheme_error = cs_err,
-    }
+  return format_result(ok, cs_err, applied, tried)
 end
 
 local function load_with_load(entry)

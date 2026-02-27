@@ -169,6 +169,40 @@ describe("theme-browser.adapters.factory", function()
     assert.is_true(setup_opts.transparent)
   end)
 
+  it("tries common variant keys for setup themes (astrotheme palette)", function()
+    local factory = require(factory_module)
+    vim.g._tb_palette = nil
+
+    package.loaded["fake.astrotheme"] = {
+      setup = function(opts)
+        -- Simulate astrotheme: expects opts.palette, ignores unknown keys.
+        vim.g._tb_palette = opts and opts.palette or nil
+      end,
+    }
+
+    vim.cmd.colorscheme = function(cs)
+      if cs == "astrolight" and vim.g._tb_palette == "astrolight" then
+        return
+      end
+      error("palette not set")
+    end
+
+    local entry = test_utils.make_theme_entry("astrotheme", {
+      variant = "astrolight",
+      colorscheme = "astrolight",
+      meta = {
+        strategy = {
+          type = "setup",
+          module = "fake.astrotheme",
+        },
+      },
+    })
+
+    local result = factory.get_adapter(entry).load(entry)
+    assert.is_true(result.ok)
+    assert.equals("astrolight", vim.g._tb_palette)
+  end)
+
   it("calls load() directly for load strategy", function()
     local factory = require(factory_module)
     local calls = { load = 0 }

@@ -68,6 +68,19 @@ local function clone_theme(theme)
 end
 
 local function make_entry(theme, variant, colorscheme, display, extra_meta, mode)
+  -- Build meta with strategy info from theme root
+  local meta = vim.tbl_extend("force", theme.meta or {}, extra_meta or {})
+  
+  -- Copy strategy from theme root to meta.strategy if not already set
+  if theme.strategy and not meta.strategy then
+    meta.strategy = { type = theme.strategy }
+  end
+  
+  -- Copy module name from theme root if not already in meta
+  if theme.module and meta.strategy and not meta.strategy.module then
+    meta.strategy.module = theme.module
+  end
+  
   local entry = {
     id = variant and string.format("%s:%s", theme.name, variant) or theme.name,
     name = theme.name,
@@ -75,7 +88,7 @@ local function make_entry(theme, variant, colorscheme, display, extra_meta, mode
     display = display,
     repo = theme.repo,
     colorscheme = colorscheme,
-    meta = vim.tbl_extend("force", theme.meta or {}, extra_meta or {}),
+    meta = meta,
   }
 
   if mode then
