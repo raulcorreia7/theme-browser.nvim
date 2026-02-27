@@ -379,8 +379,14 @@ function M.pick(opts)
   local show_hints = not (plugin_cfg.ui and plugin_cfg.ui.show_hints == false)
   local keymaps = get_keymaps()
   local popup = nil
+  local resize_autocmd_id = nil
 
   local function close_popups()
+    if resize_autocmd_id then
+      pcall(vim.api.nvim_del_autocmd, resize_autocmd_id)
+      resize_autocmd_id = nil
+    end
+
     if popup then
       pcall(function()
         popup:unmount()
@@ -867,12 +873,18 @@ function M.pick(opts)
   local function clamp_size(w, h)
     local min_w = 40
     local min_h = 15
-    local max_w = vim.o.columns - 4
-    local max_h = vim.o.lines - 4
-    return math.max(min_w, math.min(max_w, w)), math.max(min_h, math.min(max_h, h))
+    local max_w = math.max(1, vim.o.columns - 4)
+    local max_h = math.max(1, vim.o.lines - 4)
+    local effective_min_w = math.min(min_w, max_w)
+    local effective_min_h = math.min(min_h, max_h)
+    return math.max(effective_min_w, math.min(max_w, w)), math.max(effective_min_h, math.min(max_h, h))
   end
 
   local function apply_size()
+    if not popup or not popup.winid or not vim.api.nvim_win_is_valid(popup.winid) then
+      return
+    end
+
     local w, h = clamp_size(current_width, current_height)
     current_width, current_height = w, h
     local resized_max_content_width = math.max(24, w - 6)
@@ -881,8 +893,8 @@ function M.pick(opts)
       calculate_column_widths(all_items, resized_max_content_width)
     optimal_content_width = math.min(resized_max_content_width, resized_content_width)
 
-    local row = math.floor((vim.o.lines - h) / 2)
-    local col = math.floor((vim.o.columns - w) / 2)
+    local row = math.max(0, math.floor((vim.o.lines - h) / 2))
+    local col = math.max(0, math.floor((vim.o.columns - w) / 2))
     popup:update_layout({
       position = { row = row, col = col },
       size = { width = w, height = h },
@@ -932,6 +944,12 @@ function M.pick(opts)
           sync_selection_from_cursor()
         end
       end, 100)
+    end,
+  })
+
+  resize_autocmd_id = vim.api.nvim_create_autocmd("VimResized", {
+    callback = function()
+      apply_size()
     end,
   })
 
