@@ -6,6 +6,7 @@ local DEFAULT_REGISTRY_URL =
   "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/themes.json"
 local DEFAULT_MANIFEST_URL =
   "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/manifest.json"
+local RELEASES_API_URL = "https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30"
 local CACHE_FILENAME = "registry-full.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
 local COMPATIBLE_VERSION = "0.1"
@@ -19,6 +20,27 @@ local function get_cache_dir()
     end
   end
   return vim.fn.stdpath("cache") .. "/theme-browser"
+end
+
+local function get_plugin_config()
+  local ok_tb, tb = pcall(require, "theme-browser")
+  if not ok_tb or type(tb.get_config) ~= "function" then
+    return nil
+  end
+  local config = tb.get_config()
+  if type(config) ~= "table" then
+    return nil
+  end
+  return config
+end
+
+local function get_registry_channel()
+  local config = get_plugin_config()
+  local registry = config and config.registry or nil
+  if type(registry) == "table" and registry.channel == "latest" then
+    return "latest"
+  end
+  return "stable"
 end
 
 local function get_cached_registry_path()
@@ -91,6 +113,89 @@ local function parse_json_safe(content)
   return data
 end
 
+local function build_release_asset_url(tag_name, file_name)
+  return string.format(
+    "https://github.com/raulcorreia7/theme-browser-registry/releases/download/%s/%s",
+    tag_name,
+    file_name
+  )
+end
+
+local function release_matches_channel(tag_name, channel)
+  if type(tag_name) ~= "string" then
+    return false
+  end
+  if channel == "latest" then
+    if tag_name:match("^v%d+%.%d+%.%d+%+%d%d%d%d%d%d%d%d$") then
+      return true
+    end
+    return tag_name:match("^v%d+%.%d+%.%d+%+%d%d%d%d%d%d%d%d[%.%-_]%d+$") ~= nil
+  end
+  return tag_name:match("^v%d+%.%d+%.%d+$") ~= nil
+end
+
+local function resolve_release_urls_async(channel, callback)
+  fetch_url_async(RELEASES_API_URL, function(ok, body)
+    if not ok then
+      callback(false, nil, nil, "release list fetch failed")
+      return
+    end
+
+    local releases = parse_json_safe(body)
+    if type(releases) ~= "table" then
+      callback(false, nil, nil, "invalid release list")
+      return
+    end
+
+    for _, release in ipairs(releases) do
+      local tag_name = type(release) == "table" and release.tag_name or nil
+      if release_matches_channel(tag_name, channel) then
+        callback(
+          true,
+          build_release_asset_url(tag_name, "themes.json"),
+          build_release_asset_url(tag_name, "manifest.json"),
+          tag_name
+        )
+        return
+      end
+    end
+
+    callback(false, nil, nil, "no matching release found")
+  end)
+end
+
+local function resolve_urls_async(opts, callback)
+  local explicit_registry_url = opts.registry_url
+  local explicit_manifest_url = opts.manifest_url
+  if type(explicit_registry_url) == "string" and explicit_registry_url ~= "" then
+    local manifest_url = explicit_manifest_url
+    if type(manifest_url) ~= "string" or manifest_url == "" then
+      manifest_url = DEFAULT_MANIFEST_URL
+    end
+    callback(true, explicit_registry_url, manifest_url, "custom")
+    return
+  end
+
+  local channel = opts.channel
+  if channel ~= "stable" and channel ~= "latest" then
+    channel = get_registry_channel()
+  end
+
+  if channel == "stable" then
+    callback(true, DEFAULT_REGISTRY_URL, DEFAULT_MANIFEST_URL, "stable")
+    return
+  end
+
+  resolve_release_urls_async(channel, function(ok, registry_url, manifest_url, extra)
+    if ok then
+      callback(true, registry_url, manifest_url, extra)
+      return
+    end
+
+    callback(false, nil, nil, extra)
+  end)
+end
+
 local function is_fresh_manifest(cached_manifest, remote_manifest)
   if type(cached_manifest) ~= "table" or type(remote_manifest) ~= "table" then
     return false
@@ -152,8 +257,6 @@ end
 function M.sync(opts, callback)
   opts = opts or {}
 
-  local registry_url = opts.registry_url or DEFAULT_REGISTRY_URL
-  local manifest_url = opts.manifest_url or DEFAULT_MANIFEST_URL
   local force = opts.force == true
   local notify = opts.notify ~= false
 
@@ -164,98 +267,114 @@ function M.sync(opts, callback)
   local cached_manifest_content = read_file(get_cached_manifest_path())
   local cached_manifest = parse_json_safe(cached_manifest_content)
 
-  fetch_url_async(manifest_url, function(manifest_ok, manifest_data)
-    if not manifest_ok then
+  resolve_urls_async(opts, function(urls_ok, registry_url, manifest_url, source)
+    if not urls_ok then
       if notify then
-        log.warn("Failed to fetch registry manifest, using cached version if available")
+        log.warn("Failed to resolve release channel, using cached version if available")
       end
       if type(callback) == "function" then
-        callback(false, "manifest fetch failed")
+        callback(false, source or "release url resolution failed")
       end
       return
     end
 
-    local remote_manifest = parse_json_safe(manifest_data)
-    if not remote_manifest then
-      if type(callback) == "function" then
-        callback(false, "invalid manifest")
-      end
-      return
+    if notify and source and source ~= "custom" then
+      log.info(string.format("Using registry source: %s", source))
     end
 
-    if remote_manifest.version and not is_compatible_version(remote_manifest.version) then
-      if notify then
-        log.warn(
-          string.format(
-            "Registry version %s may be incompatible (expected %s.x)",
-            remote_manifest.version,
-            COMPATIBLE_VERSION
+    fetch_url_async(manifest_url, function(manifest_ok, manifest_data)
+      if not manifest_ok then
+        if notify then
+          log.warn("Failed to fetch registry manifest, using cached version if available")
+        end
+        if type(callback) == "function" then
+          callback(false, "manifest fetch failed")
+        end
+        return
+      end
+
+      local remote_manifest = parse_json_safe(manifest_data)
+      if not remote_manifest then
+        if type(callback) == "function" then
+          callback(false, "invalid manifest")
+        end
+        return
+      end
+
+      if remote_manifest.version and not is_compatible_version(remote_manifest.version) then
+        if notify then
+          log.warn(
+            string.format(
+              "Registry version %s may be incompatible (expected %s.x)",
+              remote_manifest.version,
+              COMPATIBLE_VERSION
+            )
           )
-        )
+        end
       end
-    end
 
-    if not force and is_fresh_manifest(cached_manifest, remote_manifest) then
+      if not force and is_fresh_manifest(cached_manifest, remote_manifest) then
+        if notify then
+          log.info("Registry is up to date")
+        end
+        if type(callback) == "function" then
+          callback(true, "up_to_date")
+        end
+        return
+      end
+
       if notify then
-        log.info("Registry is up to date")
+        log.info("Downloading updated registry...")
       end
-      if type(callback) == "function" then
-        callback(true, "up_to_date")
-      end
-      return
-    end
 
-    if notify then
-      log.info("Downloading updated registry...")
-    end
+      fetch_url_async(registry_url, function(registry_ok, registry_data)
+        if not registry_ok then
+          if notify then
+            log.error("Failed to download registry")
+          end
+          if type(callback) == "function" then
+            callback(false, "registry download failed")
+          end
+          return
+        end
 
-    fetch_url_async(registry_url, function(registry_ok, registry_data)
-      if not registry_ok then
+        local registry = parse_json_safe(registry_data)
+        if not registry or type(registry) ~= "table" then
+          if notify then
+            log.error("Invalid registry data")
+          end
+          if type(callback) == "function" then
+            callback(false, "invalid registry")
+          end
+          return
+        end
+
+        local ok1, err1 = write_file(get_cached_registry_path(), registry_data)
+        if not ok1 then
+          if notify then
+            log.error(string.format("Failed to cache registry: %s", err1))
+          end
+          if type(callback) == "function" then
+            callback(false, err1)
+          end
+          return
+        end
+
+        local ok2, err2 = write_file(get_cached_manifest_path(), manifest_data)
+        if not ok2 then
+          if notify then
+            log.warn(string.format("Failed to cache manifest: %s", err2))
+          end
+        end
+
+        local count = type(registry) == "table" and #registry or 0
         if notify then
-          log.error("Failed to download registry")
+          log.info(string.format("Registry updated: %d themes", count))
         end
         if type(callback) == "function" then
-          callback(false, "registry download failed")
+          callback(true, "updated", count)
         end
-        return
-      end
-
-      local registry = parse_json_safe(registry_data)
-      if not registry or type(registry) ~= "table" then
-        if notify then
-          log.error("Invalid registry data")
-        end
-        if type(callback) == "function" then
-          callback(false, "invalid registry")
-        end
-        return
-      end
-
-      local ok1, err1 = write_file(get_cached_registry_path(), registry_data)
-      if not ok1 then
-        if notify then
-          log.error(string.format("Failed to cache registry: %s", err1))
-        end
-        if type(callback) == "function" then
-          callback(false, err1)
-        end
-        return
-      end
-
-      local ok2, err2 = write_file(get_cached_manifest_path(), manifest_data)
-      if not ok2 then
-        if notify then
-          log.warn(string.format("Failed to cache manifest: %s", err2))
-        end
-      end
-
-      local count = type(registry) == "table" and #registry or 0
-      if notify then
-        log.info(string.format("Registry updated: %d themes", count))
-      end
-      if type(callback) == "function" then
-        callback(true, "updated", count)
-      end
+      end)
     end)
   end)
 end

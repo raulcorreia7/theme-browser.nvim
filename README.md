@@ -97,6 +97,9 @@ require("theme-browser").setup({
     mode = "manual",  -- auto|manual|installed_only
     provider = "auto", -- auto|lazy|noop
   },
+  registry = {
+    channel = "stable", -- stable|latest
+  },
   startup = {
     enabled = true,
     write_spec = true,
@@ -118,6 +121,7 @@ require("theme-browser").setup({
 | `package_manager.enabled` | `true` | Enable package manager integration |
 | `package_manager.mode` | `"manual"` | `auto`: auto-install, `manual`: on-demand, `installed_only`: no downloads |
 | `package_manager.provider` | `"auto"` | Package manager: `auto`, `lazy`, `noop` |
+| `registry.channel` | `"stable"` | Registry channel: `stable` (SemVer tags) or `latest` (weekly `vX.Y.Z+YYYYMMDD`) |
 | `startup.write_spec` | `true` | Generate managed lazy spec for persistence |
 | `ui.preview_on_move` | `true` | Preview installed themes on cursor move |
 

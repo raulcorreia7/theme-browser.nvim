@@ -1,5 +1,18 @@
 # Configuration Reference
 
+## Registry
+
+```lua
+registry = {
+  channel = "stable",  -- stable|latest
+}
+```
+
+| Channel | Behavior |
+|---------|----------|
+| `stable` | Uses latest stable SemVer tag (`vX.Y.Z`) |
+| `latest` | Uses weekly rolling release tags (`vX.Y.Z+YYYYMMDD`) |
+
 ## Package Manager
 
 ```lua
@@ -76,6 +89,9 @@ require("theme-browser").setup({
     enabled = true,
     mode = "manual",
     provider = "auto",
+  },
+  registry = {
+    channel = "stable",
   },
   startup = {
     enabled = true,

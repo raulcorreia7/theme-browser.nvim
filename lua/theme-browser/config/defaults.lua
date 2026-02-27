@@ -1,5 +1,6 @@
 ---@class Config
 ---@field registry_path string Path to themes.json
+---@field registry table Registry sync configuration
 ---@field cache_dir string Directory for theme cache
 ---@field auto_load boolean Auto-load theme on startup
 ---@field startup table Startup workflow configuration
@@ -19,6 +20,9 @@ end
 local M = {
   -- Registry configuration
   registry_path = get_default_registry_path(),
+  registry = {
+    channel = "stable",
+  },
 
   -- Cache configuration
   cache_dir = vim.fn.stdpath("cache") .. "/theme-browser",

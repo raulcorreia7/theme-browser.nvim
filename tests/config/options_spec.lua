@@ -21,6 +21,7 @@ describe("theme-browser.config.options", function()
     assert.equals(defaults.startup.write_spec, validated.startup.write_spec)
     assert.is_true(validated.startup.write_spec)
     assert.equals(defaults.package_manager.mode, validated.package_manager.mode)
+    assert.equals("stable", validated.registry.channel)
   end)
 
   it("warns and keeps defaults for unknown/invalid nested values", function()
@@ -44,6 +45,9 @@ describe("theme-browser.config.options", function()
         mode = "invalid",
         provider = "invalid",
       },
+      registry = {
+        channel = "beta",
+      },
       keymaps = {
         select = "<Space>",
         install = {},
@@ -58,6 +62,7 @@ describe("theme-browser.config.options", function()
     assert.equals(0.6, validated.ui.window_width)
     assert.equals("manual", validated.package_manager.mode)
     assert.equals("auto", validated.package_manager.provider)
+    assert.equals("stable", validated.registry.channel)
     assert.same({ "<Space>" }, validated.keymaps.select)
     assert.same({ "i" }, validated.keymaps.install)
     assert.is_true(validated.ui.preview_on_move)
@@ -65,5 +70,14 @@ describe("theme-browser.config.options", function()
     assert.is_true(notify_mock.has_warning("Unknown config option: default_theme"))
     assert.is_true(notify_mock.has_warning("Unknown config option: show_preview"))
     assert.is_true(#notify_mock.calls > 0)
+  end)
+
+  it("accepts registry latest channel", function()
+    local options = require(module_name)
+    local validated = options.validate({
+      registry = { channel = "latest" },
+    })
+
+    assert.equals("latest", validated.registry.channel)
   end)
 end)

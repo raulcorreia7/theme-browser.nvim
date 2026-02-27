@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog, and this project follows SemVer.
 
+## [0.3.4] - 2026-02-27
+
+### Added
+- Add configurable registry release channel selection with `registry.channel = "stable"|"latest"`.
+
+### Changed
+- Registry sync now resolves `latest` channel assets from weekly `vX.Y.Z+YYYYMMDD` release tags.
+- Document registry channel behavior and configuration in README and configuration docs.
+
 ## [0.3.3] - 2026-02-27
 
 ### Fixed
@@ -22,5 +31,6 @@ The format is based on Keep a Changelog, and this project follows SemVer.
 ### Added
 - Curated Eldritch variant list in registry overrides.
 
+[0.3.4]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.4
 [0.3.3]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.3
 [0.3.2]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.2

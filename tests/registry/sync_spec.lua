@@ -215,6 +215,48 @@ describe("theme-browser.registry.sync", function()
         assert.equals("https://example.com/custom-registry.json", urls_requested[2])
       end)
     end)
+
+    it("resolves latest channel release URLs from releases API", function()
+      with_temp_cache_dir(function()
+        local urls_requested = {}
+        local responses = {
+          {
+            code = 0,
+            stdout = vim.json.encode({
+              { tag_name = "v0.3.2" },
+              { tag_name = "v0.3.2+20260226" },
+            }),
+          },
+          { code = 0, stdout = vim.json.encode({ sha256 = "abc", count = 1 }) },
+          { code = 0, stdout = vim.json.encode({ { name = "latest" } }) },
+        }
+        local call_count = 0
+
+        vim.system = function(cmd, _opts, callback)
+          call_count = call_count + 1
+          urls_requested[call_count] = cmd[#cmd]
+          local response = responses[call_count]
+          vim.schedule(function()
+            callback(response)
+          end)
+        end
+
+        local cb, get_result = wait_for_sync_result()
+        reload_sync().sync({ notify = false, channel = "latest" }, cb)
+        local result = get_result()
+
+        assert.is_true(result.success)
+        assert.equals("https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30", urls_requested[1])
+        assert.equals(
+          "https://github.com/raulcorreia7/theme-browser-registry/releases/download/v0.3.2+20260226/manifest.json",
+          urls_requested[2]
+        )
+        assert.equals(
+          "https://github.com/raulcorreia7/theme-browser-registry/releases/download/v0.3.2+20260226/themes.json",
+          urls_requested[3]
+        )
+      end)
+    end)
   end)
 
   describe("error handling", function()

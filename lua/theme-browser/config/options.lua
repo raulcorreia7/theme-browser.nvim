@@ -10,6 +10,9 @@ local scalar_schema = {
 }
 
 local nested_schema = {
+  registry = {
+    channel = "string",
+  },
   startup = {
     enabled = "boolean",
     write_spec = "boolean",
@@ -56,6 +59,7 @@ local nested_schema = {
 
 local top_level_order = {
   "registry_path",
+  "registry",
   "cache_dir",
   "auto_load",
   "log_level",
@@ -88,6 +92,11 @@ local package_manager_providers = {
   auto = true,
   lazy = true,
   noop = true,
+}
+
+local registry_channels = {
+  stable = true,
+  latest = true,
 }
 
 local function notify_warn(message)
@@ -183,6 +192,14 @@ local function validate_nested_value(parent_key, key, value, default_value)
   if parent_key == "package_manager" and key == "provider" then
     if type(value) ~= "string" or not package_manager_providers[value] then
       notify_warn(string.format("Invalid value for %s: expected auto|lazy|noop; keeping default", keypath))
+      return default_value
+    end
+    return value
+  end
+
+  if parent_key == "registry" and key == "channel" then
+    if type(value) ~= "string" or not registry_channels[value] then
+      notify_warn(string.format("Invalid value for %s: expected stable|latest; keeping default", keypath))
       return default_value
     end
     return value
