@@ -46,12 +46,15 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 | `:ThemeBrowser use <name[:variant]> [variant]` | Install, apply, persist theme |
 | `:ThemeBrowser status [name]` | Show theme status |
 | `:ThemeBrowser pm <enable\|disable\|toggle\|status>` | Package manager controls |
+| `:ThemeBrowser <enable\|disable\|toggle>` | Startup restore controls (inline) |
 | `:ThemeBrowser browser <enable\|disable\|toggle\|status>` | Startup restore controls |
-| `:ThemeBrowser registry <sync\|clear>` | Sync/clear cached registry |
-| `:ThemeBrowser! registry sync` | Force registry sync |
+| `:ThemeBrowser <sync\|clear>` | Registry sync/clear (inline) |
+| `:ThemeBrowser! sync` | Force registry sync |
 | `:ThemeBrowser validate [output]` | Validate theme can load |
 | `:ThemeBrowser reset` | Clear state, cache, managed spec |
 | `:ThemeBrowser help` | Show help |
+
+`registry <sync|clear>` remains available as a compatibility alias.
 
 ## Picker Keys
 
@@ -144,6 +147,12 @@ See [docs/theme-source-strategy.md](docs/theme-source-strategy.md) for cache vs 
 ```bash
 make verify
 ```
+
+## Release Process
+
+- Keep `CHANGELOG.md` updated before tagging.
+- Tags follow SemVer: `vX.Y.Z`.
+- Release workflow uses `CHANGELOG.md` section for release notes when available.
 
 ## Related
 
