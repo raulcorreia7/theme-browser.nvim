@@ -177,6 +177,16 @@ Expose canonical dev/build/test commands in `README`. Use multi-stage Dockerfile
 
 - Professional, concise, human. No emojis or decorative styling
 
+**Durable Runtime Lessons**
+
+- Make ownership explicit: for each resource, define whether updates/locking are owned by the plugin or by the package manager
+- Keep startup deterministic: persist a startup contract when runtime state may load too late
+- Define fallback precedence once and keep it stable (local source -> managed install -> remote source)
+- Treat cache as disposable by default; if cache becomes primary, define freshness and retention policy explicitly
+- Do not bypass user mode/config policy via hidden force paths except for explicit, documented escape hatches
+- Keep user-visible state labels aligned with lifecycle semantics (available/downloaded/installed/current)
+- Make migrations idempotent and safe to re-run; no-op if already migrated
+
 ---
 
 ## Dependencies and Locking

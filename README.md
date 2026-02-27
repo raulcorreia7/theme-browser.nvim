@@ -134,6 +134,7 @@ See [docs/configuration.md](docs/configuration.md) for full reference.
 ## Architecture
 
 See [docs/architecture.md](docs/architecture.md) for layer details.
+See [docs/theme-source-strategy.md](docs/theme-source-strategy.md) for cache vs install behavior and tradeoffs.
 
 ## Testing
 
