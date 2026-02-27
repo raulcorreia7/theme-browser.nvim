@@ -89,18 +89,30 @@ local function split_cmd_args(cmdline)
   return parts
 end
 
-local function complete_theme_command(arglead, cmdline)
+local function complete_from_values(values, arglead)
+  local matches = {}
+  local seen = {}
+
+  for _, value in ipairs(values) do
+    if prefix_match(value, arglead) and not seen[value] then
+      seen[value] = true
+      table.insert(matches, value)
+    end
+  end
+
+  table.sort(matches)
+  return matches
+end
+
+local function complete_theme_targets(arglead)
   local registry = ensure_registry_for_completion()
-  if not registry then
+  if not registry or type(registry.list_entries) ~= "function" then
     return {}
   end
 
-  local args = split_cmd_args(cmdline)
-  local arg_index = #args
-
-  local entries = type(registry.list_entries) == "function" and registry.list_entries() or {}
-  local names_seen = {}
+  local entries = registry.list_entries() or {}
   local names = {}
+  local names_seen = {}
   local tokens = {}
 
   for _, entry in ipairs(entries) do
@@ -116,57 +128,116 @@ local function complete_theme_command(arglead, cmdline)
     end
   end
 
-  local matches = {}
-  local seen = {}
-
-  if arg_index <= 1 then
-    for _, value in ipairs(names) do
-      if prefix_match(value, arglead) and not seen[value] then
-        seen[value] = true
-        table.insert(matches, value)
-      end
-    end
-    for _, value in ipairs(tokens) do
-      if prefix_match(value, arglead) and not seen[value] then
-        seen[value] = true
-        table.insert(matches, value)
-      end
-    end
-    table.sort(matches)
-    return matches
+  local values = {}
+  for _, value in ipairs(names) do
+    table.insert(values, value)
+  end
+  for _, value in ipairs(tokens) do
+    table.insert(values, value)
   end
 
-  local base_name = args[1]
-  if type(base_name) ~= "string" or base_name == "" then
+  return complete_from_values(values, arglead)
+end
+
+local function complete_theme_variants(arglead, base_name)
+  if type(base_name) ~= "string" or base_name == "" or base_name:find(":", 1, true) then
     return {}
   end
 
-  if base_name:find(":", 1, true) then
+  local registry = ensure_registry_for_completion()
+  if
+    not registry
+    or type(registry.list_entries) ~= "function"
+    or type(registry.get_theme) ~= "function"
+  then
     return {}
   end
 
-  local resolved = type(registry.get_theme) == "function" and registry.get_theme(base_name) or nil
+  local resolved = registry.get_theme(base_name)
   if type(resolved) == "table" and type(resolved.name) == "string" then
     base_name = resolved.name
   end
 
+  local entries = registry.list_entries() or {}
+  local variants = {}
+  local seen = {}
+
   for _, entry in ipairs(entries) do
-    if entry.name == base_name then
-      local variant = entry.variant
-      if
-        type(variant) == "string"
-        and variant ~= ""
-        and prefix_match(variant, arglead)
-        and not seen[variant]
-      then
-        seen[variant] = true
-        table.insert(matches, variant)
+    if entry.name == base_name and type(entry.variant) == "string" and entry.variant ~= "" then
+      if not seen[entry.variant] then
+        seen[entry.variant] = true
+        table.insert(variants, entry.variant)
       end
     end
   end
 
-  table.sort(matches)
-  return matches
+  return complete_from_values(variants, arglead)
+end
+
+local function complete_theme_browser_command(arglead, cmdline)
+  local args = split_cmd_args(cmdline)
+  local argc = #args
+  local action = type(args[1]) == "string" and string.lower(args[1]) or ""
+
+  if argc <= 1 then
+    local values = { "pick", "focus", "use", "status", "pm", "browser", "registry", "validate", "reset", "help" }
+    local matches = complete_from_values(values, arglead)
+    for _, value in ipairs(complete_theme_targets(arglead)) do
+      table.insert(matches, value)
+    end
+    return complete_from_values(matches, arglead)
+  end
+
+  if action == "pick" then
+    if argc == 2 then
+      return complete_theme_targets(arglead)
+    end
+    return {}
+  end
+
+  if action == "focus" then
+    return {}
+  end
+
+  if action == "use" then
+    if argc == 2 then
+      return complete_theme_targets(arglead)
+    end
+    if argc == 3 then
+      return complete_theme_variants(arglead, args[2])
+    end
+    return {}
+  end
+
+  if action == "status" then
+    if argc == 2 then
+      return complete_theme_targets(arglead)
+    end
+    return {}
+  end
+
+  if action == "pm" then
+    if argc == 2 then
+      return complete_from_values({ "enable", "disable", "toggle", "status" }, arglead)
+    end
+    return {}
+  end
+
+  if action == "browser" then
+    if argc == 2 then
+      return complete_from_values({ "enable", "disable", "toggle", "status" }, arglead)
+    end
+    return {}
+  end
+
+  if action == "registry" then
+    if argc == 2 then
+      return complete_from_values({ "sync", "clear" }, arglead)
+    end
+    return {}
+  end
+
+  return {}
 end
 
 local function with_package_manager_state(callback)
@@ -184,6 +255,21 @@ local function with_package_manager_state(callback)
   local mode = type(pm.mode) == "string" and pm.mode ~= "" and pm.mode or "manual"
   local provider = type(pm.provider) == "string" and pm.provider ~= "" and pm.provider or "auto"
   callback(state, pm.enabled == true, mode, provider)
+end
+
+local function with_browser_state(callback)
+  local ok_state, state = pcall(require, "theme-browser.persistence.state")
+  if
+    not ok_state
+    or type(state.get_browser_enabled) ~= "function"
+    or type(state.set_browser_enabled) ~= "function"
+    or type(state.get_current_theme) ~= "function"
+  then
+    log.warn("Theme Browser state is unavailable")
+    return
+  end
+
+  callback(state, state.get_browser_enabled() == true)
 end
 
 local function set_package_manager_enabled(enabled)
@@ -221,131 +307,77 @@ local function run_package_manager_action(action)
   return false
 end
 
-local function setup_commands()
-  vim.api.nvim_create_user_command("ThemeBrowser", function(opts)
-    local argument = opts.fargs[1]
-    local action = type(argument) == "string" and string.lower(argument) or ""
-    if run_package_manager_action(action) then
-      return
-    end
+local function run_browser_action(action)
+  if action == "status" then
+    with_browser_state(function(_, enabled)
+      log.info(string.format("Theme Browser startup restore is %s", enabled and "enabled" or "disabled"))
+    end)
+    return true
+  end
 
-    local picker = require("theme-browser.picker")
-    picker.pick({ initial_theme = argument })
-  end, {
-    nargs = "?",
-    complete = function(arglead)
-      local registry = ensure_registry_for_completion()
-      local themes = registry and registry.list_themes() or {}
-      local matches = {}
-      local seen = {}
-      local actions = { "enable", "disable", "toggle", "status" }
-
-      for _, action in ipairs(actions) do
-        if prefix_match(action, arglead) and not seen[action] then
-          seen[action] = true
-          table.insert(matches, action)
-        end
+  if action == "disable" then
+    with_browser_state(function(state, enabled)
+      if not enabled then
+        log.info("Theme Browser is already disabled")
+        return
       end
 
-      for _, theme in ipairs(themes) do
-        if prefix_match(theme.name, arglead) and not seen[theme.name] then
-          seen[theme.name] = true
-          table.insert(matches, theme.name)
-        end
+      state.set_browser_enabled(false)
+      log.info("Theme Browser disabled (themes will not load on startup)")
+    end)
+    return true
+  end
+
+  if action == "enable" then
+    with_browser_state(function(state, enabled)
+      if enabled then
+        log.info("Theme Browser is already enabled")
+        return
       end
-      return matches
-    end,
-  })
 
-  vim.api.nvim_create_user_command("ThemeBrowserUse", function(opts)
-    local theme_name, variant = parse_theme_args(opts.fargs)
-    if not theme_name then
-      log.warn("Usage: :ThemeBrowserUse <theme-name[:variant]> [variant]")
-      return
-    end
+      state.set_browser_enabled(true)
 
-    local theme_service = require("theme-browser.application.theme_service")
-    theme_service.use(theme_name, variant, {
-      wait_install = true,
-    })
-  end, {
-    nargs = "*",
-    complete = complete_theme_command,
-  })
+      local last_theme = state.get_current_theme()
+      if last_theme then
+        local theme_service = require("theme-browser.application.theme_service")
+        theme_service.use(last_theme.name, last_theme.variant, { notify = true })
+      else
+        log.info("Theme Browser enabled (no saved theme to restore)")
+      end
+    end)
+    return true
+  end
 
-  vim.api.nvim_create_user_command("ThemeBrowserStatus", function(opts)
-    local status = require("theme-browser.ui.status")
-    status.show(opts.fargs[1])
-  end, {
-    nargs = "?",
-    complete = complete_theme_command,
-  })
+  if action == "toggle" then
+    with_browser_state(function(state, enabled)
+      if enabled then
+        state.set_browser_enabled(false)
+        log.info("Theme Browser disabled (themes will not load on startup)")
+        return
+      end
 
-  vim.api.nvim_create_user_command("ThemeBrowserReset", function()
-    local cache = require("theme-browser.downloader.cache")
-    local state = require("theme-browser.persistence.state")
-    local lazy_spec = require("theme-browser.persistence.lazy_spec")
-    local preview = require("theme-browser.preview.manager")
+      state.set_browser_enabled(true)
 
-    cache.clear_all({ notify = false })
-    lazy_spec.remove_spec({ notify = false })
-    state.reset()
-    preview.cleanup()
+      local last_theme = state.get_current_theme()
+      if last_theme then
+        local theme_service = require("theme-browser.application.theme_service")
+        theme_service.use(last_theme.name, last_theme.variant, { notify = true })
+      else
+        log.info("Theme Browser enabled (no saved theme to restore)")
+      end
+    end)
+    return true
+  end
 
-    log.info("Theme Browser reset complete (state, cache, and managed spec removed)")
-  end, {})
+  return false
+end
 
-  vim.api.nvim_create_user_command("ThemeBrowserHelp", function()
-    local lines = {
-      "  :ThemeBrowser                       - Open theme picker",
-      "  :ThemeBrowser <op>                  - Package manager enable|disable|toggle|status",
-      "  :ThemeBrowserUse <name> [variant]   - Install/load/apply and persist",
-      "  :ThemeBrowserStatus [name]          - Show theme status",
-      "  :ThemeBrowserDisable                - Revert to pre-ThemeBrowser theme",
-      "  :ThemeBrowserEnable                 - Restore last ThemeBrowser theme",
-      "  :ThemeBrowserRegistrySync[!]        - Sync registry from releases (! force)",
-      "  :ThemeBrowserRegistryClear          - Clear synced registry cache",
-      "  :ThemeBrowserValidate [output]      - Validate install/preview/use over registry",
-      "  :ThemeBrowserReset                  - Reset state, cache, and managed spec",
-      "  :ThemeBrowserHelp                   - Show this help",
-    }
+local function run_registry_action(action, opts)
+  opts = opts or {}
 
-    vim.api.nvim_echo({ { table.concat(lines, "\n"), "Normal" } }, false, {})
-  end, {})
-
-  vim.api.nvim_create_user_command("ThemeBrowserValidate", function(opts)
-    local soak = require("theme-browser.validation.soak")
-    local output = opts.fargs[1]
-    local report = soak.run({ output_path = output })
-    if report.ok then
-      log.info(
-        string.format(
-          "Validation passed: %d/%d entries, notifications=%d, report=%s",
-          report.ok_count,
-          report.total_entries,
-          report.notify_count,
-          report.output_path
-        )
-      )
-    else
-      log.warn(
-        string.format(
-          "Validation failed: ok=%d fail=%d notifications=%d, report=%s",
-          report.ok_count,
-          report.fail_count,
-          report.notify_count,
-          report.output_path
-        )
-      )
-    end
-  end, {
-    nargs = "?",
-  })
-
-  vim.api.nvim_create_user_command("ThemeBrowserRegistrySync", function(opts)
-    local force = opts.bang
+  if action == "sync" then
     local registry_sync = require("theme-browser.registry.sync")
-    registry_sync.sync({ force = force }, function(success, message, count)
+    registry_sync.sync({ force = opts.force == true }, function(success, message, count)
       vim.schedule(function()
         if success then
           if message == "updated" then
@@ -364,11 +396,10 @@ local function setup_commands()
         end
       end)
     end)
-  end, {
-    bang = true,
-  })
+    return true
+  end
 
-  vim.api.nvim_create_user_command("ThemeBrowserRegistryClear", function()
+  if action == "clear" then
     local registry_sync = require("theme-browser.registry.sync")
     registry_sync.clear_synced_registry()
 
@@ -377,32 +408,174 @@ local function setup_commands()
     registry.initialize(resolved.path)
 
     log.info("Synced registry cleared, using bundled fallback")
-  end, {})
+    return true
+  end
 
-  vim.api.nvim_create_user_command("ThemeBrowserDisable", function()
-    local state = require("theme-browser.persistence.state")
-    state.set_browser_enabled(false)
-    log.info("Theme Browser disabled (themes will not load on startup)")
-  end, {})
+  return false
+end
 
-  vim.api.nvim_create_user_command("ThemeBrowserEnable", function()
-    local state = require("theme-browser.persistence.state")
-    local theme_service = require("theme-browser.application.theme_service")
+local function run_reset_action()
+  local cache = require("theme-browser.downloader.cache")
+  local state = require("theme-browser.persistence.state")
+  local lazy_spec = require("theme-browser.persistence.lazy_spec")
+  local preview = require("theme-browser.preview.manager")
 
-    if state.get_browser_enabled() then
-      log.info("Theme Browser is already enabled")
+  cache.clear_all({ notify = false })
+  lazy_spec.remove_spec({ notify = false })
+  state.reset()
+  preview.cleanup()
+
+  log.info("Theme Browser reset complete (state, cache, and managed spec removed)")
+end
+
+local function run_validate_action(output)
+  local soak = require("theme-browser.validation.soak")
+  local report = soak.run({ output_path = output })
+  if report.ok then
+    log.info(
+      string.format(
+        "Validation passed: %d/%d entries, notifications=%d, report=%s",
+        report.ok_count,
+        report.total_entries,
+        report.notify_count,
+        report.output_path
+      )
+    )
+  else
+    log.warn(
+      string.format(
+        "Validation failed: ok=%d fail=%d notifications=%d, report=%s",
+        report.ok_count,
+        report.fail_count,
+        report.notify_count,
+        report.output_path
+      )
+    )
+  end
+end
+
+local function run_help_action()
+  local lines = {
+    "  :ThemeBrowser                          - Open theme picker",
+    "  :ThemeBrowser pick [query]             - Open picker with optional initial filter",
+    "  :ThemeBrowser focus                    - Focus existing picker window",
+    "  :ThemeBrowser use <name[:variant]> [variant] - Install/load/apply and persist",
+    "  :ThemeBrowser status [name]            - Show theme status",
+    "  :ThemeBrowser pm <enable|disable|toggle|status> - Package manager controls",
+    "  :ThemeBrowser browser <enable|disable|toggle|status> - Startup restore controls",
+    "  :ThemeBrowser registry <sync|clear>    - Sync or clear registry cache",
+    "  :ThemeBrowser! registry sync           - Force registry sync",
+    "  :ThemeBrowser validate [output]        - Validate install/preview/use over registry",
+    "  :ThemeBrowser reset                    - Reset state, cache, and managed spec",
+    "  :ThemeBrowser help                     - Show this help",
+  }
+
+  vim.api.nvim_echo({ { table.concat(lines, "\n"), "Normal" } }, false, {})
+end
+
+local function setup_commands()
+  vim.api.nvim_create_user_command("ThemeBrowser", function(opts)
+    local action = type(opts.fargs[1]) == "string" and string.lower(opts.fargs[1]) or ""
+    local picker = require("theme-browser.picker")
+
+    if action == "" then
+      if picker.focus() then
+        return
+      end
+      picker.pick()
       return
     end
 
-    state.set_browser_enabled(true)
-
-    local last_theme = state.get_current_theme()
-    if last_theme then
-      theme_service.use(last_theme.name, last_theme.variant, { notify = true })
-    else
-      log.info("Theme Browser enabled (no saved theme to restore)")
+    if action == "pick" then
+      local query = opts.fargs[2]
+      if (query == nil or query == "") and picker.focus() then
+        return
+      end
+      picker.pick({ initial_theme = query })
+      return
     end
-  end, {})
+
+    if action == "focus" then
+      if not picker.focus() then
+        log.warn("Theme picker window is not open")
+      end
+      return
+    end
+
+    if action == "use" then
+      local use_args = {}
+      for i = 2, #opts.fargs do
+        table.insert(use_args, opts.fargs[i])
+      end
+
+      local theme_name, variant = parse_theme_args(use_args)
+      if not theme_name then
+        log.warn("Usage: :ThemeBrowser use <theme-name[:variant]> [variant]")
+        return
+      end
+
+      local theme_service = require("theme-browser.application.theme_service")
+      theme_service.use(theme_name, variant, {
+        wait_install = true,
+      })
+      return
+    end
+
+    if action == "status" then
+      local status = require("theme-browser.ui.status")
+      status.show(opts.fargs[2])
+      return
+    end
+
+    if action == "pm" then
+      local pm_action = type(opts.fargs[2]) == "string" and string.lower(opts.fargs[2]) or ""
+      if not run_package_manager_action(pm_action) then
+        log.warn("Usage: :ThemeBrowser pm <enable|disable|toggle|status>")
+      end
+      return
+    end
+
+    if action == "browser" then
+      local browser_action = type(opts.fargs[2]) == "string" and string.lower(opts.fargs[2]) or ""
+      if not run_browser_action(browser_action) then
+        log.warn("Usage: :ThemeBrowser browser <enable|disable|toggle|status>")
+      end
+      return
+    end
+
+    if action == "registry" then
+      local registry_action = type(opts.fargs[2]) == "string" and string.lower(opts.fargs[2]) or ""
+      if registry_action == "" and opts.bang then
+        registry_action = "sync"
+      end
+
+      if not run_registry_action(registry_action, { force = opts.bang }) then
+        log.warn("Usage: :ThemeBrowser registry <sync|clear>")
+      end
+      return
+    end
+
+    if action == "validate" then
+      run_validate_action(opts.fargs[2])
+      return
+    end
+
+    if action == "reset" then
+      run_reset_action()
+      return
+    end
+
+    if action == "help" then
+      run_help_action()
+      return
+    end
+
+    picker.pick({ initial_theme = opts.fargs[1] })
+  end, {
+    nargs = "*",
+    bang = true,
+    complete = complete_theme_browser_command,
+  })
 end
 
 local function sync_state_from_current_colorscheme(state, registry)
@@ -486,7 +659,6 @@ local function should_run_startup_restore(state)
   return true
 end
 
----Setup theme-browser plugin
 ---@param user_config Config|nil
 ---@return ThemeBrowser
 function M.setup(user_config)

@@ -28,6 +28,8 @@ function M.get_entry_display(state, entry, snapshot)
     table.insert(states, "current")
   elseif entry_state.installed then
     table.insert(states, "installed")
+  elseif entry_state.cached then
+    table.insert(states, "downloaded")
   else
     table.insert(states, "available")
   end
@@ -41,6 +43,8 @@ function M.get_entry_display(state, entry, snapshot)
     icon = ICONS.current
   elseif entry_state.installed then
     icon = ICONS.installed
+  elseif entry_state.cached then
+    icon = ICONS.downloaded or ICONS.available
   else
     icon = ICONS.available
   end

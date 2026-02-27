@@ -9,8 +9,19 @@ describe("Integration: autoload", function()
     "theme-browser.package_manager.manager",
     "theme-browser.persistence.lazy_spec",
   }
-  local commands =
-    { "ThemeBrowser", "ThemeBrowserUse", "ThemeBrowserStatus", "ThemeBrowserReset", "ThemeBrowserHelp" }
+  local commands = {
+    "ThemeBrowser",
+    "ThemeBrowserFocus",
+    "ThemeBrowserUse",
+    "ThemeBrowserStatus",
+    "ThemeBrowserReset",
+    "ThemeBrowserHelp",
+    "ThemeBrowserValidate",
+    "ThemeBrowserRegistrySync",
+    "ThemeBrowserRegistryClear",
+    "ThemeBrowserDisable",
+    "ThemeBrowserEnable",
+  }
 
   local function clear_commands()
     for _, cmd in ipairs(commands) do
@@ -131,14 +142,14 @@ describe("Integration: autoload", function()
     assert.is_true(loaded)
   end)
 
-  it("registers ThemeBrowser commands", function()
+  it("registers only the root ThemeBrowser command", function()
     mock_deps(nil, function()
       return { ok = true }
     end)
     setup()
     assert.equals(2, vim.fn.exists(":ThemeBrowser"))
-    assert.equals(2, vim.fn.exists(":ThemeBrowserUse"))
-    assert.equals(2, vim.fn.exists(":ThemeBrowserReset"))
+    assert.equals(0, vim.fn.exists(":ThemeBrowserUse"))
+    assert.equals(0, vim.fn.exists(":ThemeBrowserReset"))
   end)
 
   it("provides theme name completion", function()
@@ -172,7 +183,13 @@ describe("Integration: autoload", function()
       end,
     }
     setup()
-    local matches = vim.fn.getcompletion("ThemeBrowserUse tok", "cmdline")
+    local matches = vim.fn.getcompletion("ThemeBrowser use tok", "cmdline")
     assert.is_true(vim.tbl_contains(matches, "tokyonight"))
+
+    local root_matches = vim.fn.getcompletion("ThemeBrowser r", "cmdline")
+    assert.is_true(vim.tbl_contains(root_matches, "registry"))
+
+    local pm_matches = vim.fn.getcompletion("ThemeBrowser pm e", "cmdline")
+    assert.is_true(vim.tbl_contains(pm_matches, "enable"))
   end)
 end)

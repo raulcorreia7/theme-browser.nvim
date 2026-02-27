@@ -379,4 +379,24 @@ describe("theme-browser.adapters.factory", function()
     assert.is_true(result.ok)
     assert.equals("dark", result.mode)
   end)
+
+  it("applies background from entry mode before colorscheme", function()
+    local factory = require(factory_module)
+    local original_background = vim.o.background
+
+    vim.o.background = "dark"
+
+    local entry = test_utils.make_theme_entry("mytheme", {
+      variant = "light",
+      mode = "light",
+      colorscheme = "mytheme-light",
+      repo = "owner/mytheme",
+    })
+
+    local result = factory.get_adapter(entry).load(entry)
+    assert.is_true(result.ok)
+    assert.equals("light", vim.o.background)
+
+    vim.o.background = original_background
+  end)
 end)

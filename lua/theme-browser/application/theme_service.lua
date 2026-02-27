@@ -369,6 +369,9 @@ function M.preview(theme_name, variant, opts)
         local reason = err
           or (result and result.errors and (result.errors.colorscheme_error or result.errors.runtime_error))
           or "theme unavailable"
+        if type(opts.on_preview_failed) == "function" then
+          opts.on_preview_failed(reason)
+        end
         if opts.notify ~= false then
           notify.warn(string.format("Preview failed: %s", reason), { theme = theme_name })
         end

@@ -47,35 +47,41 @@ Registry resolution order:
 ==============================================================================
 COMMANDS                                                        *theme-browser-commands*
 
-:ThemeBrowser [query]
+:ThemeBrowser
     Open gallery.
 
-:ThemeBrowserUse <name> [variant]
-:ThemeBrowserUse <name:variant]
+:ThemeBrowser pick [query]
+    Open gallery with optional initial filter.
+
+:ThemeBrowser focus
+    Focus an already-open picker.
+
+:ThemeBrowser use <name> [variant]
+:ThemeBrowser use <name:variant>
     Install/load/apply and persist theme.
 
-:ThemeBrowserStatus [name|name:variant]
+:ThemeBrowser status [name|name:variant]
     Show theme status.
 
-:ThemeBrowserDisable
-    Disable theme loading on startup.
+:ThemeBrowser pm <enable|disable|toggle|status>
+    Package manager controls.
 
-:ThemeBrowserEnable
-    Re-enable and restore last theme.
+:ThemeBrowser browser <enable|disable|toggle|status>
+    Startup restore controls.
 
-:ThemeBrowserReset
+:ThemeBrowser registry <sync|clear>
+    Sync or clear cached registry.
+
+:ThemeBrowser! registry sync
+    Force registry sync.
+
+:ThemeBrowser validate [output]
+    Validate install/preview/use across registry.
+
+:ThemeBrowser reset
     Clear state, cache, managed spec.
 
-:ThemeBrowserValidate [name]
-    Validate theme can load.
-
-:ThemeBrowserRegistrySync [url]
-    Sync registry from URL.
-
-:ThemeBrowserRegistryClear
-    Clear cached registry.
-
-:ThemeBrowserHelp
+:ThemeBrowser help
     Show help.
 
 ==============================================================================
@@ -101,7 +107,7 @@ CONFIGURATION                                                      *theme-browse
 
     package_manager = {
       enabled = true,
-      mode = "manual", -- auto|manual|plugin_only
+      mode = "manual", -- auto|manual|installed_only
       provider = "auto", -- auto|lazy|noop
     },
 

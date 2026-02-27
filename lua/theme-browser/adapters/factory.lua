@@ -64,7 +64,35 @@ local function apply_colorscheme(entry)
   return false, last_err, colorscheme_from_entry(entry), tried
 end
 
+local function is_valid_mode(mode)
+  return mode == "dark" or mode == "light"
+end
+
+local function resolve_entry_mode(entry)
+  if is_valid_mode(entry.mode) then
+    return entry.mode
+  end
+
+  local meta = entry.meta
+  if type(meta) == "table" then
+    if is_valid_mode(meta.mode) then
+      return meta.mode
+    end
+
+    if type(meta.strategy) == "table" and is_valid_mode(meta.strategy.mode) then
+      return meta.strategy.mode
+    end
+  end
+
+  return nil
+end
+
 local function apply_vim_options(entry)
+  local mode = resolve_entry_mode(entry)
+  if mode and vim.o.background ~= mode then
+    vim.o.background = mode
+  end
+
   local strategy = entry.meta and entry.meta.strategy
   local vim_opts = strategy and strategy.vim
 
@@ -124,19 +152,7 @@ local function resolve_args(entry)
 end
 
 local function resolve_mode(entry)
-  if entry.mode then
-    return entry.mode
-  end
-  local meta = entry.meta
-  if meta then
-    if meta.mode then
-      return meta.mode
-    end
-    if meta.strategy and meta.strategy.mode then
-      return meta.strategy.mode
-    end
-  end
-  return nil
+  return resolve_entry_mode(entry)
 end
 
 -- Common keys used by themes to specify the variant/palette in setup().

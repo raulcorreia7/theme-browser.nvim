@@ -26,6 +26,9 @@ end
 local STATE_ICONS = {
   current = "●",
   installed = "◆",
+  downloaded = "↓",
+  previewing = "◉",
+  previewed = "◈",
   dark = "◐",
   light = "◑",
   available = "○",
@@ -33,12 +36,15 @@ local STATE_ICONS = {
 }
 
 if M.has_nerd_font() then
-  STATE_ICONS.current = ""
-  STATE_ICONS.installed = ""
+  STATE_ICONS.current = ""
+  STATE_ICONS.installed = ""
+  STATE_ICONS.downloaded = ""
+  STATE_ICONS.previewing = ""
+  STATE_ICONS.previewed = ""
   STATE_ICONS.dark = ""
   STATE_ICONS.light = ""
   STATE_ICONS.available = ""
-  STATE_ICONS.marked = ""
+  STATE_ICONS.marked = ""
 end
 
 M.STATE_ICONS = STATE_ICONS

@@ -23,13 +23,20 @@ local function add_to_runtimepath(path)
   if vim.fn.isdirectory(path) == 1 then
     for _, existing in ipairs(vim.opt.runtimepath:get()) do
       if existing == path then
-        return true
+        return true, false
       end
     end
     vim.opt.runtimepath:prepend(path)
-    return true
+    return true, true
   end
-  return false
+  return false, false
+end
+
+local function reset_lua_loader()
+  local loader = vim.loader
+  if type(loader) == "table" and type(loader.reset) == "function" then
+    pcall(loader.reset)
+  end
 end
 
 local function resolve_lazy_install_path(entry)
@@ -96,9 +103,13 @@ function M.attach_cached_runtime(theme_name, variant)
     return false, "theme is not cached or installed", nil
   end
 
-  local ok = add_to_runtimepath(runtime_path)
+  local ok, added = add_to_runtimepath(runtime_path)
   if not ok then
     return false, "theme runtime path missing", nil
+  end
+
+  if added then
+    reset_lua_loader()
   end
 
   return true, nil, runtime_path

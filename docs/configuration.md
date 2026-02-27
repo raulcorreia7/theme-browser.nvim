@@ -15,7 +15,7 @@ package_manager = {
 | Mode | Behavior |
 |------|----------|
 | `auto` | Automatically install missing themes on apply |
-| `manual` | Install only when explicitly requested (`ThemeBrowserUse`) |
+| `manual` | Install only when explicitly requested (`ThemeBrowser use`) |
 | `installed_only` | Never download; only use installed plugins |
 
 ### Provider

@@ -46,16 +46,18 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 
 | Command | Description |
 |---------|-------------|
-| `:ThemeBrowser [query]` | Open theme gallery (optional search query) |
-| `:ThemeBrowserUse <name> [variant]` | Install, apply, persist theme |
-| `:ThemeBrowserStatus [name]` | Show theme status |
-| `:ThemeBrowserDisable` | Disable theme loading on startup |
-| `:ThemeBrowserEnable` | Re-enable and restore last theme |
-| `:ThemeBrowserReset` | Clear state, cache, managed spec |
-| `:ThemeBrowserValidate [name]` | Validate theme can load |
-| `:ThemeBrowserRegistrySync [url]` | Sync registry from URL |
-| `:ThemeBrowserRegistryClear` | Clear cached registry |
-| `:ThemeBrowserHelp` | Show help |
+| `:ThemeBrowser` | Open theme gallery |
+| `:ThemeBrowser pick [query]` | Open gallery with optional initial filter |
+| `:ThemeBrowser focus` | Focus an already-open picker |
+| `:ThemeBrowser use <name[:variant]> [variant]` | Install, apply, persist theme |
+| `:ThemeBrowser status [name]` | Show theme status |
+| `:ThemeBrowser pm <enable\|disable\|toggle\|status>` | Package manager controls |
+| `:ThemeBrowser browser <enable\|disable\|toggle\|status>` | Startup restore controls |
+| `:ThemeBrowser registry <sync\|clear>` | Sync/clear cached registry |
+| `:ThemeBrowser! registry sync` | Force registry sync |
+| `:ThemeBrowser validate [output]` | Validate theme can load |
+| `:ThemeBrowser reset` | Clear state, cache, managed spec |
+| `:ThemeBrowser help` | Show help |
 
 ## Picker Keys
 
@@ -127,6 +129,13 @@ See [docs/configuration.md](docs/configuration.md) for full reference.
 |------|---------|
 | `stdpath("data")/theme-browser/state.json` | Persisted state |
 | `stdpath("config")/lua/plugins/theme-browser-selected.lua` | Managed lazy spec |
+
+## Theme Compatibility
+
+- Setup-based themes with variants are supported across common option keys:
+  `theme`, `palette`, `style`, `colorscheme`, `variant`, `flavour`, `flavor`
+- Variant metadata from the registry is preserved so loader strategy/module hints work per entry
+- Themes that modify external user config files outside Neovim are excluded at the registry level
 
 ## Architecture
 

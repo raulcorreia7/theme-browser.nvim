@@ -67,20 +67,56 @@ local function clone_theme(theme)
   return vim.deepcopy(theme)
 end
 
+local function is_valid_mode(mode)
+  return mode == "dark" or mode == "light"
+end
+
+local function resolve_entry_mode(theme, explicit_mode, extra_meta)
+  if is_valid_mode(explicit_mode) then
+    return explicit_mode
+  end
+
+  if type(extra_meta) == "table" then
+    if is_valid_mode(extra_meta.mode) then
+      return extra_meta.mode
+    end
+
+    if type(extra_meta.strategy) == "table" and is_valid_mode(extra_meta.strategy.mode) then
+      return extra_meta.strategy.mode
+    end
+  end
+
+  if is_valid_mode(theme.mode) then
+    return theme.mode
+  end
+
+  if type(theme.meta) == "table" then
+    if is_valid_mode(theme.meta.mode) then
+      return theme.meta.mode
+    end
+
+    if type(theme.meta.strategy) == "table" and is_valid_mode(theme.meta.strategy.mode) then
+      return theme.meta.strategy.mode
+    end
+  end
+
+  return nil
+end
+
 local function make_entry(theme, variant, colorscheme, display, extra_meta, mode)
   -- Build meta with strategy info from theme root
   local meta = vim.tbl_extend("force", theme.meta or {}, extra_meta or {})
-  
+
   -- Copy strategy from theme root to meta.strategy if not already set
   if theme.strategy and not meta.strategy then
     meta.strategy = { type = theme.strategy }
   end
-  
+
   -- Copy module name from theme root if not already in meta
   if theme.module and meta.strategy and not meta.strategy.module then
     meta.strategy.module = theme.module
   end
-  
+
   local entry = {
     id = variant and string.format("%s:%s", theme.name, variant) or theme.name,
     name = theme.name,
@@ -91,8 +127,9 @@ local function make_entry(theme, variant, colorscheme, display, extra_meta, mode
     meta = meta,
   }
 
-  if mode then
-    entry.mode = mode
+  local resolved_mode = resolve_entry_mode(theme, mode, extra_meta)
+  if resolved_mode then
+    entry.mode = resolved_mode
   end
 
   if theme.builtin then

@@ -182,6 +182,37 @@ describe("theme-browser.runtime.loader", function()
 
       vim.fn.delete(cache_dir, "rf")
     end)
+
+    it("resets lua loader cache after adding runtimepath", function()
+      local cache_dir = setup_mocks({
+        entry = test_utils.make_theme_entry("demo", { repo = "owner/theme.nvim" }),
+      }, {}, {
+        is_cached = true,
+      })
+      local cache_path = package.loaded["theme-browser.downloader.github"].get_cache_path()
+      vim.fn.mkdir(cache_path, "p")
+
+      local original_loader = vim.loader
+      local reset_calls = 0
+      vim.loader = {
+        reset = function()
+          reset_calls = reset_calls + 1
+        end,
+      }
+
+      loader = require(module_name)
+      local success = false
+      loader.ensure_available("demo", nil, function(ok)
+        success = ok
+      end)
+
+      vim.wait(100)
+      vim.loader = original_loader
+      assert.is_true(success)
+      assert.equals(1, reset_calls)
+
+      vim.fn.delete(cache_dir, "rf")
+    end)
   end)
 
   describe("source detection", function()

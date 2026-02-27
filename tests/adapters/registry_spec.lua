@@ -143,4 +143,36 @@ describe("theme-browser.adapters.registry", function()
     assert.equals("setup", entry.meta.strategy.type)
     assert.equals("astrotheme", entry.meta.strategy.module)
   end)
+
+  it("propagates root mode to expanded entries", function()
+    local registry = reload_registry()
+    local path = write_temp_registry({
+      {
+        name = "modus",
+        repo = "owner/modus.nvim",
+        colorscheme = "modus",
+        mode = "light",
+        variants = {
+          { name = "modus-operandi", colorscheme = "modus-operandi" },
+        },
+      },
+      {
+        name = "everforest",
+        repo = "sainnhe/everforest",
+        colorscheme = "everforest",
+        mode = "dark",
+      },
+    })
+
+    registry.initialize(path)
+
+    local variant_entry = registry.resolve("modus", "modus-operandi")
+    local base_entry = registry.resolve("everforest", nil)
+
+    assert.is_not_nil(variant_entry)
+    assert.equals("light", variant_entry.mode)
+
+    assert.is_not_nil(base_entry)
+    assert.equals("dark", base_entry.mode)
+  end)
 end)
