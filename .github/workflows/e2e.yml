@@ -66,104 +66,35 @@ jobs:
             -c "lua print('Neovim started')" \
             -c "lua print(vim.fn.stdpath('config'))" \
             -c "qa!" 2>&1
-          
-          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
-            local ok, err = pcall(require, 'theme-browser')
-            if not ok then
-              print('Failed to load theme-browser: ' .. tostring(err))
-              vim.cmd('cq')
-              os.exit(1)
-            end
-            print('theme-browser loaded successfully')
-            vim.cmd('qa!')
-          " 2>&1
+
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua assert(pcall(require, 'theme-browser'))" \
+            -c "lua print('theme-browser loaded successfully')" \
+            -c "qa!" 2>&1
       
       - name: Run registry adapter tests
         run: |
-          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
-            local ok, err = pcall(function()
-              local registry = require('theme-browser.adapters.registry')
-              local entries = registry.list_entries()
-              print('Registry entries count: ' .. #entries)
-              assert(#entries > 0, 'Registry should have entries')
-              print('Registry adapter test passed')
-            end)
-            if not ok then
-              print('Test failed: ' .. tostring(err))
-              vim.cmd('cq')
-            else
-              vim.cmd('q!')
-            end
-          " 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua local registry=require('theme-browser.adapters.registry'); local entries=registry.list_entries(); print('Registry entries count: ' .. #entries); assert(#entries > 0, 'Registry should have entries'); print('Registry adapter test passed')" \
+            -c "qa!" 2>&1
       
       - name: Run theme resolution tests
         run: |
-          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
-            local ok, err = pcall(function()
-              local registry = require('theme-browser.adapters.registry')
-              
-              local theme = registry.get_theme('tokyonight')
-              assert(theme ~= nil, 'tokyonight should exist')
-              assert(theme.repo == 'folke/tokyonight.nvim', 'tokyonight repo should match')
-              
-              local entry = registry.resolve('tokyonight', 'tokyonight-night')
-              assert(entry ~= nil, 'tokyonight-night should resolve')
-              
-              print('Theme resolution test passed')
-            end)
-            if not ok then
-              print('Test failed: ' .. tostring(err))
-              vim.cmd('cq')
-            else
-              vim.cmd('q!')
-            end
-          " 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua local registry=require('theme-browser.adapters.registry'); local theme=registry.get_theme('tokyonight'); assert(theme ~= nil, 'tokyonight should exist'); assert(theme.repo == 'folke/tokyonight.nvim', 'tokyonight repo should match'); local entry=registry.resolve('tokyonight', 'tokyonight-night'); assert(entry ~= nil, 'tokyonight-night should resolve'); print('Theme resolution test passed')" \
+            -c "qa!" 2>&1
       
       - name: Run theme service tests
         run: |
-          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
-            local ok, err = pcall(function()
-              local service = require('theme-browser.application.theme_service')
-              
-              local ok_preview = pcall(service.preview, 'tokyonight', 'tokyonight-night', {
-                notify = false,
-                install_missing = false,
-              })
-              assert(ok_preview, 'Preview should not throw errors')
-              
-              print('Theme service test passed')
-            end)
-            if not ok then
-              print('Test failed: ' .. tostring(err))
-              vim.cmd('cq')
-            else
-              vim.cmd('q!')
-            end
-          " 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua local service=require('theme-browser.application.theme_service'); local ok_preview=pcall(service.preview, 'tokyonight', 'tokyonight-night', { notify=false, install_missing=false }); assert(ok_preview, 'Preview should not throw errors'); print('Theme service test passed')" \
+            -c "qa!" 2>&1
       
       - name: Run bundled registry test
         run: |
-          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
-            local ok, err = pcall(function()
-              local bundled_path = vim.fn.stdpath('data') .. '/site/pack/plugins/start/theme-browser.nvim/lua/theme-browser/data/registry.json'
-              local file = io.open(bundled_path, 'r')
-              assert(file ~= nil, 'Bundled registry.json should exist')
-              local content = file:read('*a')
-              file:close()
-              
-              local data = vim.json.decode(content)
-              assert(#data > 0, 'Bundled registry should have entries')
-              assert(#data >= 40, 'Bundled registry should have at least 40 themes')
-              
-              print('Bundled registry test passed: ' .. #data .. ' themes')
-            end)
-            if not ok then
-              print('Test failed: ' .. tostring(err))
-              vim.cmd('cq')
-            else
-              vim.cmd('q!')
-            end
-          " 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua local bundled_path=vim.fn.stdpath('data') .. '/site/pack/plugins/start/theme-browser.nvim/lua/theme-browser/data/registry.json'; local file=assert(io.open(bundled_path, 'r'), 'Bundled registry.json should exist'); local content=file:read('*a'); file:close(); local data=vim.json.decode(content); assert(#data > 0, 'Bundled registry should have entries'); assert(#data >= 40, 'Bundled registry should have at least 40 themes'); print('Bundled registry test passed: ' .. #data .. ' themes')" \
+            -c "qa!" 2>&1
 
   e2e-with-lazy:
     runs-on: ubuntu-latest
@@ -230,13 +161,7 @@ jobs:
       - name: Test plugin with Lazy
         run: |
           cd $GITHUB_WORKSPACE
-          nvim --headless -u ~/.config/nvim/init.lua -i NONE -c "
-            local ok, err = pcall(require, 'theme-browser')
-            if not ok then
-              print('Failed to load: ' .. tostring(err))
-              vim.cmd('cq')
-            else
-              print('Loaded via Lazy successfully')
-              vim.cmd('q!')
-            end
-          " 2>&1
+          nvim --headless -u ~/.config/nvim/init.lua -i NONE \
+            -c "lua assert(pcall(require, 'theme-browser'))" \
+            -c "lua print('Loaded via Lazy successfully')" \
+            -c "qa!" 2>&1
