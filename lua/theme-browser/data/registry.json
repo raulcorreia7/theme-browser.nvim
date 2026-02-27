@@ -16,7 +16,7 @@
     "name": "bamboo",
     "colorscheme": "bamboo",
     "repo": "ribru17/bamboo.nvim",
-    "stars": 446,
+    "stars": 447,
     "strategy": "setup",
     "variants": [
       {
@@ -334,7 +334,7 @@
     "name": "flexoki",
     "colorscheme": "flexoki",
     "repo": "kepano/flexoki",
-    "stars": 3053
+    "stars": 3054
   },
   {
     "name": "github-nvim-theme",
@@ -395,7 +395,7 @@
     "name": "kanagawa",
     "colorscheme": "kanagawa",
     "repo": "rebelot/kanagawa.nvim",
-    "stars": 5952,
+    "stars": 5953,
     "strategy": "load",
     "variants": [
       {
@@ -489,7 +489,7 @@
     "name": "modus-themes",
     "colorscheme": "modus",
     "repo": "miikanissi/modus-themes.nvim",
-    "stars": 404,
+    "stars": 405,
     "strategy": "setup",
     "variants": [
       {
@@ -614,7 +614,7 @@
     "name": "nyoom",
     "colorscheme": "nyoom",
     "repo": "nyoom-engineering/nyoom.nvim",
-    "stars": 1577
+    "stars": 1578
   },
   {
     "name": "onedark",
