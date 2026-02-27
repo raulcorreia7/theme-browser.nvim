@@ -6,36 +6,30 @@ Neovim theme gallery and loader. Browse, preview, apply, and persist themes.
 
 ## Quick Start
 
+Install with lazy.nvim using the latest tagged release (instead of `main`/HEAD):
+
 ```lua
 -- ~/.config/nvim/lua/plugins/theme-browser.lua
 return {
   {
     "raulcorreia7/theme-browser.nvim",
+    version = "*", -- latest stable tag
     event = "VeryLazy",
     dependencies = { "rktjmp/lush.nvim" },
     opts = {
       auto_load = true,
-      startup = {
-        enabled = true,
-        write_spec = true,
-        skip_if_already_active = true,
-      },
-      ui = {
-        preview_on_move = true,
-      },
-      package_manager = {
-        enabled = true,
-      },
     },
   },
 }
 ```
 
+If you want an exact pin for reproducible setups, use `tag = "vX.Y.Z"`.
+
 Open picker: `:ThemeBrowser`
 
 ### Persistence
 
-With `startup.write_spec = true`, selecting a theme generates:
+With `startup.write_spec = true` (default), selecting a theme generates:
 ```
 ~/.config/nvim/lua/plugins/theme-browser-selected.lua
 ```
