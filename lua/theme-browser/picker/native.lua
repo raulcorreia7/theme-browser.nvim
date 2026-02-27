@@ -278,13 +278,7 @@ local function format_item_line(item, name_col_width, variant_col_width, content
   item.variant_col_offset = #name_cell + 3
   item.variant_hl_len = #variant_text
 
-  return string.format(
-    "%s %s  %s%s",
-    item.status_icon,
-    item.bg_icon,
-    title,
-    string.rep(" ", padding)
-  )
+  return string.format("%s %s  %s%s", item.status_icon, item.bg_icon, title, string.rep(" ", padding))
 end
 
 local function apply_item(item, popup, close_after, callback)
@@ -405,8 +399,8 @@ function M.pick(opts)
 
   local function hint_text()
     return string.format(
-      " %s apply  %s set-main  %s preview  %s install  %s copy  " ..
-      "%s search  %s/%s move  %s/%s page  %s close",
+      " %s apply  %s set-main  %s preview  %s install  %s copy  "
+        .. "%s search  %s/%s move  %s/%s page  %s close",
       first_key(keymaps.select),
       first_key(keymaps.set_main),
       first_key(keymaps.preview),
@@ -426,7 +420,8 @@ function M.pick(opts)
   local min_content_width = 36
   local max_content_width = math.min(96, editor_width - 10)
   local content_width
-  name_column_width, variant_column_width, content_width = calculate_column_widths(all_items, max_content_width)
+  name_column_width, variant_column_width, content_width =
+    calculate_column_widths(all_items, max_content_width)
   optimal_content_width = math.max(min_content_width, math.min(max_content_width, content_width))
   local popup_width = optimal_content_width + 6
   local min_height = math.min(20, math.floor(editor_height * 0.5))
@@ -556,32 +551,29 @@ function M.pick(opts)
       local prefix_offset = 2
       local status_start = item.status_col_start + prefix_offset
       local status_end = item.status_col_end + prefix_offset
-      vim.api.nvim_buf_add_highlight(
-        popup.bufnr, -1, item.status_hl, row - 1, status_start, status_end
-      )
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.status_hl, row - 1, status_start, status_end)
       local bg_start = item.bg_col_start + prefix_offset
       local bg_end = item.bg_col_end + prefix_offset
-      vim.api.nvim_buf_add_highlight(
-        popup.bufnr, -1, item.bg_hl, row - 1, bg_start, bg_end
-      )
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.bg_hl, row - 1, bg_start, bg_end)
       local name_start = item.name_col_start + prefix_offset
       local name_end = name_start + item.name_len
-      vim.api.nvim_buf_add_highlight(
-        popup.bufnr, -1, "ThemeBrowserName", row - 1, name_start, name_end
-      )
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserName", row - 1, name_start, name_end)
       if item.separator_col_offset then
         local separator_start = name_start + item.separator_col_offset
         vim.api.nvim_buf_add_highlight(
-          popup.bufnr, -1, "ThemeBrowserSeparator", row - 1, separator_start, separator_start + 1
+          popup.bufnr,
+          -1,
+          "ThemeBrowserSeparator",
+          row - 1,
+          separator_start,
+          separator_start + 1
         )
       end
       if item.variant_col_offset then
         local variant_start = name_start + item.variant_col_offset
         local variant_end = variant_start + item.variant_hl_len
         local variant_hl = item.is_default_variant and "ThemeBrowserVariantDefault" or "ThemeBrowserVariant"
-        vim.api.nvim_buf_add_highlight(
-          popup.bufnr, -1, variant_hl, row - 1, variant_start, variant_end
-        )
+        vim.api.nvim_buf_add_highlight(popup.bufnr, -1, variant_hl, row - 1, variant_start, variant_end)
       end
       if i == index then
         vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSelected", row - 1, 0, -1)

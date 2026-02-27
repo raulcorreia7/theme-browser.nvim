@@ -145,11 +145,7 @@ local function complete_theme_variants(arglead, base_name)
   end
 
   local registry = ensure_registry_for_completion()
-  if
-    not registry
-    or type(registry.list_entries) ~= "function"
-    or type(registry.get_theme) ~= "function"
-  then
+  if not registry or type(registry.list_entries) ~= "function" or type(registry.get_theme) ~= "function" then
     return {}
   end
 
@@ -180,7 +176,8 @@ local function complete_theme_browser_command(arglead, cmdline)
   local action = type(args[1]) == "string" and string.lower(args[1]) or ""
 
   if argc <= 1 then
-    local values = { "pick", "focus", "use", "status", "pm", "browser", "registry", "validate", "reset", "help" }
+    local values =
+      { "pick", "focus", "use", "status", "pm", "browser", "registry", "validate", "reset", "help" }
     local matches = complete_from_values(values, arglead)
     for _, value in ipairs(complete_theme_targets(arglead)) do
       table.insert(matches, value)

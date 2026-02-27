@@ -2,60 +2,67 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v0.1.0-alpha)'
-        required: true
+        description: "Version tag (for example v0.3.0)"
+        required: false
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      PLENARY_RTP: ${{ github.workspace }}/.ci/plenary.nvim
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Lua
-        uses: leafo/gh-actions-lua@v10
+        uses: leafo/gh-actions-lua@v11
         with:
-          luaVersion: '5.1'
-      
+          luaVersion: "5.1"
+
       - name: Setup LuaRocks
-        uses: leafo/gh-actions-luarocks@v4
-      
+        uses: leafo/gh-actions-luarocks@v5
+
       - name: Install luacheck
         run: luarocks install luacheck
-      
+
       - name: Setup StyLua
         uses: JohnnyMorganz/stylua-action@v4
         with:
           version: latest
           token: ${{ secrets.GITHUB_TOKEN }}
           args: lua
-      
+
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: stable
-      
+
       - name: Install plenary.nvim
         run: |
-          mkdir -p .ci
-          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim .ci/plenary.nvim
-      
+          mkdir -p "$(dirname "$PLENARY_RTP")"
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim "$PLENARY_RTP"
+
       - name: Run verify
         run: make verify
-        env:
-          CI: true
-          PLENARY_RTP: ${{ github.workspace }}/.ci/plenary.nvim
-      
-      - name: Determine version
+
+      - name: Resolve version tag
         id: version
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -63,19 +70,34 @@ jobs:
           else
             VERSION="${{ github.ref_name }}"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
+
+          if [[ -z "$VERSION" ]]; then
+            echo "Version is required for release" >&2
+            exit 1
+          fi
+
+          if [[ "$VERSION" != v* ]]; then
+            VERSION="v$VERSION"
+          fi
+
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version tag: $VERSION" >&2
+            exit 1
+          fi
+
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Create or update release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Check if release exists
-          if gh release view "$VERSION" &>/dev/null; then
-            echo "Release $VERSION already exists, updating..."
-            gh release edit "$VERSION" --notes "Updated via CI"
+          VERSION="${{ steps.version.outputs.value }}"
+
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists, updating title"
+            gh release edit "$VERSION" --title "$VERSION"
           else
-            echo "Creating new release $VERSION..."
+            echo "Creating release $VERSION"
             gh release create "$VERSION" \
               --title "$VERSION" \
               --generate-notes
