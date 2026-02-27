@@ -186,8 +186,8 @@ describe("Integration: autoload", function()
     local matches = vim.fn.getcompletion("ThemeBrowser use tok", "cmdline")
     assert.is_true(vim.tbl_contains(matches, "tokyonight"))
 
-    local root_matches = vim.fn.getcompletion("ThemeBrowser r", "cmdline")
-    assert.is_true(vim.tbl_contains(root_matches, "registry"))
+    local sync_matches = vim.fn.getcompletion("ThemeBrowser s", "cmdline")
+    assert.is_true(vim.tbl_contains(sync_matches, "sync"))
 
     local disable_matches = vim.fn.getcompletion("ThemeBrowser d", "cmdline")
     assert.is_true(vim.tbl_contains(disable_matches, "disable"))
@@ -252,6 +252,76 @@ describe("Integration: autoload", function()
     vim.cmd("ThemeBrowser disable")
 
     assert.is_false(browser_enabled)
+    assert.is_false(picker_opened)
+  end)
+
+  it("accepts sync shorthand as registry sync", function()
+    local sync_called = false
+    local picker_opened = false
+
+    package.loaded["theme-browser.persistence.state"] = {
+      initialize = function() end,
+      get_current_theme = function()
+        return nil
+      end,
+      get_browser_enabled = function()
+        return true
+      end,
+      set_browser_enabled = function() end,
+    }
+
+    package.loaded["theme-browser.adapters.registry"] = {
+      initialize = function() end,
+      resolve = function() end,
+      list_themes = function()
+        return {}
+      end,
+      list_entries = function()
+        return {}
+      end,
+    }
+
+    package.loaded["theme-browser.registry.sync"] = {
+      sync = function(_, cb)
+        sync_called = true
+        if cb then
+          cb(true, "up_to_date", 0)
+        end
+      end,
+      get_synced_registry_path = function()
+        return nil
+      end,
+    }
+
+    package.loaded["theme-browser.adapters.base"] = {
+      has_package_manager = function()
+        return true
+      end,
+      load_theme = function()
+        return { ok = true }
+      end,
+    }
+
+    package.loaded["theme-browser.package_manager.manager"] = {
+      when_ready = function(cb)
+        cb()
+      end,
+    }
+
+    package.loaded["theme-browser.picker"] = {
+      focus = function()
+        return false
+      end,
+      pick = function()
+        picker_opened = true
+      end,
+    }
+
+    setup()
+    vim.cmd("ThemeBrowser sync")
+
+    vim.wait(100)
+    assert.is_true(sync_called)
     assert.is_false(picker_opened)
   end)
 end)

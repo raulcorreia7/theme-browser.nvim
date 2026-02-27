@@ -186,7 +186,8 @@ local function complete_theme_browser_command(arglead, cmdline)
       "enable",
       "disable",
       "toggle",
-      "registry",
+      "sync",
+      "clear",
       "validate",
       "reset",
       "help",
@@ -236,13 +237,6 @@ local function complete_theme_browser_command(arglead, cmdline)
   if action == "browser" then
     if argc == 2 then
       return complete_from_values({ "enable", "disable", "toggle", "status" }, arglead)
-    end
-    return {}
-  end
-
-  if action == "registry" then
-    if argc == 2 then
-      return complete_from_values({ "sync", "clear" }, arglead)
     end
     return {}
   end
@@ -474,8 +468,8 @@ local function run_help_action()
     "  :ThemeBrowser pm <enable|disable|toggle|status> - Package manager controls",
     "  :ThemeBrowser browser <enable|disable|toggle|status> - Startup restore controls",
     "  :ThemeBrowser <enable|disable|toggle> - Shorthand for browser controls",
-    "  :ThemeBrowser registry <sync|clear>    - Sync or clear registry cache",
-    "  :ThemeBrowser! registry sync           - Force registry sync",
+    "  :ThemeBrowser <sync|clear>            - Shorthand for registry controls",
+    "  :ThemeBrowser! sync                   - Force registry sync",
     "  :ThemeBrowser validate [output]        - Validate install/preview/use over registry",
     "  :ThemeBrowser reset                    - Reset state, cache, and managed spec",
     "  :ThemeBrowser help                     - Show this help",
@@ -559,14 +553,22 @@ local function setup_commands()
       return
     end
 
+    if action == "sync" or action == "clear" then
+      if not run_registry_action(action, { force = opts.bang }) then
+        log.warn("Usage: :ThemeBrowser <sync|clear>")
+      end
+      return
+    end
+
     if action == "registry" then
       local registry_action = type(opts.fargs[2]) == "string" and string.lower(opts.fargs[2]) or ""
-      if registry_action == "" and opts.bang then
-        registry_action = "sync"
+      if registry_action == "" then
+        log.warn("Usage: :ThemeBrowser <sync|clear>")
+        return
       end
 
       if not run_registry_action(registry_action, { force = opts.bang }) then
-        log.warn("Usage: :ThemeBrowser registry <sync|clear>")
+        log.warn("Usage: :ThemeBrowser <sync|clear>")
       end
       return
     end
