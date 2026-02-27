@@ -246,7 +246,10 @@ describe("theme-browser.registry.sync", function()
         local result = get_result()
 
         assert.is_true(result.success)
-        assert.equals("https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30", urls_requested[1])
+        assert.equals(
+          "https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30",
+          urls_requested[1]
+        )
         assert.equals(
           "https://github.com/raulcorreia7/theme-browser-registry/releases/download/v0.3.2+20260226/manifest.json",
           urls_requested[2]

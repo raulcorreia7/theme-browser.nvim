@@ -6,7 +6,8 @@ local DEFAULT_REGISTRY_URL =
   "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/themes.json"
 local DEFAULT_MANIFEST_URL =
   "https://github.com/raulcorreia7/theme-browser-registry/releases/latest/download/manifest.json"
-local RELEASES_API_URL = "https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30"
+local RELEASES_API_URL =
+  "https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30"
 local CACHE_FILENAME = "registry-full.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
 local COMPATIBLE_VERSION = "0.1"
