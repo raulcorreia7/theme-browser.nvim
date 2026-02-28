@@ -230,35 +230,6 @@
     ]
   },
   {
-    "name": "boo",
-    "colorscheme": "boo",
-    "repo": "rockerBOO/boo-colorscheme-nvim",
-    "stars": 247,
-    "strategy": "setup",
-    "variants": [
-      {
-        "name": "crimson_moonlight",
-        "colorscheme": "crimson_moonlight",
-        "mode": "dark"
-      },
-      {
-        "name": "forest_stream",
-        "colorscheme": "forest_stream",
-        "mode": "dark"
-      },
-      {
-        "name": "radioactive_waste",
-        "colorscheme": "radioactive_waste",
-        "mode": "dark"
-      },
-      {
-        "name": "sunset_cloud",
-        "colorscheme": "sunset_cloud",
-        "mode": "dark"
-      }
-    ]
-  },
-  {
     "name": "catppuccin",
     "colorscheme": "catppuccin",
     "repo": "catppuccin/nvim",
@@ -307,6 +278,291 @@
     "repo": "dracula/vim",
     "stars": 1376,
     "strategy": "colorscheme"
+  },
+  {
+    "name": "eldritch",
+    "colorscheme": "eldritch",
+    "repo": "raulcorreia7/eldritch.nvim",
+    "stars": 5000,
+    "strategy": "setup",
+    "variants": [
+      {
+        "name": "dark",
+        "colorscheme": "eldritch-dark",
+        "variant": "eldritch-dark",
+        "mode": "dark"
+      },
+      {
+        "name": "default (eldritch)",
+        "colorscheme": "eldritch",
+        "variant": "eldritch",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + azure",
+        "colorscheme": "eldritch-gruvbox-azure",
+        "variant": "eldritch-gruvbox-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + crimson",
+        "colorscheme": "eldritch-gruvbox-crimson",
+        "variant": "eldritch-gruvbox-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + emerald",
+        "colorscheme": "eldritch-gruvbox-emerald",
+        "variant": "eldritch-gruvbox-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + fusion",
+        "colorscheme": "eldritch-fusion-gruvbox",
+        "variant": "eldritch-fusion-gruvbox",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + fusion",
+        "colorscheme": "eldritch-gruvbox-fusion",
+        "variant": "eldritch-gruvbox-fusion",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + fusion azure",
+        "colorscheme": "eldritch-fusion-gruvbox-azure",
+        "variant": "eldritch-fusion-gruvbox-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + fusion crimson",
+        "colorscheme": "eldritch-fusion-gruvbox-crimson",
+        "variant": "eldritch-fusion-gruvbox-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "gruvbox + fusion emerald",
+        "colorscheme": "eldritch-fusion-gruvbox-emerald",
+        "variant": "eldritch-fusion-gruvbox-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa",
+        "colorscheme": "eldritch-kanagawa",
+        "variant": "eldritch-kanagawa",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + azure",
+        "colorscheme": "eldritch-kanagawa-azure",
+        "variant": "eldritch-kanagawa-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + crimson",
+        "colorscheme": "eldritch-kanagawa-crimson",
+        "variant": "eldritch-kanagawa-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + emerald",
+        "colorscheme": "eldritch-kanagawa-emerald",
+        "variant": "eldritch-kanagawa-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion",
+        "colorscheme": "eldritch-fusion-kanagawa",
+        "variant": "eldritch-fusion-kanagawa",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion",
+        "colorscheme": "eldritch-kanagawa-fusion",
+        "variant": "eldritch-kanagawa-fusion",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion azure",
+        "colorscheme": "eldritch-fusion-kanagawa-azure",
+        "variant": "eldritch-fusion-kanagawa-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion crimson",
+        "colorscheme": "eldritch-fusion-kanagawa-crimson",
+        "variant": "eldritch-fusion-kanagawa-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion emerald",
+        "colorscheme": "eldritch-fusion-kanagawa-emerald",
+        "variant": "eldritch-fusion-kanagawa-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion green",
+        "colorscheme": "eldritch-kanagawa-fusion-green",
+        "variant": "eldritch-kanagawa-fusion-green",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion mid",
+        "colorscheme": "eldritch-kanagawa-fusion-mid",
+        "variant": "eldritch-kanagawa-fusion-mid",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion pop",
+        "colorscheme": "eldritch-kanagawa-fusion-pop",
+        "variant": "eldritch-kanagawa-fusion-pop",
+        "mode": "dark"
+      },
+      {
+        "name": "kanagawa + fusion purple",
+        "colorscheme": "eldritch-kanagawa-fusion-purple",
+        "variant": "eldritch-kanagawa-fusion-purple",
+        "mode": "dark"
+      },
+      {
+        "name": "minimal",
+        "colorscheme": "eldritch-minimal",
+        "variant": "eldritch-minimal",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + azure",
+        "colorscheme": "eldritch-rosepine-azure",
+        "variant": "eldritch-rosepine-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + crimson",
+        "colorscheme": "eldritch-rosepine-crimson",
+        "variant": "eldritch-rosepine-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + emerald",
+        "colorscheme": "eldritch-rosepine-emerald",
+        "variant": "eldritch-rosepine-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + fusion",
+        "colorscheme": "eldritch-fusion-rosepine",
+        "variant": "eldritch-fusion-rosepine",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + fusion azure",
+        "colorscheme": "eldritch-fusion-rosepine-azure",
+        "variant": "eldritch-fusion-rosepine-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + fusion crimson",
+        "colorscheme": "eldritch-fusion-rosepine-crimson",
+        "variant": "eldritch-fusion-rosepine-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "rosepine + fusion emerald",
+        "colorscheme": "eldritch-fusion-rosepine-emerald",
+        "variant": "eldritch-fusion-rosepine-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + azure",
+        "colorscheme": "eldritch-tokyonight-azure",
+        "variant": "eldritch-tokyonight-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + crimson",
+        "colorscheme": "eldritch-tokyonight-crimson",
+        "variant": "eldritch-tokyonight-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + emerald",
+        "colorscheme": "eldritch-tokyonight-emerald",
+        "variant": "eldritch-tokyonight-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + fusion",
+        "colorscheme": "eldritch-fusion-tokyonight",
+        "variant": "eldritch-fusion-tokyonight",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + fusion",
+        "colorscheme": "eldritch-tokyonight-fusion",
+        "variant": "eldritch-tokyonight-fusion",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + fusion azure",
+        "colorscheme": "eldritch-fusion-tokyonight-azure",
+        "variant": "eldritch-fusion-tokyonight-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + fusion crimson",
+        "colorscheme": "eldritch-fusion-tokyonight-crimson",
+        "variant": "eldritch-fusion-tokyonight-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "tokyonight + fusion emerald",
+        "colorscheme": "eldritch-fusion-tokyonight-emerald",
+        "variant": "eldritch-fusion-tokyonight-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode + fusion",
+        "colorscheme": "eldritch-fusion-vscode",
+        "variant": "eldritch-fusion-vscode",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode + fusion azure",
+        "colorscheme": "eldritch-fusion-vscode-azure",
+        "variant": "eldritch-fusion-vscode-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode + fusion crimson",
+        "colorscheme": "eldritch-fusion-vscode-crimson",
+        "variant": "eldritch-fusion-vscode-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode + fusion emerald",
+        "colorscheme": "eldritch-fusion-vscode-emerald",
+        "variant": "eldritch-fusion-vscode-emerald",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode-dark-azure",
+        "colorscheme": "eldritch-vscode-dark-azure",
+        "variant": "eldritch-vscode-dark-azure",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode-dark-crimson",
+        "colorscheme": "eldritch-vscode-dark-crimson",
+        "variant": "eldritch-vscode-dark-crimson",
+        "mode": "dark"
+      },
+      {
+        "name": "vscode-dark-emerald",
+        "colorscheme": "eldritch-vscode-dark-emerald",
+        "variant": "eldritch-vscode-dark-emerald",
+        "mode": "dark"
+      }
+    ]
   },
   {
     "name": "embark-theme",

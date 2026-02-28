@@ -193,6 +193,13 @@ local function split_match_positions(item, positions)
   return name_positions, variant_positions
 end
 
+local STATUS_SORT_RANK = {
+  current = 0,
+  installed = 1,
+  downloaded = 2,
+  available = 3,
+}
+
 local function format_item(entry, snapshot, previewing_key, previewed_key)
   local status = entry_utils.entry_status(entry, snapshot)
   local key = entry_key(entry)
@@ -238,7 +245,6 @@ local function format_item(entry, snapshot, previewing_key, previewed_key)
   local is_default_variant = variant == nil
   local title = ""
 
-  -- Calculate byte positions for highlights (accounting for UTF-8 multi-byte chars)
   local status_len = #status_icon
   local bg_len = #bg_icon
   local icon_gap = 1
@@ -266,14 +272,24 @@ local function format_item(entry, snapshot, previewing_key, previewed_key)
     match_name_positions = {},
     match_variant_positions = {},
     sort_key = string.format("%s %s", name_lower, variant_lower),
-    -- Positions:
-    -- [status_icon][icon_gap][bg_icon][title_gap][title]
     status_col_start = 0,
     status_col_end = status_len,
     bg_col_start = status_len + icon_gap,
     bg_col_end = status_len + icon_gap + bg_len,
     name_col_start = status_len + icon_gap + bg_len + title_gap,
   }
+end
+
+local function compare_items(a, b)
+  if a.name_lower ~= b.name_lower then
+    return a.name_lower < b.name_lower
+  end
+
+  if a.is_default_variant ~= b.is_default_variant then
+    return a.is_default_variant
+  end
+
+  return a.variant_lower < b.variant_lower
 end
 
 local function truncate_to_width(text, max_width)
@@ -442,9 +458,7 @@ function M.pick(opts)
       table.insert(all_items, format_item(entry, snapshot, previewing_key, previewed_key))
     end
 
-    table.sort(all_items, function(a, b)
-      return a.sort_key < b.sort_key
-    end)
+    table.sort(all_items, compare_items)
 
     if optimal_content_width and name_column_width and variant_column_width then
       for _, item in ipairs(all_items) do
@@ -657,7 +671,7 @@ function M.pick(opts)
       return
     end
     ensure_visible()
-    local row = (index - scroll + 1) + 2
+    local row = (index - scroll + 1)
     syncing_cursor = true
     pcall(vim.api.nvim_win_set_cursor, popup.winid, { row, 0 })
     syncing_cursor = false
@@ -669,14 +683,14 @@ function M.pick(opts)
     local divider = string.rep("─", win_width)
     local selected_row_prefix = selected_prefix()
     local normal_row_prefix = "  "
-    local search_icon = (type(icons.has_nerd_font) == "function" and icons.has_nerd_font()) and "" or "/"
+    local search_icon = (type(icons.has_nerd_font) == "function" and icons.has_nerd_font()) and "" or "/"
     local query_display = nil
     if search_mode then
       query_display = query
     else
       query_display = query ~= "" and query or "type / to fuzzy-filter themes"
     end
-    local query_cursor = search_mode and "▏" or ""
+    local query_cursor = search_mode and "" or ""
     local prompt_text = fit_line(
       string.format(
         " %s  %s%s%s",
@@ -688,10 +702,7 @@ function M.pick(opts)
       win_width
     )
 
-    local lines = {
-      prompt_text,
-      divider,
-    }
+    local lines = {}
 
     if showing_help then
       for _, line in ipairs(help_lines()) do
@@ -704,14 +715,11 @@ function M.pick(opts)
       vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
       vim.bo[popup.bufnr].modifiable = false
 
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPrompt", 0, 0, -1)
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPromptIcon", 0, 1, 1 + #search_icon)
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", 1, 0, -1)
-      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserName", 2, 0, -1)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserName", 0, 0, -1)
       vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", #lines - 2, 0, -1)
       vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSubtle", #lines - 1, 0, -1)
 
-      pcall(vim.api.nvim_win_set_cursor, popup.winid, { 3, 0 })
+      pcall(vim.api.nvim_win_set_cursor, popup.winid, { 1, 0 })
       pcall(vim.cmd, "redraw")
       return
     end
@@ -741,6 +749,7 @@ function M.pick(opts)
     end
 
     table.insert(lines, status_line)
+    table.insert(lines, prompt_text)
     if show_hints then
       table.insert(lines, fit_line(hint_text(win_width), win_width))
     end
@@ -749,13 +758,12 @@ function M.pick(opts)
     vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
     vim.bo[popup.bufnr].modifiable = false
 
-    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPrompt", 0, 0, -1)
-    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPromptIcon", 0, 1, 1 + #search_icon)
-    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", 1, 0, -1)
+    local divider_row = #items == 0 and 0 or (last - first)
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", divider_row, 0, -1)
 
     for i = first, last do
       local item = items[i]
-      local row = (i - first + 1) + 2
+      local row = (i - first + 1)
       local row_prefix = (i == index) and selected_row_prefix or normal_row_prefix
       local prefix_offset = #row_prefix
       local status_start = item.status_col_start + prefix_offset
@@ -810,9 +818,13 @@ function M.pick(opts)
     local bottom_divider_row = #lines - (show_hints and 2 or 1)
     vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", bottom_divider_row - 1, 0, -1)
 
+    local prompt_row = #lines - (show_hints and 1 or 0)
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPrompt", prompt_row - 1, 0, -1)
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPromptIcon", prompt_row - 1, 1, 1 + #search_icon)
+
     move_cursor_to_selection()
 
-    local status_row = #lines - (show_hints and 1 or 0)
+    local status_row = prompt_row - 1
     vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSubtle", status_row - 1, 0, -1)
     if show_hints then
       vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSubtle", #lines - 1, 0, -1)
@@ -827,7 +839,7 @@ function M.pick(opts)
     end
 
     local row = vim.api.nvim_win_get_cursor(popup.winid)[1]
-    local candidate = scroll + (row - 3)
+    local candidate = scroll + (row - 1)
     if #items == 0 then
       candidate = 1
     else
@@ -858,26 +870,52 @@ function M.pick(opts)
   end
 
   local function apply_filter(new_query, preserve_index)
-    query = vim.trim(new_query or "")
-    if query == "" then
+    query = type(new_query) == "string" and new_query or ""
+    local normalized_query = vim.trim(query)
+    if normalized_query == "" then
       items = vim.deepcopy(all_items)
     else
-      local lowered = query:lower()
+      local query_tokens = {}
+      for token in normalized_query:gmatch("%S+") do
+        query_tokens[#query_tokens + 1] = token:lower()
+      end
+
       items = {}
       for _, item in ipairs(all_items) do
-        local score, positions = fuzzy_match_positions(item.sort_key, lowered)
-        if score then
+        local total_score = 0
+        local collected_positions = {}
+        local matched = true
+
+        for _, token in ipairs(query_tokens) do
+          local score, positions = fuzzy_match_positions(item.sort_key, token)
+          if not score then
+            matched = false
+            break
+          end
+          total_score = total_score + score
+          for _, pos in ipairs(positions) do
+            collected_positions[pos] = true
+          end
+        end
+
+        if matched then
+          local merged_positions = {}
+          for pos in pairs(collected_positions) do
+            merged_positions[#merged_positions + 1] = pos
+          end
+          table.sort(merged_positions)
+
           local filtered_item = vim.deepcopy(item)
-          filtered_item.match_score = score
+          filtered_item.match_score = total_score - ((#query_tokens - 1) * 0.5)
           filtered_item.match_name_positions, filtered_item.match_variant_positions =
-            split_match_positions(filtered_item, positions)
+            split_match_positions(filtered_item, merged_positions)
           table.insert(items, filtered_item)
         end
       end
 
       table.sort(items, function(a, b)
         if a.match_score == b.match_score then
-          return a.sort_key < b.sort_key
+          return compare_items(a, b)
         end
         return a.match_score > b.match_score
       end)
@@ -898,6 +936,35 @@ function M.pick(opts)
   end
 
   local map_opts = { buffer = popup.bufnr, nowait = true, silent = true }
+  local search_passthrough_keys = {}
+
+  local function register_search_passthrough_keys(keys)
+    if type(keys) ~= "table" then
+      return
+    end
+    for _, lhs in ipairs(keys) do
+      if type(lhs) == "string" and lhs ~= "" then
+        if lhs:match("^<[CMAS]%-.+>$") then
+          search_passthrough_keys[termcode(lhs)] = lhs
+        end
+      end
+    end
+  end
+
+  register_search_passthrough_keys(keymaps.navigate_up)
+  register_search_passthrough_keys(keymaps.navigate_down)
+  register_search_passthrough_keys(keymaps.goto_top)
+  register_search_passthrough_keys(keymaps.goto_bottom)
+  register_search_passthrough_keys(keymaps.scroll_up)
+  register_search_passthrough_keys(keymaps.scroll_down)
+  register_search_passthrough_keys(keymaps.select)
+  register_search_passthrough_keys(keymaps.set_main)
+  register_search_passthrough_keys(keymaps.preview)
+  register_search_passthrough_keys(keymaps.install)
+  register_search_passthrough_keys(keymaps.copy_repo)
+  register_search_passthrough_keys(keymaps.open_repo)
+  register_search_passthrough_keys(keymaps.help)
+  register_search_passthrough_keys(keymaps.close)
 
   local function map_keys(keys, fn, opts_for_map)
     local allow_in_help = type(opts_for_map) == "table" and opts_for_map.allow_in_help == true
@@ -913,6 +980,19 @@ function M.pick(opts)
       end, map_opts)
     end
   end
+
+  local function register_search_passthrough_keys(keys)
+    if type(keys) ~= "table" then
+      return
+    end
+    for _, lhs in ipairs(keys) do
+      if type(lhs) == "string" and lhs ~= "" then
+        search_passthrough_keys[termcode(lhs)] = lhs
+      end
+    end
+  end
+
+
 
   map_keys(keymaps.navigate_down, function()
     if #items == 0 then
@@ -1090,6 +1170,7 @@ function M.pick(opts)
     render()
 
     local esc = termcode("<Esc>")
+    local c_bracket = termcode("<C-[>")
     local cr = termcode("<CR>")
     local bs = termcode("<BS>")
     local del = termcode("<Del>")
@@ -1097,6 +1178,9 @@ function M.pick(opts)
     local c_u = termcode("<C-u>")
     local c_w = termcode("<C-w>")
     local c_c = termcode("<C-c>")
+    local raw_c_c = "\3"
+    local search_key = first_key(keymaps.search)
+    local replay_lhs = nil
 
     while popup and popup.winid and vim.api.nvim_win_is_valid(popup.winid) do
       local ok, key = pcall(vim.fn.getcharstr)
@@ -1108,18 +1192,22 @@ function M.pick(opts)
         break
       end
 
-      if key == esc or key == c_c then
+      if key == esc or key == c_bracket or key == c_c or key == raw_c_c then
         break
       end
 
-      if key == bs or key == del or key == c_h then
+      local passthrough_lhs = search_passthrough_keys[key]
+      if passthrough_lhs ~= nil then
+        replay_lhs = passthrough_lhs
+        break
+      end
+
+      if key == search_key then
+        apply_filter("", false)
+      elseif key == bs or key == del or key == c_h then
         if query ~= "" then
           query = vim.fn.strcharpart(query, 0, math.max(0, vim.fn.strchars(query) - 1))
           apply_filter(query, false)
-        end
-      elseif key == c_u then
-        if query ~= "" then
-          apply_filter("", false)
         end
       elseif key == c_w then
         local stripped = query:gsub("%s+$", "")
@@ -1134,6 +1222,15 @@ function M.pick(opts)
 
     search_mode = false
     render()
+
+    if replay_lhs then
+      vim.schedule(function()
+        if not popup or not popup.winid or not vim.api.nvim_win_is_valid(popup.winid) then
+          return
+        end
+        vim.api.nvim_feedkeys(termcode(replay_lhs), "n", false)
+      end)
+    end
   end)
 
   map_keys(keymaps.clear_search, function()

@@ -24,6 +24,9 @@ describe("theme-browser.picker.native repo actions", function()
   local original_keymap_set
   local original_ui_open
   local original_setreg
+  local original_getcharstr
+  local original_nvim_feedkeys
+  local feedkeys_calls
 
   local function open_popup_window(popup, layout)
     local config = {
@@ -45,6 +48,10 @@ describe("theme-browser.picker.native repo actions", function()
     popup.winid = vim.api.nvim_open_win(popup.bufnr, true, config)
   end
 
+  local function termcode(key)
+    return vim.api.nvim_replace_termcodes(key, true, true, true)
+  end
+
   before_each(function()
     test_utils.reset_all(modules)
 
@@ -53,6 +60,7 @@ describe("theme-browser.picker.native repo actions", function()
     mark_calls = {}
     setreg_calls = {}
     opened_urls = {}
+    feedkeys_calls = {}
 
     package.loaded["nui.popup"] = setmetatable({}, {
       __call = function(_, opts)
@@ -192,12 +200,17 @@ describe("theme-browser.picker.native repo actions", function()
     vim.fn.setreg = function(register, value)
       setreg_calls[register] = value
     end
+
+    original_getcharstr = vim.fn.getcharstr
+    original_nvim_feedkeys = vim.api.nvim_feedkeys
   end)
 
   after_each(function()
     vim.keymap.set = original_keymap_set
     vim.ui.open = original_ui_open
     vim.fn.setreg = original_setreg
+    vim.fn.getcharstr = original_getcharstr
+    vim.api.nvim_feedkeys = original_nvim_feedkeys
 
     if last_popup then
       last_popup:unmount()
@@ -234,5 +247,53 @@ describe("theme-browser.picker.native repo actions", function()
     assert.equals(1, #mark_calls)
     assert.equals("tokyonight", mark_calls[1].name)
     assert.equals("night", mark_calls[1].variant)
+  end)
+
+  it("replays command keys when fuzzy search is active", function()
+    local picker = require(module_name)
+    picker.pick()
+
+    assert.is_not_nil(mapped_callbacks["/"])
+
+    vim.fn.getcharstr = function()
+      return "m"
+    end
+
+    vim.api.nvim_feedkeys = function(keys, mode, escape_ks)
+      table.insert(feedkeys_calls, {
+        keys = keys,
+        mode = mode,
+        escape_ks = escape_ks,
+      })
+    end
+
+    mapped_callbacks["/"]()
+    vim.wait(100)
+
+    assert.equals(1, #feedkeys_calls)
+    assert.equals("m", feedkeys_calls[1].keys)
+    assert.equals("n", feedkeys_calls[1].mode)
+    assert.is_false(feedkeys_calls[1].escape_ks)
+  end)
+
+  it("keeps spaces in fuzzy query input", function()
+    local picker = require(module_name)
+    picker.pick()
+
+    assert.is_not_nil(mapped_callbacks["/"])
+
+    local keys = { "t", "o", "k", "y", "o", " ", "n", termcode("<CR>") }
+    local idx = 1
+    vim.fn.getcharstr = function()
+      local next_key = keys[idx]
+      idx = idx + 1
+      return next_key
+    end
+
+    mapped_callbacks["/"]()
+    vim.wait(100)
+
+    local first_line = vim.api.nvim_buf_get_lines(last_popup.bufnr, 0, 1, false)[1]
+    assert.is_truthy(first_line:find("tokyo n", 1, true))
   end)
 end)

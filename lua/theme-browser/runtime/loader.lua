@@ -57,6 +57,44 @@ local function resolve_lazy_install_path(entry)
   return nil
 end
 
+local function resolve_local_repo_path(entry)
+  if type(entry) ~= "table" or type(entry.repo) ~= "string" then
+    return nil
+  end
+
+  local _, repo_name = entry.repo:match("([^/]+)/(.+)")
+  if type(repo_name) ~= "string" or repo_name == "" then
+    return nil
+  end
+
+  local ok_theme_browser, theme_browser = pcall(require, "theme-browser")
+  if not ok_theme_browser or type(theme_browser.get_config) ~= "function" then
+    return nil
+  end
+
+  local config = theme_browser.get_config()
+  local sources = config.local_repo_sources
+  if type(sources) ~= "table" then
+    sources = type(sources) == "string" and { sources } or {}
+  end
+
+  local home = (vim.loop and vim.loop.os_homedir and vim.loop.os_homedir()) or vim.env.HOME
+  if type(home) == "string" and home ~= "" then
+    table.insert(sources, 1, home .. "/projects")
+  end
+
+  for _, source in ipairs(sources) do
+    if type(source) == "string" and source ~= "" then
+      local candidate = source .. "/" .. repo_name
+      if vim.fn.isdirectory(candidate) == 1 then
+        return candidate
+      end
+    end
+  end
+
+  return nil
+end
+
 local function cache_path_for(entry, cache_dir)
   local github = require("theme-browser.downloader.github")
   if type(github.resolve_cache_path) == "function" then
@@ -94,9 +132,12 @@ function M.attach_cached_runtime(theme_name, variant)
     return false, "theme has no repo and is not builtin", nil
   end
 
-  local cache_dir = resolve_cache_dir()
-  local runtime_path = cache_path_for(entry, cache_dir)
-  if vim.fn.isdirectory(runtime_path) ~= 1 then
+  local runtime_path = resolve_local_repo_path(entry)
+  if not runtime_path then
+    local cache_dir = resolve_cache_dir()
+    runtime_path = cache_path_for(entry, cache_dir)
+  end
+  if not runtime_path then
     runtime_path = resolve_lazy_install_path(entry)
   end
   if type(runtime_path) ~= "string" or runtime_path == "" then

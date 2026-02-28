@@ -124,6 +124,7 @@ local function make_entry(theme, variant, colorscheme, display, extra_meta, mode
     display = display,
     repo = theme.repo,
     colorscheme = colorscheme,
+    stars = tonumber(theme.stars) or 0,
     meta = meta,
   }
 
