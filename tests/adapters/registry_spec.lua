@@ -79,7 +79,7 @@ describe("theme-browser.adapters.registry", function()
     assert.is_not_nil(entry)
     assert.equals("everforest:light", entry.id)
     assert.equals("light", entry.variant)
-    assert.equals("everforest", entry.colorscheme)
+    assert.equals("light", entry.colorscheme)
   end)
 
   it("resolves by colorscheme alias when theme name differs", function()

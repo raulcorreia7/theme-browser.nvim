@@ -80,4 +80,29 @@ describe("theme-browser.config.options", function()
 
     assert.equals("latest", validated.registry.channel)
   end)
+
+  it("normalizes local repo source inputs as arrays", function()
+    local options = require(module_name)
+    local validated = options.validate({
+      local_repo_sources = {
+        " /home/user/projects ",
+        "/home/user/themes;/home/user/projects",
+      },
+    })
+
+    assert.same({ "/home/user/projects", "/home/user/themes" }, validated.local_repo_sources)
+  end)
+
+  it("accepts scroll keymap overrides", function()
+    local options = require(module_name)
+    local validated = options.validate({
+      keymaps = {
+        scroll_up = "<C-b>",
+        scroll_down = { "<C-f>" },
+      },
+    })
+
+    assert.same({ "<C-b>" }, validated.keymaps.scroll_up)
+    assert.same({ "<C-f>" }, validated.keymaps.scroll_down)
+  end)
 end)

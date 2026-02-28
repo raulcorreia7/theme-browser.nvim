@@ -19,6 +19,7 @@ describe("theme-browser.config.registry", function()
     assert.is_true(type(resolved.path) == "string")
     assert.is_true(resolved.path ~= "")
     assert.is_true(vim.fn.filereadable(resolved.path) == 1)
+    assert.is_true(resolved.path:match("registry%.json$") ~= nil)
     assert.are.equal("bundled", resolved.source)
   end)
 

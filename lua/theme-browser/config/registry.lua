@@ -13,8 +13,11 @@ local function file_exists(path)
   return type(path) == "string" and path ~= "" and vim.fn.filereadable(path) == 1
 end
 
-local function bundled_registry_path(root)
-  return root .. "/lua/theme-browser/data/themes-top-50.json"
+local function bundled_registry_paths(root)
+  return {
+    root .. "/lua/theme-browser/data/registry.json",
+    root .. "/lua/theme-browser/data/themes-top-50.json",
+  }
 end
 
 local function synced_registry_path()
@@ -38,7 +41,9 @@ local function candidate_paths(user_path)
     table.insert(paths, { source = "synced", path = synced })
   end
 
-  table.insert(paths, { source = "bundled", path = bundled_registry_path(root) })
+  for _, path in ipairs(bundled_registry_paths(root)) do
+    table.insert(paths, { source = "bundled", path = path })
+  end
 
   return paths
 end

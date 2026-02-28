@@ -5,6 +5,7 @@ local defaults = require("theme-browser.config.defaults")
 local scalar_schema = {
   registry_path = "string",
   cache_dir = "string",
+  local_repo_sources = "table|string",
   auto_load = "boolean",
   log_level = "string",
 }
@@ -45,8 +46,11 @@ local nested_schema = {
     navigate_down = "table|string",
     goto_top = "table|string",
     goto_bottom = "table|string",
+    scroll_up = "table|string",
+    scroll_down = "table|string",
     search = "table|string",
     clear_search = "table|string",
+    help = "table|string",
     copy_repo = "table|string",
     open_repo = "table|string",
   },
@@ -61,6 +65,7 @@ local top_level_order = {
   "registry_path",
   "registry",
   "cache_dir",
+  "local_repo_sources",
   "auto_load",
   "log_level",
   "startup",
@@ -155,6 +160,59 @@ local function normalize_keymap_list(value, default_value, keypath)
   if #normalized == 0 then
     notify_warn(string.format("Invalid empty keymap list for %s; keeping default", keypath))
     return default_value
+  end
+
+  return normalized
+end
+
+local function normalize_path_list(value, default_value, keypath)
+  local function parse_path_list(raw)
+    local result = {}
+    local seen = {}
+    for _, part in ipairs(vim.split(raw, ",", { trimempty = true })) do
+      for _, token in ipairs(vim.split(part, ";", { trimempty = true })) do
+        local path = vim.trim(token)
+        if path ~= "" and not seen[path] then
+          table.insert(result, path)
+          seen[path] = true
+        end
+      end
+    end
+    return result
+  end
+
+  if type(value) == "string" then
+    local parsed = parse_path_list(value)
+    if #parsed == 0 then
+      notify_warn(string.format("Invalid empty path list for %s; keeping default", keypath))
+      return default_value
+    end
+    return parsed
+  end
+
+  if type(value) ~= "table" then
+    notify_warn(string.format("Invalid type for %s: expected table|string, got %s", keypath, type(value)))
+    return default_value
+  end
+
+  local normalized = {}
+  local seen = {}
+  for _, item in ipairs(value) do
+    if type(item) ~= "string" then
+      notify_warn(string.format("Invalid path entry for %s; keeping default", keypath))
+      return default_value
+    end
+    local parsed = parse_path_list(item)
+    if #parsed == 0 then
+      notify_warn(string.format("Invalid empty path entry for %s; keeping default", keypath))
+      return default_value
+    end
+    for _, path in ipairs(parsed) do
+      if not seen[path] then
+        table.insert(normalized, path)
+        seen[path] = true
+      end
+    end
   end
 
   return normalized
@@ -288,7 +346,11 @@ function M.validate(user_config)
             string.format("Invalid type for %s: expected %s, got %s", key, scalar_schema[key], type(value))
           )
         else
-          validated[key] = value
+          if key == "local_repo_sources" then
+            validated[key] = normalize_path_list(value, defaults[key], key)
+          else
+            validated[key] = value
+          end
         end
       elseif nested_schema[key] then
         validated[key] = normalize_nested(key, value, defaults[key])

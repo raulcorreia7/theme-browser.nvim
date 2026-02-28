@@ -2,6 +2,7 @@
 ---@field registry_path string Path to themes.json
 ---@field registry table Registry sync configuration
 ---@field cache_dir string Directory for theme cache
+---@field local_repo_sources string[] Local directories to search for theme repos
 ---@field auto_load boolean Auto-load theme on startup
 ---@field startup table Startup workflow configuration
 ---@field cache table Cache maintenance configuration
@@ -26,6 +27,7 @@ local M = {
 
   -- Cache configuration
   cache_dir = vim.fn.stdpath("cache") .. "/theme-browser",
+  local_repo_sources = {},
 
   -- Auto-load persisted theme on startup
   auto_load = false,
@@ -85,6 +87,7 @@ local M = {
     scroll_up = { "<C-u>", "<PageUp>" },
     search = { "/" },
     clear_search = { "c" },
+    help = { "?" },
     copy_repo = { "Y" },
     open_repo = { "O" },
   },

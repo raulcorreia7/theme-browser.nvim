@@ -91,15 +91,183 @@ local function plugin_name_from_repo(repo, fallback)
   return fallback
 end
 
-local function build_spec_content(entry, colorscheme)
+local function normalize_local_repo_sources(value)
+  if type(value) == "string" then
+    local trimmed = vim.trim(value)
+    return trimmed ~= "" and { trimmed } or {}
+  end
+
+  if type(value) ~= "table" then
+    return {}
+  end
+
+  local normalized = {}
+  local seen = {}
+  for _, item in ipairs(value) do
+    if type(item) == "string" then
+      local trimmed = vim.trim(item)
+      if trimmed ~= "" and not seen[trimmed] then
+        table.insert(normalized, trimmed)
+        seen[trimmed] = true
+      end
+    end
+  end
+
+  return normalized
+end
+
+local function configured_local_repo_sources()
+  local ok_theme_browser, theme_browser = pcall(require, "theme-browser")
+  if not ok_theme_browser or type(theme_browser.get_config) ~= "function" then
+    return {}
+  end
+
+  local config = theme_browser.get_config()
+  if type(config) ~= "table" then
+    return {}
+  end
+
+  local sources = normalize_local_repo_sources(config.local_repo_sources)
+  if #sources > 0 then
+    return sources
+  end
+
+  -- Backward compatibility for older configs using a singular key.
+  return normalize_local_repo_sources(config.local_repo_source)
+end
+
+local function build_spec_content(entry, colorscheme, local_repo_sources)
   local theme_repo = entry.repo
   local plugin_name = plugin_name_from_repo(theme_repo, entry.name or "theme-browser-theme")
+  local local_sources_literal = vim.inspect(local_repo_sources or {})
   return string.format(
     [[
 local theme_repo = %q
 local theme_plugin_name = %q
+local local_repo_sources = %s
+
+local function path_matches_repo(path, repo)
+  if type(path) ~= "string" or path == "" or type(repo) ~= "string" or repo == "" then
+    return false
+  end
+
+  local config_path = path .. "/.git/config"
+  if vim.fn.filereadable(config_path) ~= 1 then
+    return false
+  end
+
+  local ok, lines = pcall(vim.fn.readfile, config_path)
+  if not ok or type(lines) ~= "table" then
+    return false
+  end
+
+  local content = table.concat(lines, "\n"):lower()
+  return content:find(repo:lower(), 1, true) ~= nil
+end
+
+local function append_unique_path(paths, candidate)
+  if type(candidate) ~= "string" then
+    return
+  end
+
+  local trimmed = vim.trim(candidate)
+  if trimmed == "" then
+    return
+  end
+
+  local normalized = vim.fn.fnamemodify(trimmed, ":p"):gsub("/$", "")
+  if normalized == "" then
+    return
+  end
+
+  for _, existing in ipairs(paths) do
+    if existing == normalized then
+      return
+    end
+  end
+
+  table.insert(paths, normalized)
+end
+
+local function split_path_list(value)
+  local parts = {}
+  if type(value) ~= "string" or value == "" then
+    return parts
+  end
+
+  for raw in value:gmatch("[^,;:]+") do
+    local part = vim.trim(raw)
+    if part ~= "" then
+      table.insert(parts, part)
+    end
+  end
+  return parts
+end
+
+local function collect_local_sources()
+  local sources = {}
+
+  local home = (vim.loop and vim.loop.os_homedir and vim.loop.os_homedir()) or vim.env.HOME
+  if type(home) == "string" and home ~= "" then
+    append_unique_path(sources, home .. "/projects")
+  end
+
+  for _, source in ipairs(local_repo_sources) do
+    append_unique_path(sources, source)
+  end
+
+  local g_sources = vim.g.theme_browser_local_repo_sources
+  if type(g_sources) == "string" then
+    for _, source in ipairs(split_path_list(g_sources)) do
+      append_unique_path(sources, source)
+    end
+  elseif type(g_sources) == "table" then
+    for _, source in ipairs(g_sources) do
+      append_unique_path(sources, source)
+    end
+  end
+
+  for _, source in ipairs(split_path_list(vim.env.THEME_BROWSER_LOCAL_REPOS)) do
+    append_unique_path(sources, source)
+  end
+  for _, source in ipairs(split_path_list(vim.env.THEME_BROWSER_LOCAL_THEME_SOURCES)) do
+    append_unique_path(sources, source)
+  end
+
+  return sources
+end
+
+local function resolve_local_repo_path(repo)
+  local _, repo_name = repo:match("([^/]+)/(.+)")
+  if type(repo_name) ~= "string" or repo_name == "" then
+    return nil
+  end
+
+  for _, source in ipairs(collect_local_sources()) do
+    if vim.fn.isdirectory(source) == 1 then
+      if path_matches_repo(source, repo) then
+        return source
+      end
+
+      local nested = source .. "/" .. repo_name
+      if vim.fn.isdirectory(nested) == 1 and path_matches_repo(nested, repo) then
+        return nested
+      end
+    end
+  end
+
+  return nil
+end
 
 local function resolve_theme_source()
+  local local_repo = resolve_local_repo_path(theme_repo)
+  if local_repo then
+    return {
+      dir = local_repo,
+      name = theme_plugin_name,
+    }
+  end
+
   local ok_theme_browser, theme_browser = pcall(require, "theme-browser")
   local ok_github, github = pcall(require, "theme-browser.downloader.github")
   if ok_theme_browser and ok_github and type(theme_browser.get_config) == "function" then
@@ -124,7 +292,7 @@ local function resolve_theme_source()
   local _, repo_name = theme_repo:match("([^/]+)/(.+)")
   if type(repo_name) == "string" and repo_name ~= "" then
     local lazy_path = vim.fn.stdpath("data") .. "/lazy/" .. repo_name
-    if vim.fn.isdirectory(lazy_path) == 1 then
+    if vim.fn.isdirectory(lazy_path) == 1 and path_matches_repo(lazy_path, theme_repo) then
       return {
         dir = lazy_path,
         name = theme_plugin_name,
@@ -178,6 +346,7 @@ return {
 ]],
     theme_repo,
     plugin_name,
+    local_sources_literal,
     colorscheme,
     colorscheme
   )
@@ -209,7 +378,8 @@ function M.generate_spec(theme_name, variant, opts)
   local spec_file = get_spec_file()
   ensure_parent_dir(spec_file)
 
-  local spec_content = build_spec_content(entry, entry.colorscheme or entry.name)
+  local local_sources = configured_local_repo_sources()
+  local spec_content = build_spec_content(entry, entry.colorscheme or entry.name, local_sources)
   local file = io.open(spec_file, "w")
   if not file then
     log.error(string.format("Failed to write spec to: %s", spec_file))

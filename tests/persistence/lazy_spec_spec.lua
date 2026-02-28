@@ -11,6 +11,7 @@ describe("theme-browser.persistence.lazy_spec", function()
     module_name,
     "theme-browser.adapters.registry",
     "theme-browser.persistence.state",
+    "theme-browser",
   }
 
   local function reset_module()
@@ -163,6 +164,30 @@ describe("theme-browser.persistence.lazy_spec", function()
     assert.equals("already_cache_aware", result.reason)
     assert.equals(out, result.spec_file)
     assert.equals(before, after)
+  end)
+
+  it("embeds configured local repo sources into generated spec", function()
+    package.loaded["theme-browser"] = {
+      get_config = function()
+        return {
+          local_repo_sources = {
+            "/home/user/projects",
+            "/home/user/themes",
+          },
+        }
+      end,
+    }
+
+    local lazy_spec = reset_module()
+    local out = lazy_spec.generate_spec("tokyonight", nil, {
+      notify = false,
+      update_state = false,
+    })
+
+    local content = table.concat(vim.fn.readfile(out), "\n")
+    assert.is_truthy(content:find("local local_repo_sources = {", 1, true))
+    assert.is_truthy(content:find('"/home/user/projects"', 1, true))
+    assert.is_truthy(content:find("split_path_list%(g_sources%)"))
   end)
 
   it("skips migration when legacy theme cannot be resolved", function()

@@ -4,7 +4,7 @@
 
 ```lua
 registry = {
-  channel = "stable",  -- stable|latest
+  channel = "latest",  -- stable|latest
 }
 ```
 
@@ -12,6 +12,22 @@ registry = {
 |---------|----------|
 | `stable` | Uses latest stable SemVer tag (`vX.Y.Z`) |
 | `latest` | Uses weekly rolling release tags (`vX.Y.Z+YYYYMMDD`) |
+
+## Local Sources
+
+```lua
+local_repo_sources = {
+  "~/projects",
+  "~/themes",
+}
+```
+
+- Accepts either a string or an array of strings.
+- Strings can be delimited with `,` or `;` and will be normalized into an array.
+- Managed startup spec also reads optional runtime inputs:
+  - `vim.g.theme_browser_local_repo_sources` (string or array)
+  - `THEME_BROWSER_LOCAL_REPOS`
+  - `THEME_BROWSER_LOCAL_THEME_SOURCES`
 
 ## Package Manager
 
@@ -74,6 +90,8 @@ ui = {
 ```lua
 keymaps = {
   select = { "<CR>" },
+  help = { "?" },
+  search = { "/" },
   install = { "i" },
   copy_repo = { "Y" },
   open_repo = { "O" },

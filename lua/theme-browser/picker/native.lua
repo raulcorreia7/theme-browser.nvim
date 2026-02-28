@@ -75,7 +75,23 @@ local function get_keymaps()
     scroll_down = pick("scroll_down"),
     search = pick("search"),
     clear_search = pick("clear_search"),
+    help = pick("help"),
   }
+end
+
+local function clamp_number(value, min_value, max_value)
+  return math.max(min_value, math.min(max_value, value))
+end
+
+local function termcode(key)
+  return vim.api.nvim_replace_termcodes(key, true, true, true)
+end
+
+local function selected_prefix()
+  if type(icons.has_nerd_font) == "function" and icons.has_nerd_font() then
+    return " "
+  end
+  return "> "
 end
 
 local function compact_variant(entry)
@@ -112,6 +128,69 @@ local function entry_key(entry)
   local name = type(entry.name) == "string" and entry.name or ""
   local variant = type(entry.variant) == "string" and entry.variant or ""
   return string.format("%s::%s", name, variant)
+end
+
+local function fuzzy_match_positions(haystack, query)
+  if type(haystack) ~= "string" or type(query) ~= "string" then
+    return nil, nil
+  end
+  if query == "" then
+    return 0, {}
+  end
+
+  local lowered_haystack = haystack:lower()
+  local lowered_query = query:lower()
+  local positions = {}
+
+  local q_index = 1
+  local q_len = #lowered_query
+  local consecutive = 0
+  local score = 0
+
+  for h_index = 1, #lowered_haystack do
+    if q_index > q_len then
+      break
+    end
+
+    if lowered_haystack:sub(h_index, h_index) == lowered_query:sub(q_index, q_index) then
+      positions[#positions + 1] = h_index
+      score = score + 10 + (consecutive * 4)
+      if q_index == 1 then
+        score = score + math.max(0, 8 - h_index)
+      end
+      consecutive = consecutive + 1
+      q_index = q_index + 1
+    else
+      consecutive = 0
+    end
+  end
+
+  if q_index <= q_len then
+    return nil, nil
+  end
+
+  score = score - (#lowered_haystack * 0.01)
+  return score, positions
+end
+
+local function split_match_positions(item, positions)
+  if type(item) ~= "table" or type(positions) ~= "table" then
+    return {}, {}
+  end
+
+  local name_positions = {}
+  local variant_positions = {}
+  local name_len = #item.name_lower
+
+  for _, pos in ipairs(positions) do
+    if pos <= name_len then
+      name_positions[#name_positions + 1] = pos
+    elseif pos > (name_len + 1) then
+      variant_positions[#variant_positions + 1] = pos - name_len - 1
+    end
+  end
+
+  return name_positions, variant_positions
 end
 
 local function format_item(entry, snapshot, previewing_key, previewed_key)
@@ -153,7 +232,9 @@ local function format_item(entry, snapshot, previewing_key, previewed_key)
   local bg_hl = bg == "light" and "ThemeBrowserLight" or "ThemeBrowserDark"
 
   local name = entry.name
+  local name_lower = name:lower()
   local variant_label = variant or "default"
+  local variant_lower = variant_label:lower()
   local is_default_variant = variant == nil
   local title = ""
 
@@ -180,7 +261,11 @@ local function format_item(entry, snapshot, previewing_key, previewed_key)
     variant_col_offset = 0,
     variant_hl_len = 0,
     is_default_variant = is_default_variant,
-    sort_key = string.format("%s %s", name:lower(), (variant or ""):lower()),
+    name_lower = name_lower,
+    variant_lower = variant_lower,
+    match_name_positions = {},
+    match_variant_positions = {},
+    sort_key = string.format("%s %s", name_lower, variant_lower),
     -- Positions:
     -- [status_icon][icon_gap][bg_icon][title_gap][title]
     status_col_start = 0,
@@ -377,10 +462,13 @@ function M.pick(opts)
   local syncing_cursor = false
   local last_cursor_move_time = 0
   local plugin_cfg = get_plugin_config()
-  local show_hints = not (plugin_cfg.ui and plugin_cfg.ui.show_hints == false)
+  local ui_cfg = type(plugin_cfg.ui) == "table" and plugin_cfg.ui or {}
+  local show_hints = not (ui_cfg.show_hints == false)
   local keymaps = get_keymaps()
   local popup = nil
   local resize_autocmd_id = nil
+  local search_mode = false
+  local showing_help = false
 
   local function close_popups()
     if resize_autocmd_id then
@@ -404,36 +492,101 @@ function M.pick(opts)
     return keys[1]
   end
 
-  local function hint_text()
-    return string.format(
-      " %s apply  %s set-main  %s preview  %s install  %s copy  %s open  "
-        .. "%s search  %s/%s move  %s/%s page  %s close",
-      first_key(keymaps.select),
-      first_key(keymaps.set_main),
-      first_key(keymaps.preview),
-      first_key(keymaps.install),
-      first_key(keymaps.copy_repo),
-      first_key(keymaps.open_repo),
-      first_key(keymaps.search),
-      first_key(keymaps.navigate_up),
-      first_key(keymaps.navigate_down),
-      first_key(keymaps.scroll_up),
-      first_key(keymaps.scroll_down),
-      first_key(keymaps.close)
-    )
+  local function keycap(keys)
+    return string.format("[%s]", first_key(keys))
+  end
+
+  local function fit_hint_parts(width, parts)
+    local line = ""
+    for _, part in ipairs(parts) do
+      local candidate = line == "" and (" " .. part) or (line .. "  ·  " .. part)
+      if vim.fn.strdisplaywidth(candidate) > width then
+        break
+      end
+      line = candidate
+    end
+    return line ~= "" and line or (" " .. parts[1])
+  end
+
+  local function hint_text(width)
+    if search_mode then
+      return fit_hint_parts(width, {
+        string.format("%s help", keycap(keymaps.help)),
+        "[Enter] done",
+        "[Esc] exit",
+        "[BS] erase",
+      })
+    end
+
+    local parts = {
+      string.format("%s help", keycap(keymaps.help)),
+      string.format("%s fuzzy", keycap(keymaps.search)),
+      string.format("%s apply", keycap(keymaps.select)),
+    }
+
+    local current = (#items > 0 and items[index]) or nil
+    if current and current.status then
+      if current.status == "installed" or current.status == "current" or current.status == "previewed" then
+        table.insert(parts, string.format("%s preview", keycap(keymaps.preview)))
+      else
+        table.insert(parts, string.format("%s install", keycap(keymaps.install)))
+      end
+      table.insert(parts, string.format("%s set-main", keycap(keymaps.set_main)))
+    end
+
+    return fit_hint_parts(width, parts)
+  end
+
+  local function help_lines()
+    return {
+      " Theme Browser Help",
+      "",
+      " Core",
+      string.format("  %s  Apply and close", keycap(keymaps.select)),
+      string.format("  %s  Apply and keep open", keycap(keymaps.set_main)),
+      string.format("  %s  Live fuzzy search", keycap(keymaps.search)),
+      string.format("  %s  Toggle this help", keycap(keymaps.help)),
+      "",
+      " Actions",
+      string.format("  %s  Preview selected theme", keycap(keymaps.preview)),
+      string.format("  %s  Install selected theme", keycap(keymaps.install)),
+      string.format("  %s  Clear current search", keycap(keymaps.clear_search)),
+      string.format("  %s  Copy repository URL", keycap(keymaps.copy_repo)),
+      string.format("  %s  Open repository URL", keycap(keymaps.open_repo)),
+      "",
+      " Navigation",
+      string.format("  %s/%s  Move selection", keycap(keymaps.navigate_up), keycap(keymaps.navigate_down)),
+      string.format("  %s/%s  Jump to top/bottom", keycap(keymaps.goto_top), keycap(keymaps.goto_bottom)),
+      string.format("  %s/%s  Scroll half page", keycap(keymaps.scroll_up), keycap(keymaps.scroll_down)),
+      "",
+      string.format("  %s or %s  Close help", keycap(keymaps.help), keycap(keymaps.close)),
+    }
   end
 
   local editor_width = vim.o.columns
   local editor_height = vim.o.lines
+  local defaults_ui = type(defaults.ui) == "table" and defaults.ui or {}
+  local width_ratio = clamp_number(
+    type(ui_cfg.window_width) == "number" and ui_cfg.window_width or defaults_ui.window_width or 0.6,
+    0.45,
+    0.9
+  )
+  local height_ratio = clamp_number(
+    type(ui_cfg.window_height) == "number" and ui_cfg.window_height or defaults_ui.window_height or 0.5,
+    0.4,
+    0.85
+  )
+  local border_style = type(ui_cfg.border) == "string" and ui_cfg.border ~= "" and ui_cfg.border or "rounded"
   local min_content_width = 36
-  local max_content_width = math.min(96, editor_width - 10)
+  local target_popup_width = clamp_number(math.floor(editor_width * width_ratio), 48, math.max(48, editor_width - 4))
+  local max_content_width = math.max(min_content_width, math.min(110, target_popup_width - 6))
   local content_width
   name_column_width, variant_column_width, content_width =
     calculate_column_widths(all_items, max_content_width)
   optimal_content_width = math.max(min_content_width, math.min(max_content_width, content_width))
-  local popup_width = optimal_content_width + 6
-  local min_height = math.min(20, math.floor(editor_height * 0.5))
-  local max_height = math.min(35, math.floor(editor_height * 0.7))
+  local popup_width = clamp_number(optimal_content_width + 6, 48, math.max(48, editor_width - 4))
+  local min_height = 15
+  local max_height = clamp_number(math.floor(editor_height * height_ratio), 15, math.max(15, editor_height - 4))
   local footer_line_count = show_hints and 2 or 1
   local popup_height = math.max(min_height, math.min(max_height, #all_items + 3 + footer_line_count))
   local current_width = popup_width
@@ -448,9 +601,9 @@ function M.pick(opts)
     focusable = true,
     relative = "editor",
     border = {
-      style = "rounded",
+      style = border_style,
       text = {
-        top = " Select Theme ",
+        top = " Theme Browser ",
         top_align = "center",
       },
     },
@@ -514,11 +667,54 @@ function M.pick(opts)
 
     local win_width = current_width - 2
     local divider = string.rep("─", win_width)
+    local selected_row_prefix = selected_prefix()
+    local normal_row_prefix = "  "
+    local search_icon = (type(icons.has_nerd_font) == "function" and icons.has_nerd_font()) and "" or "/"
+    local query_display = nil
+    if search_mode then
+      query_display = query
+    else
+      query_display = query ~= "" and query or "type / to fuzzy-filter themes"
+    end
+    local query_cursor = search_mode and "▏" or ""
+    local prompt_text = fit_line(
+      string.format(
+        " %s  %s%s%s",
+        search_icon,
+        query_display,
+        query_cursor,
+        search_mode and "  [LIVE]" or ""
+      ),
+      win_width
+    )
 
     local lines = {
-      string.format(" Search: %s", query ~= "" and query or "(use configured search key)"),
+      prompt_text,
       divider,
     }
+
+    if showing_help then
+      for _, line in ipairs(help_lines()) do
+        table.insert(lines, fit_line(line, win_width))
+      end
+      table.insert(lines, divider)
+      table.insert(lines, fit_line(" Press ? to toggle help, or q/Esc to return", win_width))
+
+      vim.bo[popup.bufnr].modifiable = true
+      vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
+      vim.bo[popup.bufnr].modifiable = false
+
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPrompt", 0, 0, -1)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPromptIcon", 0, 1, 1 + #search_icon)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", 1, 0, -1)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserName", 2, 0, -1)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", #lines - 2, 0, -1)
+      vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSubtle", #lines - 1, 0, -1)
+
+      pcall(vim.api.nvim_win_set_cursor, popup.winid, { 3, 0 })
+      pcall(vim.cmd, "redraw")
+      return
+    end
 
     local cap = visible_capacity()
     local first = scroll
@@ -526,7 +722,7 @@ function M.pick(opts)
 
     for i = first, last do
       local item = items[i]
-      local prefix = (i == index) and "> " or "  "
+      local prefix = (i == index) and selected_row_prefix or normal_row_prefix
       table.insert(lines, prefix .. item.line)
     end
 
@@ -546,17 +742,22 @@ function M.pick(opts)
 
     table.insert(lines, status_line)
     if show_hints then
-      table.insert(lines, fit_line(hint_text(), win_width))
+      table.insert(lines, fit_line(hint_text(win_width), win_width))
     end
 
     vim.bo[popup.bufnr].modifiable = true
     vim.api.nvim_buf_set_lines(popup.bufnr, 0, -1, false, lines)
     vim.bo[popup.bufnr].modifiable = false
 
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPrompt", 0, 0, -1)
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPromptIcon", 0, 1, 1 + #search_icon)
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", 1, 0, -1)
+
     for i = first, last do
       local item = items[i]
       local row = (i - first + 1) + 2
-      local prefix_offset = 2
+      local row_prefix = (i == index) and selected_row_prefix or normal_row_prefix
+      local prefix_offset = #row_prefix
       local status_start = item.status_col_start + prefix_offset
       local status_end = item.status_col_end + prefix_offset
       vim.api.nvim_buf_add_highlight(popup.bufnr, -1, item.status_hl, row - 1, status_start, status_end)
@@ -583,10 +784,31 @@ function M.pick(opts)
         local variant_hl = item.is_default_variant and "ThemeBrowserVariantDefault" or "ThemeBrowserVariant"
         vim.api.nvim_buf_add_highlight(popup.bufnr, -1, variant_hl, row - 1, variant_start, variant_end)
       end
+
+      for _, pos in ipairs(item.match_name_positions or {}) do
+        if pos >= 1 and pos <= item.name_hl_len then
+          local col = name_start + (pos - 1)
+          vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserFuzzyMatch", row - 1, col, col + 1)
+        end
+      end
+
+      if item.variant_col_offset then
+        local variant_start = name_start + item.variant_col_offset
+        for _, pos in ipairs(item.match_variant_positions or {}) do
+          if pos >= 1 and pos <= item.variant_hl_len then
+            local col = variant_start + (pos - 1)
+            vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserFuzzyMatch", row - 1, col, col + 1)
+          end
+        end
+      end
+
       if i == index then
         vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSelected", row - 1, 0, -1)
       end
     end
+
+    local bottom_divider_row = #lines - (show_hints and 2 or 1)
+    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserDivider", bottom_divider_row - 1, 0, -1)
 
     move_cursor_to_selection()
 
@@ -595,6 +817,9 @@ function M.pick(opts)
     if show_hints then
       vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserSubtle", #lines - 1, 0, -1)
     end
+
+    -- Force immediate visual refresh so live-search input is visible per keystroke.
+    pcall(vim.cmd, "redraw")
   end
   local function sync_selection_from_cursor()
     if syncing_cursor or not popup.winid or not vim.api.nvim_win_is_valid(popup.winid) then
@@ -633,17 +858,29 @@ function M.pick(opts)
   end
 
   local function apply_filter(new_query, preserve_index)
-    query = new_query or ""
+    query = vim.trim(new_query or "")
     if query == "" then
       items = vim.deepcopy(all_items)
     else
       local lowered = query:lower()
       items = {}
       for _, item in ipairs(all_items) do
-        if item.sort_key:find(lowered, 1, true) then
-          table.insert(items, item)
+        local score, positions = fuzzy_match_positions(item.sort_key, lowered)
+        if score then
+          local filtered_item = vim.deepcopy(item)
+          filtered_item.match_score = score
+          filtered_item.match_name_positions, filtered_item.match_variant_positions =
+            split_match_positions(filtered_item, positions)
+          table.insert(items, filtered_item)
         end
       end
+
+      table.sort(items, function(a, b)
+        if a.match_score == b.match_score then
+          return a.sort_key < b.sort_key
+        end
+        return a.match_score > b.match_score
+      end)
     end
 
     if not preserve_index then
@@ -662,12 +899,18 @@ function M.pick(opts)
 
   local map_opts = { buffer = popup.bufnr, nowait = true, silent = true }
 
-  local function map_keys(keys, fn)
+  local function map_keys(keys, fn, opts_for_map)
+    local allow_in_help = type(opts_for_map) == "table" and opts_for_map.allow_in_help == true
     if type(keys) ~= "table" then
       return
     end
     for _, lhs in ipairs(keys) do
-      vim.keymap.set("n", lhs, fn, map_opts)
+      vim.keymap.set("n", lhs, function()
+        if showing_help and not allow_in_help then
+          return
+        end
+        fn()
+      end, map_opts)
     end
   end
 
@@ -732,6 +975,9 @@ function M.pick(opts)
   end)
 
   vim.keymap.set("n", "<ScrollWheelDown>", function()
+    if showing_help then
+      return
+    end
     if #items == 0 then
       return
     end
@@ -740,6 +986,9 @@ function M.pick(opts)
   end, map_opts)
 
   vim.keymap.set("n", "<ScrollWheelUp>", function()
+    if showing_help then
+      return
+    end
     if #items == 0 then
       return
     end
@@ -837,22 +1086,64 @@ function M.pick(opts)
   end)
 
   map_keys(keymaps.search, function()
-    local default_query = query
-    if query ~= "" then
-      apply_filter("", true)
-      default_query = ""
+    search_mode = true
+    render()
+
+    local esc = termcode("<Esc>")
+    local cr = termcode("<CR>")
+    local bs = termcode("<BS>")
+    local del = termcode("<Del>")
+    local c_h = termcode("<C-h>")
+    local c_u = termcode("<C-u>")
+    local c_w = termcode("<C-w>")
+    local c_c = termcode("<C-c>")
+
+    while popup and popup.winid and vim.api.nvim_win_is_valid(popup.winid) do
+      local ok, key = pcall(vim.fn.getcharstr)
+      if not ok or type(key) ~= "string" then
+        break
+      end
+
+      if key == cr then
+        break
+      end
+
+      if key == esc or key == c_c then
+        break
+      end
+
+      if key == bs or key == del or key == c_h then
+        if query ~= "" then
+          query = vim.fn.strcharpart(query, 0, math.max(0, vim.fn.strchars(query) - 1))
+          apply_filter(query, false)
+        end
+      elseif key == c_u then
+        if query ~= "" then
+          apply_filter("", false)
+        end
+      elseif key == c_w then
+        local stripped = query:gsub("%s+$", "")
+        local next_query = stripped:gsub("%S+$", "")
+        apply_filter(vim.trim(next_query), false)
+      elseif key:find("^<") and key:find(">$") then
+        -- ignore non-text special keys while live filtering
+      else
+        apply_filter(query .. key, false)
+      end
     end
 
-    vim.ui.input({ prompt = "Theme search: ", default = default_query }, function(input)
-      if input ~= nil then
-        apply_filter(vim.trim(input))
-      end
-    end)
+    search_mode = false
+    render()
   end)
 
   map_keys(keymaps.clear_search, function()
     apply_filter("")
   end)
+
+  map_keys(keymaps.help, function()
+    showing_help = not showing_help
+    render()
+  end, { allow_in_help = true })
 
   local function selected_repo_url()
     if #items == 0 then
@@ -905,8 +1196,13 @@ function M.pick(opts)
   end)
 
   map_keys(keymaps.close, function()
+    if showing_help then
+      showing_help = false
+      render()
+      return
+    end
     close_popups()
-  end)
+  end, { allow_in_help = true })
 
   local resize_step = 5
 

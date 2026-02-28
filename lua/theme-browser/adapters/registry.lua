@@ -382,6 +382,7 @@ function M.resolve(name, variant)
   if base then
     local fallback = vim.deepcopy(base)
     fallback.variant = variant
+    fallback.colorscheme = variant
     fallback.id = string.format("%s:%s", theme.name, variant)
     fallback.display = variant
     fallback.meta = vim.tbl_extend("force", fallback.meta or {}, {

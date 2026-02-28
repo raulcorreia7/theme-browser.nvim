@@ -61,7 +61,8 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 | Key | Action |
 |-----|--------|
 | `j/k` | Navigate |
-| `/<C-s>` | Search |
+| `?` | Toggle help |
+| `/` | Start live fuzzy search |
 | `<CR>` | Apply theme |
 | `i` | Install + mark for later |
 | `Y` | Copy selected theme repo URL |
@@ -92,6 +93,10 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 ```lua
 require("theme-browser").setup({
   auto_load = true,
+  local_repo_sources = {
+    "~/projects",
+    "~/themes",
+  },
   package_manager = {
     enabled = true,
     mode = "manual",  -- auto|manual|installed_only
@@ -122,6 +127,7 @@ require("theme-browser").setup({
 | `package_manager.mode` | `"manual"` | `auto`: auto-install, `manual`: on-demand, `installed_only`: no downloads |
 | `package_manager.provider` | `"auto"` | Package manager: `auto`, `lazy`, `noop` |
 | `registry.channel` | `"stable"` | Registry channel: `stable` (SemVer tags) or `latest` (weekly `vX.Y.Z+YYYYMMDD`) |
+| `local_repo_sources` | `{}` | Array of local directories/repo roots used when resolving theme sources |
 | `startup.write_spec` | `true` | Generate managed lazy spec for persistence |
 | `ui.preview_on_move` | `true` | Preview installed themes on cursor move |
 

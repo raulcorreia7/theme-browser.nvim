@@ -4,7 +4,12 @@ local _snapshots = {}
 local _runtimepath_before
 
 local function get_plugin_root()
-  return vim.fn.fnamemodify(vim.fn.getcwd(), ":p"):gsub("/$", "")
+  local source = debug.getinfo(1, "S").source
+  if source:sub(1, 1) == "@" then
+    source = source:sub(2)
+  end
+  local absolute = vim.fn.fnamemodify(source, ":p")
+  return vim.fn.fnamemodify(absolute, ":h:h:h")
 end
 
 function M.snapshot(modules)
@@ -154,17 +159,18 @@ end
 
 function M.get_bundled_registry_path()
   local candidates = {
+    plugin_root,
     vim.env.THEME_BROWSER_PLUGIN_ROOT,
     vim.fn.getcwd(),
   }
 
   for _, root in ipairs(candidates) do
     if root and root ~= "" then
-      local bundled = root .. "/lua/theme-browser/data/themes-top-50.json"
+      local bundled = root .. "/lua/theme-browser/data/registry.json"
       if vim.fn.filereadable(bundled) == 1 then
         return bundled
       end
-      bundled = root .. "/lua/theme-browser/data/registry.json"
+      bundled = root .. "/lua/theme-browser/data/themes-top-50.json"
       if vim.fn.filereadable(bundled) == 1 then
         return bundled
       end
