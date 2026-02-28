@@ -27,6 +27,7 @@ function M.setup()
     ThemeBrowserVariant = link_or("Comment", "Comment"),
     ThemeBrowserVariantDefault = link_or("NonText", "Comment"),
     ThemeBrowserPreview = link_or("NormalFloat", "Normal"),
+    ThemeBrowserVisual = link_or("Visual", "PmenuSel"),
     ThemeBrowserSelected = link_or("TelescopeSelection", "PmenuSel"),
     ThemeBrowserFuzzyMatch = link_or("TelescopeMatching", "Search"),
     ThemeBrowserPrompt = link_or("TelescopePromptNormal", "NormalFloat"),

@@ -90,6 +90,9 @@ local M = {
     help = { "?" },
     copy_repo = { "Y" },
     open_repo = { "O" },
+    visual = { "v" },
+    visual_line = { "V" },
+    yank = { "y" },
   },
 }
 

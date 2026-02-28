@@ -243,6 +243,8 @@ local function format_item(entry, snapshot, previewing_key, previewed_key)
   local variant_label = variant or "default"
   local variant_lower = variant_label:lower()
   local is_default_variant = variant == nil
+  local colorscheme = entry.colorscheme or entry.variant or name
+  local colorscheme_lower = colorscheme:lower()
   local title = ""
 
   local status_len = #status_icon
@@ -269,9 +271,10 @@ local function format_item(entry, snapshot, previewing_key, previewed_key)
     is_default_variant = is_default_variant,
     name_lower = name_lower,
     variant_lower = variant_lower,
+    colorscheme_lower = colorscheme_lower,
     match_name_positions = {},
     match_variant_positions = {},
-    sort_key = string.format("%s %s", name_lower, variant_lower),
+    sort_key = colorscheme_lower,
     status_col_start = 0,
     status_col_end = status_len,
     bg_col_start = status_len + icon_gap,
@@ -285,11 +288,7 @@ local function compare_items(a, b)
     return a.name_lower < b.name_lower
   end
 
-  if a.is_default_variant ~= b.is_default_variant then
-    return a.is_default_variant
-  end
-
-  return a.variant_lower < b.variant_lower
+  return a.colorscheme_lower < b.colorscheme_lower
 end
 
 local function truncate_to_width(text, max_width)
@@ -483,6 +482,8 @@ function M.pick(opts)
   local resize_autocmd_id = nil
   local search_mode = false
   local showing_help = false
+  local visual_anchor = nil
+  local visual_line_mode = false
 
   local function close_popups()
     if resize_autocmd_id then
@@ -676,6 +677,21 @@ function M.pick(opts)
     pcall(vim.api.nvim_win_set_cursor, popup.winid, { row, 0 })
     syncing_cursor = false
   end
+
+  local function get_visual_range()
+    if not visual_anchor then
+      return nil, nil
+    end
+    local start_idx = math.min(visual_anchor, index)
+    local end_idx = math.max(visual_anchor, index)
+    return start_idx, end_idx
+  end
+
+  local function exit_visual_mode()
+    visual_anchor = nil
+    visual_line_mode = false
+  end
+
   local function render()
     ensure_visible()
 
@@ -808,6 +824,11 @@ function M.pick(opts)
             vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserFuzzyMatch", row - 1, col, col + 1)
           end
         end
+      end
+
+      local visual_start, visual_end = get_visual_range()
+      if visual_start and i >= visual_start and i <= visual_end then
+        vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserVisual", row - 1, 0, -1)
       end
 
       if i == index then
@@ -1075,6 +1096,61 @@ function M.pick(opts)
     index = math.max(1, index - 1)
     render()
   end, map_opts)
+
+  local function yank_selection()
+    local start_idx, end_idx = get_visual_range()
+    if not start_idx then
+      return
+    end
+    local lines = {}
+    for i = start_idx, end_idx do
+      local item = items[i]
+      if item and item.entry then
+        local colorscheme = item.entry.colorscheme or item.entry.variant or item.entry.name
+        table.insert(lines, colorscheme)
+      end
+    end
+    if #lines > 0 then
+      local text = table.concat(lines, "\n")
+      vim.fn.setreg('"', text)
+      vim.fn.setreg("+", text)
+      vim.notify(string.format("Yanked %d theme%s", #lines, #lines == 1 and "" or "s"), vim.log.levels.INFO)
+    end
+    exit_visual_mode()
+    render()
+  end
+
+  map_keys(keymaps.visual, function()
+    if #items == 0 then
+      return
+    end
+    if visual_anchor then
+      exit_visual_mode()
+    else
+      visual_anchor = index
+      visual_line_mode = false
+    end
+    render()
+  end)
+
+  map_keys(keymaps.visual_line, function()
+    if #items == 0 then
+      return
+    end
+    if visual_anchor and visual_line_mode then
+      exit_visual_mode()
+    else
+      visual_anchor = index
+      visual_line_mode = true
+    end
+    render()
+  end)
+
+  map_keys(keymaps.yank, function()
+    if visual_anchor then
+      yank_selection()
+    end
+  end)
 
   map_keys(keymaps.select, function()
     if #items == 0 then

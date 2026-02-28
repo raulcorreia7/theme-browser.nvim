@@ -53,6 +53,9 @@ local nested_schema = {
     help = "table|string",
     copy_repo = "table|string",
     open_repo = "table|string",
+    visual = "table|string",
+    visual_line = "table|string",
+    yank = "table|string",
   },
   status_display = {
     show_adapter = "boolean",
