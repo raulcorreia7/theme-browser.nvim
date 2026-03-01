@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog, and this project follows SemVer.
 
+## [0.4.0] - 2026-03-01
+
+### Added
+
+- Picker visual yank support for copying theme names in visual mode.
+- ID-based sorting for consistent theme ordering across picker sessions.
+
 ## [0.3.5] - 2026-02-27
 
 ### Fixed
@@ -36,6 +43,7 @@ The format is based on Keep a Changelog, and this project follows SemVer.
 ### Added
 - Curated Eldritch variant list in registry overrides.
 
+[0.4.0]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.0
 [0.3.5]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.5
 [0.3.4]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.4
 [0.3.3]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.3
