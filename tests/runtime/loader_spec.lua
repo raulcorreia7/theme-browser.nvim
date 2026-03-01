@@ -118,7 +118,7 @@ describe("theme-browser.runtime.loader", function()
 
       vim.wait(20)
       assert.is_false(success)
-      assert.equals("theme is not cached or installed", err)
+      assert.equals("theme runtime path missing", err)
       vim.fn.delete(cache_dir, "rf")
     end)
 
@@ -257,7 +257,7 @@ describe("theme-browser.runtime.loader", function()
 
       vim.wait(20)
       assert.is_false(success)
-      assert.equals("theme is not cached or installed", err)
+      assert.equals("theme runtime path missing", err)
 
       vim.fn.delete(cache_dir, "rf")
     end)

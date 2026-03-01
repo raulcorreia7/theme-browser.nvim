@@ -476,7 +476,7 @@ function M.pick(opts)
   local last_cursor_move_time = 0
   local plugin_cfg = get_plugin_config()
   local ui_cfg = type(plugin_cfg.ui) == "table" and plugin_cfg.ui or {}
-  local show_hints = not (ui_cfg.show_hints == false)
+  local show_hints = ui_cfg.show_hints ~= false
   local keymaps = get_keymaps()
   local popup = nil
   local resize_autocmd_id = nil
@@ -593,7 +593,8 @@ function M.pick(opts)
   )
   local border_style = type(ui_cfg.border) == "string" and ui_cfg.border ~= "" and ui_cfg.border or "rounded"
   local min_content_width = 36
-  local target_popup_width = clamp_number(math.floor(editor_width * width_ratio), 48, math.max(48, editor_width - 4))
+  local target_popup_width =
+    clamp_number(math.floor(editor_width * width_ratio), 48, math.max(48, editor_width - 4))
   local max_content_width = math.max(min_content_width, math.min(110, target_popup_width - 6))
   local content_width
   name_column_width, variant_column_width, content_width =
@@ -601,7 +602,8 @@ function M.pick(opts)
   optimal_content_width = math.max(min_content_width, math.min(max_content_width, content_width))
   local popup_width = clamp_number(optimal_content_width + 6, 48, math.max(48, editor_width - 4))
   local min_height = 15
-  local max_height = clamp_number(math.floor(editor_height * height_ratio), 15, math.max(15, editor_height - 4))
+  local max_height =
+    clamp_number(math.floor(editor_height * height_ratio), 15, math.max(15, editor_height - 4))
   local footer_line_count = show_hints and 2 or 1
   local popup_height = math.max(min_height, math.min(max_height, #all_items + 3 + footer_line_count))
   local current_width = popup_width
@@ -700,21 +702,10 @@ function M.pick(opts)
     local selected_row_prefix = selected_prefix()
     local normal_row_prefix = "  "
     local search_icon = (type(icons.has_nerd_font) == "function" and icons.has_nerd_font()) and "" or "/"
-    local query_display = nil
-    if search_mode then
-      query_display = query
-    else
-      query_display = query ~= "" and query or "type / to fuzzy-filter themes"
-    end
+    local query_display = search_mode and query or (query ~= "" and query or "type / to fuzzy-filter themes")
     local query_cursor = search_mode and "" or ""
     local prompt_text = fit_line(
-      string.format(
-        " %s  %s%s%s",
-        search_icon,
-        query_display,
-        query_cursor,
-        search_mode and "  [LIVE]" or ""
-      ),
+      string.format(" %s  %s%s%s", search_icon, query_display, query_cursor, search_mode and "  [LIVE]" or ""),
       win_width
     )
 
@@ -841,7 +832,14 @@ function M.pick(opts)
 
     local prompt_row = #lines - (show_hints and 1 or 0)
     vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPrompt", prompt_row - 1, 0, -1)
-    vim.api.nvim_buf_add_highlight(popup.bufnr, -1, "ThemeBrowserPromptIcon", prompt_row - 1, 1, 1 + #search_icon)
+    vim.api.nvim_buf_add_highlight(
+      popup.bufnr,
+      -1,
+      "ThemeBrowserPromptIcon",
+      prompt_row - 1,
+      1,
+      1 + #search_icon
+    )
 
     move_cursor_to_selection()
 
@@ -1001,19 +999,6 @@ function M.pick(opts)
       end, map_opts)
     end
   end
-
-  local function register_search_passthrough_keys(keys)
-    if type(keys) ~= "table" then
-      return
-    end
-    for _, lhs in ipairs(keys) do
-      if type(lhs) == "string" and lhs ~= "" then
-        search_passthrough_keys[termcode(lhs)] = lhs
-      end
-    end
-  end
-
-
 
   map_keys(keymaps.navigate_down, function()
     if #items == 0 then
@@ -1289,10 +1274,10 @@ function M.pick(opts)
         local stripped = query:gsub("%s+$", "")
         local next_query = stripped:gsub("%S+$", "")
         apply_filter(vim.trim(next_query), false)
-      elseif key:find("^<") and key:find(">$") then
-        -- ignore non-text special keys while live filtering
       else
-        apply_filter(query .. key, false)
+        if not (key:find("^<") and key:find(">$")) then
+          apply_filter(query .. key, false)
+        end
       end
     end
 
