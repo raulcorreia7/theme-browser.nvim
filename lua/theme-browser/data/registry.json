@@ -262,7 +262,7 @@
     "name": "cyberdream",
     "colorscheme": "cyberdream",
     "repo": "scottmckendry/cyberdream.nvim",
-    "stars": 1267,
+    "stars": 1269,
     "strategy": "setup",
     "variants": [
       {
@@ -582,7 +582,7 @@
     "name": "everviolet",
     "colorscheme": "evergarden",
     "repo": "everviolet/nvim",
-    "stars": 584,
+    "stars": 583,
     "strategy": "setup",
     "variants": [
       {
@@ -696,7 +696,7 @@
     "name": "kanagawa",
     "colorscheme": "kanagawa",
     "repo": "rebelot/kanagawa.nvim",
-    "stars": 5957,
+    "stars": 5959,
     "strategy": "load",
     "variants": [
       {
@@ -729,9 +729,17 @@
         "mode": "dark"
       },
       {
+        "name": "koda-glade",
+        "colorscheme": "koda-glade"
+      },
+      {
         "name": "koda-light",
         "colorscheme": "koda-light",
         "mode": "light"
+      },
+      {
+        "name": "koda-moss",
+        "colorscheme": "koda-moss"
       }
     ]
   },
@@ -782,7 +790,7 @@
     "name": "miasma",
     "colorscheme": "miasma",
     "repo": "xero/miasma.nvim",
-    "stars": 491,
+    "stars": 490,
     "strategy": "colorscheme"
   },
   {
@@ -1076,7 +1084,7 @@
     "name": "rose-pine",
     "colorscheme": "rose-pine",
     "repo": "rose-pine/neovim",
-    "stars": 2949,
+    "stars": 2950,
     "strategy": "setup",
     "variants": [
       {
@@ -1164,7 +1172,7 @@
     "name": "vague",
     "colorscheme": "vague",
     "repo": "vague-theme/vague.nvim",
-    "stars": 1002,
+    "stars": 1001,
     "strategy": "setup"
   },
   {
@@ -1185,7 +1193,7 @@
     "name": "vim-dogrun",
     "colorscheme": "dogrun",
     "repo": "wadackel/vim-dogrun",
-    "stars": 664,
+    "stars": 663,
     "strategy": "colorscheme"
   },
   {
