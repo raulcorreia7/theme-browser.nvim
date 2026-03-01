@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog, and this project follows SemVer.
 
+## [0.4.2] - 2026-03-01
+
+### Fixed
+
+- Resolved luacheck warnings in picker/native.lua (comparison style, unused variable, duplicate function, empty branch).
+
 ## [0.4.1] - 2026-03-01
 
 ### Changed
@@ -49,6 +55,7 @@ The format is based on Keep a Changelog, and this project follows SemVer.
 ### Added
 - Curated Eldritch variant list in registry overrides.
 
+[0.4.2]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.2
 [0.4.1]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.1
 [0.4.0]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.0
 [0.3.5]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.3.5
