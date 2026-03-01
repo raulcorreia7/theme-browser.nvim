@@ -94,10 +94,29 @@ main() {
 	export XDG_STATE_HOME="$TEMP_DIR/state"
 	export THEME_BROWSER_PLUGIN_ROOT="$PLUGIN_ROOT"
 
+	local output_file="$TEMP_DIR/test_output.txt"
+
+	set +e
 	$NVIM --headless \
 		-u "$CONFIG_HOME/nvim/init.lua" \
 		-c "lua require('plenary.test_harness').test_directory('$PLUGIN_ROOT/tests', { minimal_init = '$CONFIG_HOME/nvim/init.lua' })" \
-		+qa
+		+qa 2>&1 | tee "$output_file"
+	set -e
+
+	local total_failed=0
+	while IFS= read -r line; do
+		if [[ "$line" =~ Failed[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+			total_failed=$((total_failed + BASH_REMATCH[1]))
+		fi
+	done <"$output_file"
+
+	echo ""
+	if [[ "$total_failed" -eq 0 ]]; then
+		echo "All tests passed"
+	else
+		echo "Tests failed: $total_failed failure(s)"
+		exit 1
+	fi
 }
 
 main "$@"
