@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog, and this project follows SemVer.
 
+## [0.4.3] - 2026-03-01
+
+### Fixed
+
+- Test runner properly handles plenary exit codes for CI compatibility.
+
 ## [0.4.2] - 2026-03-01
 
 ### Fixed
@@ -55,6 +61,7 @@ The format is based on Keep a Changelog, and this project follows SemVer.
 ### Added
 - Curated Eldritch variant list in registry overrides.
 
+[0.4.3]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.3
 [0.4.2]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.2
 [0.4.1]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.1
 [0.4.0]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.0
