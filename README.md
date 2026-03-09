@@ -1,19 +1,17 @@
 # theme-browser.nvim
 
-> ⚠️ **ALPHA** - Under active development. APIs may change.
-
-Neovim theme gallery and loader. Browse, preview, apply, and persist themes.
+Alpha Neovim theme gallery and loader. Browse, preview, apply, and persist
+themes from the bundled registry.
 
 ## Quick Start
 
-Install with lazy.nvim using the latest tagged release (instead of `main`/HEAD):
+Install with `lazy.nvim` using a tagged release:
 
 ```lua
--- ~/.config/nvim/lua/plugins/theme-browser.lua
 return {
   {
     "raulcorreia7/theme-browser.nvim",
-    version = "*", -- latest stable tag
+    version = "*",
     event = "VeryLazy",
     dependencies = { "rktjmp/lush.nvim" },
     opts = {
@@ -23,69 +21,64 @@ return {
 }
 ```
 
-If you want an exact pin for reproducible setups, use `tag = "vX.Y.Z"`.
+If you need a reproducible pin, use `tag = "vX.Y.Z"`.
 
-Open picker: `:ThemeBrowser`
+Open the picker with `:ThemeBrowser`.
 
-### Persistence
+## Features
 
-With `startup.write_spec = true` (default), selecting a theme generates:
-```
-~/.config/nvim/lua/plugins/theme-browser-selected.lua
-```
-
-This managed spec ensures your theme loads on startup without manual lazy.nvim specs.
+- Browse registry themes from inside Neovim.
+- Preview themes before committing to them.
+- Install, apply, and persist the active theme with one command.
+- Restore the persisted theme on startup when `auto_load = true`.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `:ThemeBrowser` | Open theme gallery |
-| `:ThemeBrowser pick [query]` | Open gallery with optional initial filter |
-| `:ThemeBrowser focus` | Focus an already-open picker |
-| `:ThemeBrowser use <name[:variant]> [variant]` | Install, apply, persist theme |
-| `:ThemeBrowser status [name]` | Show theme status |
-| `:ThemeBrowser pm <enable\|disable\|toggle\|status>` | Package manager controls |
-| `:ThemeBrowser <enable\|disable\|toggle>` | Startup restore controls (inline) |
-| `:ThemeBrowser browser <enable\|disable\|toggle\|status>` | Startup restore controls |
-| `:ThemeBrowser registry <sync\|clear>` | Registry controls (compatibility alias) |
-| `:ThemeBrowser <sync\|clear>` | Registry sync/clear |
+| `:ThemeBrowser` | Open the theme picker |
+| `:ThemeBrowser pick [query]` | Open the picker with an optional initial filter |
+| `:ThemeBrowser focus` | Focus an existing picker window |
+| `:ThemeBrowser use <name[:variant]> [variant]` | Install, apply, and persist a theme |
+| `:ThemeBrowser status [name]` | Show status for the current or named theme |
+| `:ThemeBrowser pm <enable|disable|toggle|status>` | Control package manager integration |
+| `:ThemeBrowser browser <enable|disable|toggle|status>` | Control startup restore |
+| `:ThemeBrowser <enable|disable|toggle>` | Shorthand for browser controls |
+| `:ThemeBrowser registry <sync|clear>` | Registry controls compatibility alias |
+| `:ThemeBrowser <sync|clear>` | Registry control shorthand |
 | `:ThemeBrowser! sync` | Force registry sync |
-| `:ThemeBrowser validate [output]` | Validate theme can load |
-| `:ThemeBrowser reset` | Clear state, cache, managed spec |
-| `:ThemeBrowser help` | Show help |
+| `:ThemeBrowser validate [output]` | Validate install, preview, and use flows |
+| `:ThemeBrowser reset` | Clear plugin state, cache, and managed spec |
+| `:ThemeBrowser help` | Show command help |
 
 ## Picker Keys
 
+Default picker keys:
+
 | Key | Action |
 |-----|--------|
-| `j/k` | Navigate |
+| `j` / `k` | Navigate |
+| `<CR>` | Apply theme and close |
+| `m` | Apply theme and keep picker open |
+| `p` | Preview selected theme |
+| `i` | Install and mark theme |
+| `/` | Start live search |
+| `c` | Clear current search |
 | `?` | Toggle help |
-| `/` | Start live fuzzy search |
-| `<CR>` | Apply theme |
-| `i` | Install + mark for later |
-| `Y` | Copy selected theme repo URL |
-| `O` | Open selected theme repo URL |
-| `<Esc>` | Close |
+| `Y` | Copy selected repo URL |
+| `O` | Open selected repo URL |
+| `q` / `<Esc>` | Close picker |
 
-## How It Works
+## Persistence
 
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│   Picker    │───▶│ ThemeService │───▶│   Adapters  │
-│ (vim.ui)    │    │ (orchestr.)  │    │ (loaders)   │
-└─────────────┘    └──────────────┘    └─────────────┘
-                           │
-                           ▼
-                   ┌──────────────┐
-                   │    State     │
-                   │ (persisted)  │
-                   └──────────────┘
+With `startup.write_spec = true` (default), selecting a theme writes the managed
+spec file at:
+
+```text
+~/.config/nvim/lua/plugins/theme-browser-selected.lua
 ```
 
-1. Browse themes from registry
-2. Apply → installs (if needed) → loads → persists
-3. On startup: restores persisted theme (if enabled)
+That file gives startup restore an early, deterministic lazy.nvim entry point.
 
 ## Configuration
 
@@ -96,18 +89,18 @@ require("theme-browser").setup({
     "~/projects",
     "~/themes",
   },
-  package_manager = {
-    enabled = true,
-    mode = "manual",  -- auto|manual|installed_only
-    provider = "auto", -- auto|lazy|noop
-  },
   registry = {
-    channel = "stable", -- stable|latest
+    channel = "stable",
   },
   startup = {
     enabled = true,
     write_spec = true,
     skip_if_already_active = true,
+  },
+  package_manager = {
+    enabled = true,
+    mode = "manual",
+    provider = "auto",
   },
   cache = {
     auto_cleanup = true,
@@ -119,55 +112,41 @@ require("theme-browser").setup({
 })
 ```
 
+Key defaults:
+
 | Option | Default | Description |
 |--------|---------|-------------|
-| `auto_load` | `false` | Restore theme on startup |
-| `package_manager.enabled` | `true` | Enable package manager integration |
-| `package_manager.mode` | `"manual"` | `auto`: auto-install, `manual`: on-demand, `installed_only`: no downloads |
-| `package_manager.provider` | `"auto"` | Package manager: `auto`, `lazy`, `noop` |
-| `registry.channel` | `"stable"` | Registry channel: `stable` (SemVer tags) or `latest` (weekly `vX.Y.Z+YYYYMMDD`) |
-| `local_repo_sources` | `{}` | Array of local directories/repo roots used when resolving theme sources |
-| `startup.write_spec` | `true` | Generate managed lazy spec for persistence |
-| `ui.preview_on_move` | `true` | Preview installed themes on cursor move |
+| `auto_load` | `false` | Restore the persisted theme on startup |
+| `registry.channel` | `"stable"` | Use stable or rolling registry tags |
+| `startup.write_spec` | `true` | Generate the managed lazy.nvim spec |
+| `package_manager.mode` | `"manual"` | Install on demand unless you opt into `auto` |
+| `ui.preview_on_move` | `true` | Preview installed themes while moving through the picker |
 
-See [docs/configuration.md](docs/configuration.md) for full reference.
+See `docs/configuration.md` for the full option reference.
 
 ## Files
 
 | Path | Purpose |
 |------|---------|
-| `stdpath("data")/theme-browser/state.json` | Persisted state |
-| `stdpath("config")/lua/plugins/theme-browser-selected.lua` | Managed lazy spec |
+| `stdpath("data")/theme-browser/state.json` | Persisted plugin state |
+| `stdpath("config")/lua/plugins/theme-browser-selected.lua` | Managed lazy.nvim startup spec |
 
-## Theme Compatibility
+## Development
 
-- Setup-based themes with variants are supported across common option keys:
-  `theme`, `palette`, `style`, `colorscheme`, `variant`, `flavour`, `flavor`
-- Variant metadata from the registry is preserved so loader strategy/module hints work per entry
-- Themes that modify external user config files outside Neovim are excluded at the registry level
-
-## Architecture
-
-See [docs/architecture.md](docs/architecture.md) for layer details.
-See [docs/theme-source-strategy.md](docs/theme-source-strategy.md) for cache vs install behavior and tradeoffs.
-
-## Testing
+From `packages/plugin`:
 
 ```bash
 make verify
 ```
 
-## Release Process
+That runs setup checks, linting, format checks, smoke tests, and plugin tests.
 
-- Keep `CHANGELOG.md` updated before tagging.
-- Tags follow SemVer: `vX.Y.Z`.
-- Release workflow uses `CHANGELOG.md` section for release notes when available.
-- Release workflow publishes `themes.json` and `manifest.json` assets.
-- Release workflow validates uploaded assets (exists and non-zero size).
+## Related Docs
 
-## Related
-
-- [theme-browser-registry](https://github.com/raulcorreia7/theme-browser-registry) — Theme registry indexer
+- `docs/configuration.md` - full configuration reference
+- `docs/theme-source-strategy.md` - cache vs install behavior and tradeoffs
+- `../registry/README.md` - registry package outputs and workflows
+- `../../docs/release.md` - coordinated release process
 
 ## License
 
