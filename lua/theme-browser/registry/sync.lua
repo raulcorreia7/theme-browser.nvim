@@ -10,7 +10,7 @@ local RELEASES_API_URL =
   "https://api.github.com/repos/raulcorreia7/theme-browser-registry/releases?per_page=30"
 local CACHE_FILENAME = "registry-full.json"
 local MANIFEST_FILENAME = "registry-manifest.json"
-local COMPATIBLE_VERSION = "0.1"
+local COMPATIBLE_VERSION = "0.4"
 
 local function get_cache_dir()
   local ok_tb, tb = pcall(require, "theme-browser")

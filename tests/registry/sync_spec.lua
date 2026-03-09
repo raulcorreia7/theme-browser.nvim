@@ -430,7 +430,7 @@ describe("theme-browser.registry.sync", function()
     it("accepts matching version", function()
       with_temp_cache_dir(function()
         vim.system = test_utils.mock_vim_system({
-          { code = 0, stdout = vim.json.encode({ sha256 = "abc", count = 1, version = "0.1.0" }) },
+          { code = 0, stdout = vim.json.encode({ sha256 = "abc", count = 1, version = "0.4.3" }) },
           { code = 0, stdout = vim.json.encode({ { name = "test" } }) },
         })
 
@@ -440,6 +440,26 @@ describe("theme-browser.registry.sync", function()
 
         assert.is_not_nil(result)
         assert.is_true(result.success)
+      end)
+    end)
+
+    it("warns on mismatched version but still syncs", function()
+      with_temp_cache_dir(function()
+        local notify = test_utils.mock_vim_notify()
+        vim.system = test_utils.mock_vim_system({
+          { code = 0, stdout = vim.json.encode({ sha256 = "abc", count = 1, version = "0.5.0" }) },
+          { code = 0, stdout = vim.json.encode({ { name = "test" } }) },
+        })
+
+        local cb, get_result = wait_for_sync_result()
+        reload_sync().sync({ notify = true }, cb)
+        local result = get_result()
+
+        notify.restore()
+
+        assert.is_not_nil(result)
+        assert.is_true(result.success)
+        assert.is_true(notify.has_warning("Registry version 0%.5%.0 may be incompatible"))
       end)
     end)
   end)

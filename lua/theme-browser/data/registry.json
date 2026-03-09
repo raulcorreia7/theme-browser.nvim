@@ -3,7 +3,7 @@
     "name": "aura-theme",
     "colorscheme": "aura-theme",
     "repo": "daltonmenezes/aura-theme",
-    "stars": 3737
+    "stars": 3740
   },
   {
     "name": "ayu",
@@ -16,7 +16,7 @@
     "name": "bamboo",
     "colorscheme": "bamboo",
     "repo": "ribru17/bamboo.nvim",
-    "stars": 447,
+    "stars": 448,
     "strategy": "setup",
     "variants": [
       {
@@ -40,7 +40,7 @@
     "name": "black-metal-theme-neovim",
     "colorscheme": "bathory",
     "repo": "metalelf0/black-metal-theme-neovim",
-    "stars": 279,
+    "stars": 288,
     "strategy": "colorscheme",
     "variants": [
       {
@@ -214,7 +214,7 @@
     "name": "bluloco",
     "colorscheme": "bluloco",
     "repo": "uloco/bluloco.nvim",
-    "stars": 425,
+    "stars": 428,
     "strategy": "setup",
     "variants": [
       {
@@ -233,7 +233,7 @@
     "name": "boo",
     "colorscheme": "boo",
     "repo": "rockerBOO/boo-colorscheme-nvim",
-    "stars": 247,
+    "stars": 251,
     "strategy": "setup",
     "variants": [
       {
@@ -262,7 +262,7 @@
     "name": "catppuccin",
     "colorscheme": "catppuccin",
     "repo": "catppuccin/nvim",
-    "stars": 7222,
+    "stars": 7242,
     "strategy": "setup",
     "variants": [
       {
@@ -291,7 +291,7 @@
     "name": "cyberdream",
     "colorscheme": "cyberdream",
     "repo": "scottmckendry/cyberdream.nvim",
-    "stars": 1270,
+    "stars": 1275,
     "strategy": "setup",
     "variants": [
       {
@@ -312,7 +312,7 @@
     "name": "embark-theme",
     "colorscheme": "embark",
     "repo": "embark-theme/vim",
-    "stars": 721,
+    "stars": 722,
     "strategy": "colorscheme"
   },
   {
@@ -326,7 +326,7 @@
     "name": "everviolet",
     "colorscheme": "evergarden",
     "repo": "everviolet/nvim",
-    "stars": 583,
+    "stars": 592,
     "strategy": "setup",
     "variants": [
       {
@@ -361,7 +361,7 @@
     "name": "flexoki",
     "colorscheme": "flexoki",
     "repo": "kepano/flexoki",
-    "stars": 3056
+    "stars": 3103
   },
   {
     "name": "github-nvim-theme",
@@ -433,14 +433,14 @@
     "name": "iceberg",
     "colorscheme": "iceberg",
     "repo": "cocopon/iceberg.vim",
-    "stars": 2362,
+    "stars": 2361,
     "strategy": "colorscheme"
   },
   {
     "name": "kanagawa",
     "colorscheme": "kanagawa",
     "repo": "rebelot/kanagawa.nvim",
-    "stars": 5960,
+    "stars": 5980,
     "strategy": "load",
     "variants": [
       {
@@ -464,7 +464,7 @@
     "name": "koda",
     "colorscheme": "koda",
     "repo": "oskarnurm/koda.nvim",
-    "stars": 237,
+    "stars": 243,
     "strategy": "setup",
     "variants": [
       {
@@ -474,7 +474,8 @@
       },
       {
         "name": "koda-glade",
-        "colorscheme": "koda-glade"
+        "colorscheme": "koda-glade",
+        "mode": "light"
       },
       {
         "name": "koda-light",
@@ -483,7 +484,8 @@
       },
       {
         "name": "koda-moss",
-        "colorscheme": "koda-moss"
+        "colorscheme": "koda-moss",
+        "mode": "dark"
       }
     ]
   },
@@ -491,7 +493,7 @@
     "name": "lackluster",
     "colorscheme": "lackluster",
     "repo": "slugbyte/lackluster.nvim",
-    "stars": 528,
+    "stars": 529,
     "strategy": "setup",
     "variants": [
       {
@@ -520,28 +522,28 @@
     "name": "lush",
     "colorscheme": "lush",
     "repo": "rktjmp/lush.nvim",
-    "stars": 1751,
+    "stars": 1754,
     "strategy": "setup"
   },
   {
     "name": "melange",
     "colorscheme": "melange",
     "repo": "savq/melange-nvim",
-    "stars": 928,
+    "stars": 934,
     "strategy": "colorscheme"
   },
   {
     "name": "miasma",
     "colorscheme": "miasma",
     "repo": "xero/miasma.nvim",
-    "stars": 490,
+    "stars": 492,
     "strategy": "colorscheme"
   },
   {
     "name": "modus-themes",
     "colorscheme": "modus",
     "repo": "miikanissi/modus-themes.nvim",
-    "stars": 407,
+    "stars": 409,
     "strategy": "setup",
     "variants": [
       {
@@ -560,7 +562,7 @@
     "name": "neovim-ayu",
     "colorscheme": "ayu",
     "repo": "Shatur/neovim-ayu",
-    "stars": 549,
+    "stars": 550,
     "strategy": "setup",
     "variants": [
       {
@@ -584,7 +586,7 @@
     "name": "nightfox",
     "colorscheme": "nightfox",
     "repo": "EdenEast/nightfox.nvim",
-    "stars": 3916,
+    "stars": 3922,
     "strategy": "setup",
     "variants": [
       {
@@ -623,7 +625,7 @@
     "name": "no-clown-fiesta",
     "colorscheme": "no-clown-fiesta",
     "repo": "aktersnurra/no-clown-fiesta.nvim",
-    "stars": 411,
+    "stars": 415,
     "strategy": "setup",
     "variants": [
       {
@@ -633,7 +635,8 @@
       },
       {
         "name": "no-clown-fiesta-dim",
-        "colorscheme": "no-clown-fiesta-dim"
+        "colorscheme": "no-clown-fiesta-dim",
+        "mode": "dark"
       },
       {
         "name": "no-clown-fiesta-light",
@@ -646,7 +649,7 @@
     "name": "nordic",
     "colorscheme": "nordic",
     "repo": "AlexvZyl/nordic.nvim",
-    "stars": 992,
+    "stars": 995,
     "strategy": "load"
   },
   {
@@ -764,14 +767,14 @@
     "name": "onedark",
     "colorscheme": "onedark",
     "repo": "navarasu/onedark.nvim",
-    "stars": 1924,
+    "stars": 1931,
     "strategy": "setup"
   },
   {
     "name": "onedarkpro",
     "colorscheme": "onedark",
     "repo": "olimorris/onedarkpro.nvim",
-    "stars": 1034,
+    "stars": 1038,
     "strategy": "setup",
     "variants": [
       {
@@ -800,7 +803,7 @@
     "name": "onenord",
     "colorscheme": "onenord",
     "repo": "rmehri01/onenord.nvim",
-    "stars": 625,
+    "stars": 627,
     "strategy": "setup",
     "variants": [
       {
@@ -814,7 +817,7 @@
     "name": "oxocarbon",
     "colorscheme": "oxocarbon",
     "repo": "nyoom-engineering/oxocarbon.nvim",
-    "stars": 1527,
+    "stars": 1531,
     "strategy": "colorscheme"
   },
   {
@@ -828,7 +831,7 @@
     "name": "rose-pine",
     "colorscheme": "rose-pine",
     "repo": "rose-pine/neovim",
-    "stars": 2951,
+    "stars": 2962,
     "strategy": "setup",
     "variants": [
       {
@@ -852,7 +855,7 @@
     "name": "solarized-osaka",
     "colorscheme": "solarized-osaka",
     "repo": "craftzdog/solarized-osaka.nvim",
-    "stars": 953,
+    "stars": 957,
     "strategy": "setup",
     "variants": [
       {
@@ -880,14 +883,14 @@
     "name": "tender",
     "colorscheme": "tender",
     "repo": "jacoborus/tender.vim",
-    "stars": 1234,
+    "stars": 1233,
     "strategy": "colorscheme"
   },
   {
     "name": "tokyonight",
     "colorscheme": "tokyonight",
     "repo": "folke/tokyonight.nvim",
-    "stars": 7847,
+    "stars": 7861,
     "strategy": "setup",
     "variants": [
       {
@@ -916,47 +919,47 @@
     "name": "vague",
     "colorscheme": "vague",
     "repo": "vague-theme/vague.nvim",
-    "stars": 1001,
+    "stars": 1022,
     "strategy": "setup"
   },
   {
     "name": "vim-colors-pencil",
     "colorscheme": "pencil",
     "repo": "preservim/vim-colors-pencil",
-    "stars": 619,
+    "stars": 620,
     "strategy": "colorscheme"
   },
   {
     "name": "vim-deus",
     "colorscheme": "deus",
     "repo": "ajmwagar/vim-deus",
-    "stars": 836,
+    "stars": 837,
     "strategy": "colorscheme"
   },
   {
     "name": "vim-dogrun",
     "colorscheme": "dogrun",
     "repo": "wadackel/vim-dogrun",
-    "stars": 663,
+    "stars": 666,
     "strategy": "colorscheme"
   },
   {
     "name": "vim-moonfly-colors",
     "colorscheme": "moonfly",
     "repo": "bluz71/vim-moonfly-colors",
-    "stars": 1252
+    "stars": 1255
   },
   {
     "name": "vim-nightfly-colors",
     "colorscheme": "nightfly",
     "repo": "bluz71/vim-nightfly-colors",
-    "stars": 924
+    "stars": 922
   },
   {
     "name": "vim-no-color-collections",
     "colorscheme": "vim-no-color-collections",
     "repo": "mcchrish/vim-no-color-collections",
-    "stars": 1005
+    "stars": 1009
   },
   {
     "name": "vim-one",
@@ -976,7 +979,7 @@
     "name": "zenbones",
     "colorscheme": "zenbones",
     "repo": "zenbones-theme/zenbones.nvim",
-    "stars": 1067,
+    "stars": 1077,
     "strategy": "load",
     "variants": [
       {
@@ -1006,7 +1009,8 @@
       },
       {
         "name": "randombones",
-        "colorscheme": "randombones"
+        "colorscheme": "randombones",
+        "modeExempt": true
       },
       {
         "name": "randombones_dark",

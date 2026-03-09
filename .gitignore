@@ -12,6 +12,7 @@ lua/plugins/theme-browser.lua
 
 # Test artifacts
 *.log
+.nvimlog
 .nvim/
 *.prof
 
