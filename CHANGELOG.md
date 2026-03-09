@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 The format is based on Keep a Changelog, and this project follows SemVer.
 
+## [0.4.5] - 2026-03-09
+
+### Changed
+
+- Fixed the README command table so command aliases with `|` render correctly.
+- Removed the monorepo-only related-docs section so the package README stays
+  standalone.
+- No plugin runtime changes; version stays aligned with the coordinated 0.4.5
+  workspace release.
+
 ## [0.4.4] - 2026-03-09
 
 ### Fixed
@@ -73,6 +83,7 @@ The format is based on Keep a Changelog, and this project follows SemVer.
 ### Added
 - Curated Eldritch variant list in registry overrides.
 
+[0.4.5]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.5
 [0.4.4]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.4
 [0.4.3]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.3
 [0.4.2]: https://github.com/raulcorreia7/theme-browser.nvim/releases/tag/v0.4.2

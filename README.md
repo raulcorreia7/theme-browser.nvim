@@ -41,11 +41,11 @@ Open the picker with `:ThemeBrowser`.
 | `:ThemeBrowser focus` | Focus an existing picker window |
 | `:ThemeBrowser use <name[:variant]> [variant]` | Install, apply, and persist a theme |
 | `:ThemeBrowser status [name]` | Show status for the current or named theme |
-| `:ThemeBrowser pm <enable|disable|toggle|status>` | Control package manager integration |
-| `:ThemeBrowser browser <enable|disable|toggle|status>` | Control startup restore |
-| `:ThemeBrowser <enable|disable|toggle>` | Shorthand for browser controls |
-| `:ThemeBrowser registry <sync|clear>` | Registry controls compatibility alias |
-| `:ThemeBrowser <sync|clear>` | Registry control shorthand |
+| `:ThemeBrowser pm <enable\|disable\|toggle\|status>` | Control package manager integration |
+| `:ThemeBrowser browser <enable\|disable\|toggle\|status>` | Control startup restore |
+| `:ThemeBrowser <enable\|disable\|toggle>` | Shorthand for browser controls |
+| `:ThemeBrowser registry <sync\|clear>` | Registry controls compatibility alias |
+| `:ThemeBrowser <sync\|clear>` | Registry control shorthand |
 | `:ThemeBrowser! sync` | Force registry sync |
 | `:ThemeBrowser validate [output]` | Validate install, preview, and use flows |
 | `:ThemeBrowser reset` | Clear plugin state, cache, and managed spec |
@@ -140,13 +140,6 @@ make verify
 ```
 
 That runs setup checks, linting, format checks, smoke tests, and plugin tests.
-
-## Related Docs
-
-- `docs/configuration.md` - full configuration reference
-- `docs/theme-source-strategy.md` - cache vs install behavior and tradeoffs
-- `../registry/README.md` - registry package outputs and workflows
-- `../../docs/release.md` - coordinated release process
 
 ## License
 
