@@ -262,7 +262,7 @@
     "name": "catppuccin",
     "colorscheme": "catppuccin",
     "repo": "catppuccin/nvim",
-    "stars": 7242,
+    "stars": 7243,
     "strategy": "setup",
     "variants": [
       {
@@ -361,7 +361,7 @@
     "name": "flexoki",
     "colorscheme": "flexoki",
     "repo": "kepano/flexoki",
-    "stars": 3103
+    "stars": 3104
   },
   {
     "name": "github-nvim-theme",
@@ -890,7 +890,7 @@
     "name": "tokyonight",
     "colorscheme": "tokyonight",
     "repo": "folke/tokyonight.nvim",
-    "stars": 7861,
+    "stars": 7862,
     "strategy": "setup",
     "variants": [
       {
