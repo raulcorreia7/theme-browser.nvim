@@ -9,12 +9,9 @@ USE_ISOLATED ?= true
 
 ROOT := $(CURDIR)
 
-.PHONY: all pipeline setup build test test-isolated lint fmt fmt-check clean package smoke verify
+.PHONY: all setup build test test-isolated lint fmt fmt-check clean package smoke verify
 
 all: verify
-
-# Backward-compatible alias used by local scripts/CI wrappers.
-pipeline: verify
 
 setup:
 	@command -v $(NVIM) >/dev/null

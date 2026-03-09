@@ -560,19 +560,6 @@ local function setup_commands()
       return
     end
 
-    if action == "registry" then
-      local registry_action = type(opts.fargs[2]) == "string" and string.lower(opts.fargs[2]) or ""
-      if registry_action == "" then
-        log.warn("Usage: :ThemeBrowser <sync|clear>")
-        return
-      end
-
-      if not run_registry_action(registry_action, { force = opts.bang }) then
-        log.warn("Usage: :ThemeBrowser <sync|clear>")
-      end
-      return
-    end
-
     if action == "validate" then
       run_validate_action(opts.fargs[2])
       return

@@ -69,10 +69,10 @@ COMMANDS                                                        *theme-browser-c
 :ThemeBrowser browser <enable|disable|toggle|status>
     Startup restore controls.
 
-:ThemeBrowser registry <sync|clear>
+:ThemeBrowser <sync|clear>
     Sync or clear cached registry.
 
-:ThemeBrowser! registry sync
+:ThemeBrowser! sync
     Force registry sync.
 
 :ThemeBrowser validate [output]

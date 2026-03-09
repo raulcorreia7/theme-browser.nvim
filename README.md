@@ -48,13 +48,11 @@ This managed spec ensures your theme loads on startup without manual lazy.nvim s
 | `:ThemeBrowser pm <enable\|disable\|toggle\|status>` | Package manager controls |
 | `:ThemeBrowser <enable\|disable\|toggle>` | Startup restore controls (inline) |
 | `:ThemeBrowser browser <enable\|disable\|toggle\|status>` | Startup restore controls |
-| `:ThemeBrowser <sync\|clear>` | Registry sync/clear (inline) |
+| `:ThemeBrowser <sync\|clear>` | Registry sync/clear |
 | `:ThemeBrowser! sync` | Force registry sync |
 | `:ThemeBrowser validate [output]` | Validate theme can load |
 | `:ThemeBrowser reset` | Clear state, cache, managed spec |
 | `:ThemeBrowser help` | Show help |
-
-`registry <sync|clear>` remains available as a compatibility alias.
 
 ## Picker Keys
 
