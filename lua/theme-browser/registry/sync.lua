@@ -231,6 +231,14 @@ local function is_compatible_version(version)
   return major_minor == COMPATIBLE_VERSION
 end
 
+local function incompatible_version_message(version)
+  return string.format(
+    "Registry version %s is incompatible (expected %s.x); keeping existing cache",
+    version,
+    COMPATIBLE_VERSION
+  )
+end
+
 function M.get_synced_registry_path()
   local cached = get_cached_registry_path()
   if vim.fn.filereadable(cached) == 1 then
@@ -304,14 +312,12 @@ function M.sync(opts, callback)
 
       if remote_manifest.version and not is_compatible_version(remote_manifest.version) then
         if notify then
-          log.warn(
-            string.format(
-              "Registry version %s may be incompatible (expected %s.x)",
-              remote_manifest.version,
-              COMPATIBLE_VERSION
-            )
-          )
+          log.warn(incompatible_version_message(remote_manifest.version))
         end
+        if type(callback) == "function" then
+          callback(false, "incompatible registry version")
+        end
+        return
       end
 
       if not force and is_fresh_manifest(cached_manifest, remote_manifest) then

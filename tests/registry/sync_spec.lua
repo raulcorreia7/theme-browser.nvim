@@ -443,9 +443,14 @@ describe("theme-browser.registry.sync", function()
       end)
     end)
 
-    it("warns on mismatched version but still syncs", function()
-      with_temp_cache_dir(function()
+    it("rejects mismatched version and keeps cached registry", function()
+      with_temp_cache_dir(function(cache_dir)
         local notify = test_utils.mock_vim_notify()
+        vim.fn.writefile({ vim.json.encode({ { name = "existing" } }) }, cache_dir .. "/registry-full.json")
+        vim.fn.writefile(
+          { vim.json.encode({ sha256 = "cached", count = 1, version = "0.4.3" }) },
+          cache_dir .. "/registry-manifest.json"
+        )
         vim.system = test_utils.mock_vim_system({
           { code = 0, stdout = vim.json.encode({ sha256 = "abc", count = 1, version = "0.5.0" }) },
           { code = 0, stdout = vim.json.encode({ { name = "test" } }) },
@@ -458,8 +463,13 @@ describe("theme-browser.registry.sync", function()
         notify.restore()
 
         assert.is_not_nil(result)
-        assert.is_true(result.success)
-        assert.is_true(notify.has_warning("Registry version 0%.5%.0 may be incompatible"))
+        assert.is_false(result.success)
+        assert.equals("incompatible registry version", result.message)
+        assert.is_true(notify.has_warning("Registry version 0%.5%.0 is incompatible"))
+        assert.same(
+          { { name = "existing" } },
+          vim.json.decode(table.concat(vim.fn.readfile(cache_dir .. "/registry-full.json"), "\n"))
+        )
       end)
     end)
   end)
