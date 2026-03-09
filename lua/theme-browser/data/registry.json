@@ -305,7 +305,7 @@
     "name": "dracula",
     "colorscheme": "dracula",
     "repo": "dracula/vim",
-    "stars": 1376,
+    "stars": 1378,
     "strategy": "colorscheme"
   },
   {
@@ -319,7 +319,7 @@
     "name": "everforest",
     "colorscheme": "everforest",
     "repo": "sainnhe/everforest",
-    "stars": 3874,
+    "stars": 3889,
     "strategy": "colorscheme"
   },
   {
@@ -367,7 +367,7 @@
     "name": "github-nvim-theme",
     "colorscheme": "github_dark",
     "repo": "projekt0n/github-nvim-theme",
-    "stars": 2425,
+    "stars": 2429,
     "strategy": "setup",
     "variants": [
       {
@@ -426,7 +426,7 @@
     "name": "gruvbox",
     "colorscheme": "gruvbox",
     "repo": "morhetz/gruvbox",
-    "stars": 15222,
+    "stars": 15249,
     "strategy": "colorscheme"
   },
   {
@@ -440,7 +440,7 @@
     "name": "kanagawa",
     "colorscheme": "kanagawa",
     "repo": "rebelot/kanagawa.nvim",
-    "stars": 5980,
+    "stars": 5981,
     "strategy": "load",
     "variants": [
       {
@@ -959,7 +959,7 @@
     "name": "vim-no-color-collections",
     "colorscheme": "vim-no-color-collections",
     "repo": "mcchrish/vim-no-color-collections",
-    "stars": 1009
+    "stars": 1010
   },
   {
     "name": "vim-one",
@@ -972,7 +972,7 @@
     "name": "vscode",
     "colorscheme": "vscode",
     "repo": "Mofiqul/vscode.nvim",
-    "stars": 949,
+    "stars": 952,
     "strategy": "load"
   },
   {
